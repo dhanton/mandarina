@@ -44,9 +44,15 @@ protected:
     //wrap it in child classes
     void receiveLoop(u32 id);
 
+    void printMessage(const char* format, ...) const;
+
     ISteamNetworkingSocketsCallbacks* m_callbacks;
     ISteamNetworkingSockets* m_pInterface;
     bool m_isServer;
+
+    //When using local connection isServer = false in server as well
+    //but we still want to display messages with [SERVER] prefix
+    const bool m_isServerMsg;
 };
 
 #endif // NET_PEER_HPP

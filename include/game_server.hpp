@@ -35,7 +35,7 @@ public:
     void processPacket(HSteamNetConnection connectionId, CRCPacket* packet);
     void handleCommand(u8 command, int clientId, CRCPacket* packet);
 
-    void addClientToPoll(int id);
+    bool addClientToPoll(int id);
 
     void resetClient(int id);
     int getFreeClientId();

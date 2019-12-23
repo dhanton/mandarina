@@ -11,21 +11,35 @@ void GameClientCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
 {
     switch (info->m_info.m_eState)
     {
-        // case k_ESteamNetworkingConnectionState_ProblemDetectedLocally:
-        // case k_ESteamNetworkingConnectionState_Connecting:
-        
         case k_ESteamNetworkingConnectionState_ClosedByPeer:
+        case k_ESteamNetworkingConnectionState_ProblemDetectedLocally:
         {
-            parent->m_pInterface->CloseConnection(parent->m_serverConnectionId, 0, nullptr, false);
+            if (info->m_eOldState == k_ESteamNetworkingConnectionState_Connecting) {
+                parent->printMessage("Unable to reach server");
+
+            } else if (info->m_info.m_eState == k_ESteamNetworkingConnectionState_ClosedByPeer) {
+                parent->printMessage("Connection with server closed by peer");
+
+            } else {
+                parent->printMessage("There was a problem with the connection");
+            }
+
+            parent->m_pInterface->CloseConnection(info->m_hConn, 0, nullptr, false);
             parent->m_serverConnectionId = k_HSteamNetConnection_Invalid;
 
-            std::cout << "Connection with server closed by peer" << std::endl;
+            break;
+        }
 
+        case k_ESteamNetworkingConnectionState_Connecting:
+        {
+            parent->printMessage("Connecting...");
             break;
         }
 
         case k_ESteamNetworkingConnectionState_Connected:
         {
+            parent->printMessage("Connection completed with server");
+
             //Eventually, sending ready command should be based on input from the player
             //Like interacting with something in the tavern
             //Or clicking a button in a menu
@@ -49,7 +63,12 @@ GameClient::GameClient(const Context& context, const SteamNetworkingIPAddr& endp
     } else {
         m_serverConnectionId = context.localCon1;
 
-        std::cout << "Adding server in local connection" << std::endl;
+        printMessage("Adding server in local connection");
+
+        //local connection doesn't trigger callbacks
+        CRCPacket packet;
+        packet << (u8) ServerCommand::PlayerReady << true;
+        sendPacket(packet, m_serverConnectionId, true);
     }
 }
 
@@ -83,7 +102,7 @@ void GameClient::handleCommand(u8 command, CRCPacket* packet)
     {
         case ClientCommand::Null:
         {
-            std::cerr << "handleCommand error - NULL command" << std::endl;
+            printMessage("handleCommand error - NULL command");
 
             //receiving null command invalidates the rest of the packet
             packet->clear();

@@ -1,5 +1,7 @@
 #include "net_peer.hpp"
 
+#include <cstdarg>
+
 const NetPeer::PollId NetPeer::PollId::Invalid = PollId(k_HSteamNetPollGroup_Invalid, k_HSteamListenSocket_Invalid);
 
 NetPeer::PollId::PollId()
@@ -24,12 +26,67 @@ bool NetPeer::PollId::operator!=(const NetPeer::PollId& other) const
     return !(*this == other);
 }
 
-NetPeer::NetPeer(ISteamNetworkingSocketsCallbacks *callbacks, bool server)
+NetPeer::NetPeer(ISteamNetworkingSocketsCallbacks *callbacks, bool server):
+    m_isServerMsg(server)
 {
     m_callbacks = callbacks;
     m_isServer = server;
 
     m_pInterface = SteamNetworkingSockets();
+}
+
+HSteamNetConnection NetPeer::connectToServer(const SteamNetworkingIPAddr &endpoint)
+{
+    if (m_isServer) {
+        printMessage("Can't connect to another server");
+        return k_HSteamNetConnection_Invalid;
+    }
+
+    printMessage("Trying to reach server");
+
+    return m_pInterface->ConnectByIPAddress(endpoint, 0, nullptr);
+}
+
+NetPeer::PollId NetPeer::createListenSocket(const SteamNetworkingIPAddr &endpoint)
+{
+    if (!m_isServer) {
+        printMessage("Only servers can create listen sockets");
+        return PollId::Invalid;
+    }
+
+    //PollGroup is used to receive data
+    HSteamNetPollGroup pollGroup = m_pInterface->CreatePollGroup();
+    printMessage("PollGroup created");
+
+    //ListenSocket is used to allow clients to connect
+    HSteamListenSocket connection = m_pInterface->CreateListenSocketIP(endpoint, 0, nullptr);
+    printMessage("ListenSocket created");
+
+    return PollId(pollGroup, connection);
+}
+
+void NetPeer::checkConnectionStatus(SteamNetworkingQuickConnectionStatus &status, HSteamNetConnection connectionId)
+{
+    m_pInterface->GetQuickConnectionStatus(connectionId, &status);
+}
+
+void NetPeer::sendPacket(CRCPacket &packet, HSteamNetConnection connectionId, bool reliable)
+{
+    size_t dataSize = packet.getDataSize();
+
+    //We used shared pointer to ensure the message lives while its being sent
+    //TODO: Test if this is still needed
+    auto packet_ptr = std::make_shared<CRCPacket>(packet);
+
+    //TODO: Change message type to unreliable no delay if delay is high
+    //Those 4 extra bytes are the CRC Key (that's not included in dataSize)
+    EResult result = m_pInterface->SendMessageToConnection(connectionId, packet.onSend(dataSize), dataSize + 4,
+                                                                       reliable ? k_nSteamNetworkingSend_Reliable : k_nSteamNetworkingSend_Unreliable,
+                                                                       nullptr);
+
+    if (result != k_EResultOK) {
+        printMessage("Error (%d) sending CRCPacket. Size: %u bytes.", result, dataSize);
+    }
 }
 
 void NetPeer::receiveLoop(u32 id)
@@ -61,55 +118,14 @@ void NetPeer::receiveLoop(u32 id)
     }
 }
 
-HSteamNetConnection NetPeer::connectToServer(const SteamNetworkingIPAddr &endpoint)
+void NetPeer::printMessage(const char* format, ...) const
 {
-    if (m_isServer) {
-        std::cerr << "Server can't connect to another server" << std::endl;
-        return k_HSteamNetConnection_Invalid;
-    }
+    va_list vl;
+    va_start(vl, format);
 
-    return m_pInterface->ConnectByIPAddress(endpoint, 0, nullptr);
-}
+    printf(m_isServerMsg ?  "[server] " : "[client] ");
+    vprintf(format, vl);
+    printf("\n");
 
-NetPeer::PollId NetPeer::createListenSocket(const SteamNetworkingIPAddr &endpoint)
-{
-    if (!m_isServer) {
-        std::cerr << "Only servers can create listen sockets" << std::endl;
-        return PollId::Invalid;
-    }
-
-    //PollGroup is used to receive data
-    HSteamNetPollGroup pollGroup = m_pInterface->CreatePollGroup();
-
-    //ListenSocket is used to allow clients to connect
-    HSteamListenSocket connection = m_pInterface->CreateListenSocketIP(endpoint, 0, nullptr);
-
-    //This should be called when clients finish connecting
-    // m_pInterface->SetConnectionPollGroup(connection, pollGroup);
-
-    return PollId(pollGroup, connection);
-}
-
-void NetPeer::checkConnectionStatus(SteamNetworkingQuickConnectionStatus &status, HSteamNetConnection connectionId)
-{
-    m_pInterface->GetQuickConnectionStatus(connectionId, &status);
-}
-
-void NetPeer::sendPacket(CRCPacket &packet, HSteamNetConnection connectionId, bool reliable)
-{
-    size_t dataSize = packet.getDataSize();
-
-    //We used shared pointer to ensure the message lives while its being sent
-    //TODO: Test if this is still needed
-    auto packet_ptr = std::make_shared<CRCPacket>(packet);
-
-    //TODO: Change message type to unreliable no delay if delay is high
-    //Those 4 extra bytes are the CRC Key (that's not included in dataSize)
-    EResult result = m_pInterface->SendMessageToConnection(connectionId, packet.onSend(dataSize), dataSize + 4,
-                                                                       reliable ? k_nSteamNetworkingSend_Reliable : k_nSteamNetworkingSend_Unreliable,
-                                                                       nullptr);
-
-    if (result != k_EResultOK) {
-        std::cerr << "Error (" << result << ") sending CRCPacket. Size: " << dataSize << " bytes." << std::endl;
-    }
+    va_end(vl);
 }

@@ -1,8 +1,6 @@
 #ifndef HELPER_HPP
 #define HELPER_HPP
 
-#include <array>
-
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/View.hpp>
 
@@ -33,11 +31,6 @@ template<typename T> inline sf::Vector2<T> absolute(const sf::Vector2<T>& a);
 
 //It doesn't compile if non-template functions are not inline
 inline sf::FloatRect getViewRect(const sf::View& view);
-
-//CRC32 Implementation with lookup table
-inline std::array<std::uint_fast32_t, 256> generate_crc_lookup_table() noexcept;
-template<typename InputIterator> inline std::uint_fast32_t crc(InputIterator first, InputIterator last);
-
 }
 
 #include "helper.inl"
