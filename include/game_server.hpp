@@ -62,7 +62,6 @@ private:
     std::vector<bool> mClients_isValid;
     std::vector<HSteamNetConnection> mClients_connectionId;
     std::vector<std::string> mClients_displayName;
-    std::vector<NetStatus> mClients_netStatus;
     std::vector<bool> mClients_ready;
 };
 

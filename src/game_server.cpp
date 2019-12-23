@@ -49,10 +49,9 @@ void GameServerCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
 
                 if (clientId != -1) {
                     parent->resetClient(clientId);
-
-                    parent->mClients_isValid[clientId] = true;
                     parent->mClients_connectionId[clientId] = info->m_hConn;
-                    parent->mClients_netStatus[clientId] = NetStatus::Connecting;
+
+                    //Set the rest of the parameters (displayName, character, team, etc)
 
                     parent->m_pInterface->AcceptConnection(info->m_hConn);
                     std::cout << "Connecting with client " << clientId << std::endl;
@@ -66,7 +65,7 @@ void GameServerCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
             int clientId = parent->getClientIdByConnectionId(info->m_hConn);
 
             if (clientId != -1) {
-                parent->mClients_netStatus[clientId] = NetStatus::Connected;
+                parent->mClients_isValid[clientId] = true;
                 parent->addClientToPoll(clientId);
 
                 std::cout << "Connection completed with client " << clientId << std::endl;
@@ -98,7 +97,6 @@ GameServer::GameServer(const Context& context, int partyNumber):
         int clientId = getFreeClientId();
         mClients_isValid[clientId] = true;
         mClients_connectionId[clientId] = context.localCon2;
-        mClients_netStatus[clientId] = NetStatus::Connected;
 
         std::cout << "Adding client in local connection" << std::endl;
     }
@@ -178,15 +176,13 @@ void GameServer::update(const sf::Time& eTime, bool& running)
             while (mClients_isValid.size() > m_partyNumber) {
                 int n = mClients_connectionId.size() - 1;
 
-                if (mClients_isValid[n] && mClients_netStatus[n] == NetStatus::Connected) {
+                if (mClients_isValid[n]) {
                     m_pInterface->CloseConnection(mClients_connectionId[n], 0, nullptr, false);
                 }
 
                 mClients_isValid.pop_back();
                 mClients_connectionId.pop_back();
                 mClients_displayName.pop_back();
-                mClients_netStatus.pop_back();
-                mClients_ready.pop_back();
             }
         }
     }
@@ -264,7 +260,6 @@ void GameServer::resetClient(int id)
     mClients_isValid[id] = false;
     mClients_connectionId[id] = k_HSteamNetConnection_Invalid;
     mClients_displayName[id] = "Default";
-    mClients_netStatus[id] = NetStatus::Null; 
     mClients_ready[id] = false;
 }
 
@@ -283,7 +278,6 @@ int GameServer::getFreeClientId()
         mClients_isValid.push_back(false);
         mClients_connectionId.push_back(-1);
         mClients_displayName.push_back("");
-        mClients_netStatus.push_back(NetStatus::Null);
         mClients_ready.push_back(false);
     }
 
@@ -316,6 +310,5 @@ void GameServer::swapClientData(int clientId1, int clientId2)
     std::swap(mClients_isValid[clientId1], mClients_isValid[clientId2]);
     std::swap(mClients_connectionId[clientId1], mClients_connectionId[clientId2]);
     std::swap(mClients_displayName[clientId1], mClients_displayName[clientId2]);
-    std::swap(mClients_netStatus[clientId1], mClients_netStatus[clientId2]);
     std::swap(mClients_ready[clientId1], mClients_ready[clientId2]);
 }

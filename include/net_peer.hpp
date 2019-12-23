@@ -9,13 +9,6 @@
 #include "defines.hpp"
 #include "crcpacket.hpp"
 
-enum class NetStatus {
-    Null,
-    Disconnected,
-    Connecting,
-    Connected
-};
-
 class NetPeer
 {
 public:

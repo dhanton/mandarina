@@ -26,6 +26,10 @@ void GameClientCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
 
         case k_ESteamNetworkingConnectionState_Connected:
         {
+            //Eventually, sending ready command should be based on input from the player
+            //Like interacting with something in the tavern
+            //Or clicking a button in a menu
+
             CRCPacket packet;
             packet << (u8) ServerCommand::PlayerReady << true;
             parent->sendPacket(packet, parent->m_serverConnectionId, true);
@@ -83,7 +87,6 @@ void GameClient::handleCommand(u8 command, CRCPacket* packet)
 
             //receiving null command invalidates the rest of the packet
             packet->clear();
-
             break;
         }
     }
