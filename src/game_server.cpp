@@ -129,7 +129,11 @@ GameServer::~GameServer()
 
 void GameServer::receiveLoop()
 {
-    NetPeer::receiveLoop(m_pollId.pollGroup);
+    if (m_context.local) {
+        NetPeer::receiveLoop(m_pollId.listenSocket);
+    } else {
+        NetPeer::receiveLoop(m_pollId.pollGroup);
+    }
 }
 
 void GameServer::update(const sf::Time& eTime, bool& running)
@@ -153,6 +157,8 @@ void GameServer::update(const sf::Time& eTime, bool& running)
 
         if (readyPlayers >= m_partyNumber) {
             m_gameStarted = true;
+
+            std::cout << "Game starting" << std::endl;
 
             //find all the party members
             //and move them at the start of each vector
@@ -223,19 +229,15 @@ void GameServer::handleCommand(u8 command, int clientId, CRCPacket* packet)
 
             //receiving null command invalidates the rest of the packet
             packet->clear();
-
             break;
         }
 
         case ServerCommand::PlayerReady:
         {
-            
-            //set ready flag to true
             bool ready;
             *packet >> ready;
 
             mClients_ready[clientId] = ready;
-
             break;
         }
     }
@@ -258,6 +260,7 @@ void GameServer::resetClient(int id)
         return;
     }
 
+    //Default values for client data
     mClients_isValid[id] = false;
     mClients_connectionId[id] = k_HSteamNetConnection_Invalid;
     mClients_displayName[id] = "Default";

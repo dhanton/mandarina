@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
         context.localCon1 = localCon1;
         context.localCon2 = localCon2;
 
-        GameServer server(context);
+        GameServer server(context, 1);
 
         while (running) {
             server.receiveLoop();

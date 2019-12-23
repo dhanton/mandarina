@@ -13,7 +13,6 @@ void GameClientCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
     {
         // case k_ESteamNetworkingConnectionState_ProblemDetectedLocally:
         // case k_ESteamNetworkingConnectionState_Connecting:
-        // case k_ESteamNetworkingConnectionState_Connected:
         
         case k_ESteamNetworkingConnectionState_ClosedByPeer:
         {
@@ -22,6 +21,14 @@ void GameClientCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
 
             std::cout << "Connection with server closed by peer" << std::endl;
 
+            break;
+        }
+
+        case k_ESteamNetworkingConnectionState_Connected:
+        {
+            CRCPacket packet;
+            packet << (u8) ServerCommand::PlayerReady << true;
+            parent->sendPacket(packet, parent->m_serverConnectionId, true);
             break;
         }
     }
@@ -54,10 +61,6 @@ void GameClient::receiveLoop()
 
 void GameClient::update(const sf::Time& eTime)
 {
-    // CRCPacket outPacket;
-    // outPacket << (u8) ClientCommand::Test;
-
-    // sendPacket(outPacket, m_serverConnectionId, true);
 }
 
 void GameClient::processPacket(HSteamNetConnection connectionId, CRCPacket* packet)
