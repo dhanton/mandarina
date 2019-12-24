@@ -1,5 +1,4 @@
-#ifndef CRCPACKET_HPP
-#define CRCPACKET_HPP
+#pragma once
 
 #include <SFML/Network/Packet.hpp>
 #include <cstring>
@@ -15,5 +14,3 @@ public:
     virtual const void *onSend(std::size_t &size);
     virtual void onReceive(const void* data, std::size_t size);
 };
-
-#endif // CRCPACKET_HPP

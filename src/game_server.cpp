@@ -22,7 +22,7 @@ void GameServerCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
                 parent->mClients_isValid[clientId] = false;
 
                 if (!parent->m_gameStarted) {
-                    parent->m_dataOrientedManager.itemIdRemoved(clientId);
+                    parent->m_clientDataManager.itemIdRemoved(clientId);
                 }
             }
 
@@ -282,7 +282,7 @@ void GameServer::resetClient(int id)
 
 int GameServer::getFreeClientId()
 {
-    int id = m_dataOrientedManager.getNewItemId();
+    int id = m_clientDataManager.getNewItemId();
 
     if (id < 0 || id > mClients_isValid.size()) {
         printMessage("getFreeClientId error - Invalid id");

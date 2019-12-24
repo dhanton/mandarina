@@ -1,5 +1,4 @@
-#ifndef NET_PEER_HPP
-#define NET_PEER_HPP
+#pragma once
 
 #include <iostream>
 #include <thread>
@@ -54,5 +53,3 @@ protected:
     //but we still want to display messages with [SERVER] prefix
     const bool m_isServerMsg;
 };
-
-#endif // NET_PEER_HPP

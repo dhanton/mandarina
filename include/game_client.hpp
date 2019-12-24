@@ -1,5 +1,4 @@
-#ifndef GAME_CLIENT_HPP
-#define GAME_CLIENT_HPP
+#pragma once
 
 #include <steam/steamnetworkingsockets.h>
 #include <SFML/System/Time.hpp>
@@ -38,5 +37,3 @@ private:
 
     HSteamNetConnection m_serverConnectionId;
 };
-
-#endif //GAME_CLIENT_HPP

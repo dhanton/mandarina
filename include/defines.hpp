@@ -1,5 +1,4 @@
-#ifndef DEFINES_HPP
-#define DEFINES_HPP
+#pragma once
 
 #include <cstdint>
 
@@ -13,5 +12,3 @@ using u32 = uint32_t;
 using u64 = uint64_t;
 
 #define PI 3.14159265358979323846
-
-#endif // DEFINES_HPP

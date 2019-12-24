@@ -1,5 +1,4 @@
-#ifndef CONTEXT_HPP
-#define CONTEXT_HPP
+#pragma once
 
 struct Context {
     // sf::RenderTarget* renderTarget = nullptr;
@@ -19,5 +18,3 @@ public:
 protected:
     Context m_context;
 };
-
-#endif // CONTEXT_HPP

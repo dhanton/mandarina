@@ -1,5 +1,4 @@
-#ifndef HELPER_HPP
-#define HELPER_HPP
+#pragma once
 
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/View.hpp>
@@ -34,5 +33,3 @@ inline sf::FloatRect getViewRect(const sf::View& view);
 }
 
 #include "helper.inl"
-
-#endif // HELPER_HPP

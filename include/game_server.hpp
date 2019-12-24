@@ -1,5 +1,4 @@
-#ifndef GAME_SERVER_HPP
-#define GAME_SERVER_HPP
+#pragma once
 
 #include <steam/steamnetworkingsockets.h>
 #include <SFML/System/Time.hpp>
@@ -7,6 +6,8 @@
 #include "context.hpp"
 #include "net_peer.hpp"
 #include "data_oriented_manager.hpp"
+
+#include "entity_manager.hpp"
 
 class GameServer;
 
@@ -57,7 +58,7 @@ private:
     static bool SIGNAL_SHUTDOWN;
 
     /** All client info (using DOD) **/
-    DataOrientedManager m_dataOrientedManager;
+    DataOrientedManager m_clientDataManager;
 
     std::vector<bool> mClients_isValid;
     std::vector<HSteamNetConnection> mClients_connectionId;
@@ -67,5 +68,3 @@ private:
     //0 is the party
     std::vector<u8> mClients_team;
 };
-
-#endif //GAME_SERVER_HPP
