@@ -56,13 +56,16 @@ private:
     //used to safely shutdown the server with Ctrl+C
     static bool SIGNAL_SHUTDOWN;
 
-    //All client info (using DOD)
+    /** All client info (using DOD) **/
     DataOrientedManager m_dataOrientedManager;
 
     std::vector<bool> mClients_isValid;
     std::vector<HSteamNetConnection> mClients_connectionId;
     std::vector<std::string> mClients_displayName;
     std::vector<bool> mClients_ready;
+
+    //0 is the party
+    std::vector<u8> mClients_team;
 };
 
 #endif //GAME_SERVER_HPP

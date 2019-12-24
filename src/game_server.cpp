@@ -197,6 +197,8 @@ void GameServer::update(const sf::Time& eTime, bool& running)
                 mClients_isValid.pop_back();
                 mClients_connectionId.pop_back();
                 mClients_displayName.pop_back();
+                mClients_ready.pop_back();
+                mClients_team.pop_back();
             }
         }
     }
@@ -275,6 +277,7 @@ void GameServer::resetClient(int id)
     mClients_connectionId[id] = k_HSteamNetConnection_Invalid;
     mClients_displayName[id] = "Default";
     mClients_ready[id] = false;
+    mClients_team[id] = 0;
 }
 
 int GameServer::getFreeClientId()
@@ -293,6 +296,7 @@ int GameServer::getFreeClientId()
         mClients_connectionId.push_back(-1);
         mClients_displayName.push_back("");
         mClients_ready.push_back(false);
+        mClients_team.push_back(0);
     }
 
     return id;
