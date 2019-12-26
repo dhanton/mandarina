@@ -5,6 +5,9 @@
 
 #include "game_server.hpp"
 #include "game_client.hpp"
+#include "res_loader.hpp"
+
+#include "entities.hpp"
 
 enum class ExecMode {
     Client,
@@ -43,6 +46,9 @@ int main(int argc, char* argv[])
     bool running = true;
 
     auto clientFunc = [&] () {
+        TextureLoader textures;
+        textures.loadResource("../../data/muscles.png", "test_character");
+
         sf::RenderWindow window{{960, 640}, "Mandarina Prototype", sf::Style::Titlebar | sf::Style::Close};
 
         SteamNetworkingIPAddr serverAddr;
@@ -52,6 +58,8 @@ int main(int argc, char* argv[])
         context.local = (execMode == ExecMode::LocalConnection);
         context.localCon1 = localCon1;
         context.localCon2 = localCon2;
+        context.textures = &textures;
+        context.CLIENT = true;
 
         GameClient client(context, serverAddr);
 
@@ -81,6 +89,7 @@ int main(int argc, char* argv[])
         context.local = (execMode == ExecMode::LocalConnection);
         context.localCon1 = localCon1;
         context.localCon2 = localCon2;
+        context.SERVER = true;
 
         GameServer server(context, 1);
 

@@ -1,18 +1,24 @@
 #include "entities.hpp"
 
-#include "entity_manager.hpp"
+// #include "entity_manager.hpp"
 
-TestCharacter::TestCharacter()
+int _lastTypeId = 0;
+
+////////////////////////////////////////////////////////////////////////////////
+
+int TestCharacter::typeId = _lastTypeId++;
+
+void TestCharacter::setupComponentFlags(ComponentFlags& flags)
 {
-    defaultComponentFlags.render = true;
+    flags.render = true;
 }
 
-void TestCharacter::asignDefaultValues(EntityManager* manager, int entityId)
+void TestCharacter::assignDefaultValues(EntityManager* manager, int entityId)
 {
-    RenderComponent& renderComp = manager->m_renderComponent[manager->mIds_render[entityId]];
+    // RenderComponent& renderComp = manager->m_renderComponent[manager->mIds_render[entityId]];
 
-    renderComp.height = 100;
-    renderComp.width = 100;
+    // renderComp.textureId = "test_character";
+    // renderComp.scale = 1.5f;
 
     //do something like this for components that require us to modify callbacks
     // manager->m_onDeathComponent[id].callback = TestCharacter::onDeath;

@@ -1,9 +1,16 @@
 #pragma once
 
+#include "res_loader.hpp"
+
 struct Context {
     // sf::RenderTarget* renderTarget = nullptr;
     // sf::Window* window = nullptr; //Not the same as above if we're using a RenderTexture
     // sf::View* view = nullptr;
+
+    bool SERVER = false;
+    bool CLIENT = false;
+
+    TextureLoader* textures = nullptr;
 
     bool local = false;
     uint32_t localCon1 = 0;

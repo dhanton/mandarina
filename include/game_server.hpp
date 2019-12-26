@@ -5,9 +5,8 @@
 
 #include "context.hpp"
 #include "net_peer.hpp"
-#include "data_oriented_manager.hpp"
 
-#include "entity_manager.hpp"
+// #include "entity_manager.hpp"
 
 class GameServer;
 
@@ -34,14 +33,21 @@ public:
     void update(const sf::Time& eTime, bool& running);
 
     void processPacket(HSteamNetConnection connectionId, CRCPacket* packet);
-    void handleCommand(u8 command, int clientId, CRCPacket* packet);
+    void handleCommand(u8 command, int index, CRCPacket* packet);
 
-    bool addClientToPoll(int id);
+    int addClient();
+    void resetClient(int index);
+    void removeClient(int index);
+    
 
-    void resetClient(int id);
-    int getFreeClientId();
-    int getClientIdByConnectionId(HSteamNetConnection connectionId) const;
-    void swapClientData(int clientId1, int clientId2);
+    bool addClientToPoll(int index);
+    int getIndexByConnectionId(HSteamNetConnection connectionId) const;
+    bool isIndexValid(int index) const;
+
+private:
+    void _popClient_impl();
+    void _pushClient_impl();
+    void _resizeClients_impl(int size);
 
 private:
     GameServerCallbacks m_gameServerCallbacks;
@@ -57,14 +63,17 @@ private:
     //used to safely shutdown the server with Ctrl+C
     static bool SIGNAL_SHUTDOWN;
 
-    /** All client info (using DOD) **/
-    DataOrientedManager m_clientDataManager;
-
-    std::vector<bool> mClients_isValid;
+    //All client data
+    std::vector<int> mClients_clientId;
     std::vector<HSteamNetConnection> mClients_connectionId;
+    //TODO: Make displayName fixed size
     std::vector<std::string> mClients_displayName;
-    std::vector<bool> mClients_ready;
+    std::vector<bool> mClients_isReady;
+    std::vector<u8> mClients_teamId;
+    int m_firstInvalidIndex;
+    int m_lastClientId;
 
-    //0 is the party
-    std::vector<u8> mClients_team;
+    //initial size of the clients vector
+    //will grow to accomodate more if needed
+    const int INITIAL_CLIENTS_SIZE;
 };
