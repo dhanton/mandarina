@@ -36,10 +36,8 @@ public:
     void handleCommand(u8 command, int index, CRCPacket* packet);
 
     int addClient();
-    void resetClient(int index);
     void removeClient(int index);
     
-
     bool addClientToPoll(int index);
     int getIndexByConnectionId(HSteamNetConnection connectionId) const;
     bool isIndexValid(int index) const;
@@ -47,6 +45,7 @@ public:
 private:
     void _popClient_impl();
     void _pushClient_impl();
+    void _resetClient_impl(int index);
     void _resizeClients_impl(int size);
 
 private:
@@ -63,7 +62,7 @@ private:
     //used to safely shutdown the server with Ctrl+C
     static bool SIGNAL_SHUTDOWN;
 
-    //All client data
+    //TODO: Change this to use Buckets
     std::vector<int> mClients_clientId;
     std::vector<HSteamNetConnection> mClients_connectionId;
     //TODO: Make displayName fixed size

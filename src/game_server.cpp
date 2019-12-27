@@ -251,24 +251,10 @@ int GameServer::addClient()
         _pushClient_impl();
     }
 
-    resetClient(m_firstInvalidIndex);
+    _resetClient_impl(m_firstInvalidIndex);
     mClients_clientId[m_firstInvalidIndex] = m_lastClientId++;
 
     return m_firstInvalidIndex++;
-}
-
-void GameServer::resetClient(int index)
-{
-    if (!isIndexValid(index)) {
-        printMessage("resetClient error - Invalid index %d", index);
-        return;
-    }
-
-    mClients_clientId[index] = -1;
-    mClients_connectionId[index] = k_HSteamNetConnection_Invalid;
-    mClients_displayName[index] = "Default";
-    mClients_isReady[index] = false;
-    mClients_teamId[index] = 0;
 }
 
 void GameServer::removeClient(int index)
@@ -278,8 +264,8 @@ void GameServer::removeClient(int index)
         return;
     }
 
-    if (m_firstInvalidIndex == 0) {
-        printMessage("removeClient error - There are no clients to remove");
+    if (index >= m_firstInvalidIndex) {
+        printMessage("removeClient error - Trying to remove nonexistent client");
         return;
     }
 
@@ -334,6 +320,20 @@ void GameServer::_pushClient_impl()
     mClients_displayName.push_back("");
     mClients_isReady.push_back(false);
     mClients_teamId.push_back(0);
+}
+
+void GameServer::_resetClient_impl(int index)
+{
+    if (!isIndexValid(index)) {
+        printMessage("resetClient error - Invalid index %d", index);
+        return;
+    }
+
+    mClients_clientId[index] = -1;
+    mClients_connectionId[index] = k_HSteamNetConnection_Invalid;
+    mClients_displayName[index] = "Default";
+    mClients_isReady[index] = false;
+    mClients_teamId[index] = 0;
 }
 
 void GameServer::_resizeClients_impl(int size)

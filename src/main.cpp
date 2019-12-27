@@ -7,8 +7,6 @@
 #include "game_client.hpp"
 #include "res_loader.hpp"
 
-#include "entities.hpp"
-
 enum class ExecMode {
     Client,
     Server,

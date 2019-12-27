@@ -1,6 +1,7 @@
 #ifndef BIT_STREAM_HPP
 #define BIT_STREAM_HPP
 
+#include <cstddef>
 #include "defines.hpp"
 
 /*

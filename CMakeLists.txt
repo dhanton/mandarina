@@ -23,11 +23,7 @@ if (UNIX AND NOT APPLE)
 	endif()
 endif ()
 
-# target_include_directories("*.hpp" "*")
-
 include_directories(include)
-# set(INCLUDE_DIR "./include")
-# file(GLOB INCLUDE_FILES "${INCLUDE_DIR}/*.hpp" "${INCLUDE_DIR}/*.h")
 
 set(SRC_DIR "./src")
 file(GLOB SRC_FILES "${SRC_DIR}/*.cpp" "${INCLUDE_DIR}/*.inl")
