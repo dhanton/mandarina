@@ -1,5 +1,4 @@
-#ifndef BIT_STREAM_HPP
-#define BIT_STREAM_HPP
+#pragma once
 
 #include <cstddef>
 #include "defines.hpp"
@@ -31,5 +30,3 @@ private:
     size_t m_stream;
     size_t m_currentIndex;
 };
-
-#endif // BIT_STREAM_HPP

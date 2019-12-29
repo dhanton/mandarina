@@ -1,8 +1,15 @@
 #pragma once
 
 #include <vector>
+#include <unordered_map>
+
+#include "defines.hpp"
 
 //This is called bucket for lack of a better term
+
+//Container that keeps data tight in memory
+//Uses a hash table to access data by a unique identifier
+//This uniqueId has to be handled somewhere else
 
 template<typename T>
 class Bucket
@@ -10,9 +17,12 @@ class Bucket
 public:
     Bucket(int initialSize = 0);
 
-    int addElement();
-    void removeElement(int index);
+    void resize(int size);
 
+    int addElement(u32 uniqueId);
+    void removeElement(u32 uniqueId);
+
+    void removeInvalidData();
     void copyValidDataTo(Bucket<T>& otherBucket) const;
 
     bool isIndexInRange(int index) const;
@@ -22,8 +32,16 @@ public:
     T& operator[](int index);
     const T& operator[](int index) const;
 
+    int getIndexByUniqueId(u32 uniqueId) const;
+
+    //might return nullptr (if uniqueId is not found)
+    T* atUniqueId(u32 uniqueId);
+    const T* atUniqueId(u32 uniqueId) const;
+
 private:
     std::vector<T> m_elements;
+    std::unordered_map<u32, int> m_hashTable;
+
     int m_firstInvalidIndex;
 };
 

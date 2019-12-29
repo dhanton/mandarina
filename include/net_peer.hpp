@@ -27,7 +27,7 @@ public:
 public:
     NetPeer(ISteamNetworkingSocketsCallbacks* callbacks, bool server);
 
-    virtual void processPacket(HSteamNetConnection connectionId, CRCPacket* packet) = 0;
+    virtual void processPacket(HSteamNetConnection connectionId, CRCPacket& packet) = 0;
 
     //Store returns of these functions (in child class for example)
     //Important to send/receive messages

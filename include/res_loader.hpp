@@ -7,6 +7,8 @@
 #include <cassert>
 #include <stdexcept>
 
+#include "defines.hpp"
+
 template <typename Res, typename Id = std::string>
 class ResLoader : private sf::NonCopyable
 {
@@ -21,6 +23,6 @@ private:
     std::map<Id, std::unique_ptr<Res>> m_resourceMap;
 };
 
-using TextureLoader = ResLoader<sf::Texture, std::string>;
+using TextureLoader = ResLoader<sf::Texture, u16>;
 
 #include "res_loader.inl"

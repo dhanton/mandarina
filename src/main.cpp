@@ -6,6 +6,7 @@
 #include "game_server.hpp"
 #include "game_client.hpp"
 #include "res_loader.hpp"
+#include "texture_ids.hpp"
 
 enum class ExecMode {
     Client,
@@ -27,6 +28,11 @@ int main(int argc, char* argv[])
     HSteamNetConnection localCon1 = k_HSteamNetConnection_Invalid;
     HSteamNetConnection localCon2 = k_HSteamNetConnection_Invalid;
 
+    //NETWORK CONDITIONS TESTING
+    // SteamNetworkingUtils()->SetGlobalConfigValueInt32(k_ESteamNetworkingConfig_FakePacketLag_Recv, 500);
+    // SteamNetworkingUtils()->SetGlobalConfigValueInt32(k_ESteamNetworkingConfig_FakePacketLoss_Recv, 10);
+    // SteamNetworkingUtils()->SetGlobalConfigValueInt32(k_ESteamNetworkingConfig_FakePacketReorder_Recv, 10);
+
     if (argc > 1) {
         std::string option = argv[1];
 
@@ -45,7 +51,7 @@ int main(int argc, char* argv[])
 
     auto clientFunc = [&] () {
         TextureLoader textures;
-        textures.loadResource("../../data/muscles.png", "test_character");
+        textures.loadResource("../../data/diablo.png", TextureId::DIABLO);
 
         sf::RenderWindow window{{960, 640}, "Mandarina Prototype", sf::Style::Titlebar | sf::Style::Close};
 
@@ -61,7 +67,16 @@ int main(int argc, char* argv[])
 
         GameClient client(context, serverAddr);
 
+        sf::Clock clock;
+
+        const sf::Time updateSpeed = sf::seconds(1.f/30.f);
+        sf::Time updateTimer;
+
         while (running) {
+            sf::Time eTime = clock.restart();
+
+            updateTimer += eTime;
+
             sf::Event event;
 
             while (window.pollEvent(event)) {
@@ -74,10 +89,17 @@ int main(int argc, char* argv[])
                 }
             }
 
-            client.update(sf::Time::Zero);
             client.receiveLoop();
 
+            if (updateTimer >= updateSpeed) {
+                client.update(updateSpeed);
+                updateTimer -= updateSpeed;
+            }
+
+            client.renderUpdate(eTime);
+
             window.clear();
+            window.draw(client);
             window.display();
         }
     };
@@ -91,11 +113,35 @@ int main(int argc, char* argv[])
 
         GameServer server(context, 1);
 
-        while (running) {
-            server.receiveLoop();
-            server.update(sf::Time::Zero, running);
+        sf::Clock clock;
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        //TODO: Load this from json config file
+        const sf::Time updateSpeed = sf::seconds(1.f/30.f);
+        const sf::Time snapshotSpeed = sf::seconds(1.f/20.f);
+
+        sf::Time updateTimer;
+        sf::Time snapshotTimer;
+
+        while (running) {
+            sf::Time eTime = clock.restart();
+
+            updateTimer += eTime;
+            snapshotTimer += eTime;
+
+            server.receiveLoop();
+
+            if (updateTimer >= updateSpeed) {
+                server.update(updateSpeed, running);
+                updateTimer -= updateSpeed;
+            }
+
+            if (snapshotTimer >= snapshotSpeed) {
+                server.sendSnapshots();
+                snapshotTimer -= snapshotSpeed;
+            }
+
+            //Remove this for maximum performance (more CPU usage)
+            // std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
 
     };

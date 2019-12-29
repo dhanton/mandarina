@@ -19,7 +19,7 @@ void GameServerCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
             int index = parent->getIndexByConnectionId(info->m_hConn);
 
             if (index != -1) {
-                int clientId = parent->mClients_clientId[index];
+                u32 clientId = parent->m_clients[index].clientId;
 
                 if (info->m_info.m_eState == k_ESteamNetworkingConnectionState_ClosedByPeer) {
                     parent->printMessage("Connection with client %d closed by peer", clientId);
@@ -28,7 +28,7 @@ void GameServerCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
                     parent->printMessage("Connection with client %d lost", clientId);
                 }
 
-                parent->removeClient(index);
+                parent->m_clients.removeElement(clientId);
                 parent->m_pInterface->CloseConnection(info->m_hConn, 0, nullptr, false);
             }
 
@@ -49,9 +49,9 @@ void GameServerCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
             }
 
             if (index != -1) {
-                parent->mClients_connectionId[index] = info->m_hConn;
+                parent->m_clients[index].connectionId = info->m_hConn;
 
-                int clientId = parent->mClients_clientId[index];
+                u32 clientId = parent->m_clients[index].clientId;
 
                 //Set the rest of the parameters (displayName, character, team, etc)
 
@@ -78,7 +78,7 @@ void GameServerCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
             int index = parent->getIndexByConnectionId(info->m_hConn);
 
             if (index != -1) {
-                parent->printMessage("Connection completed with client %d", parent->mClients_clientId[index]);
+                parent->printMessage("Connection completed with client %d", parent->m_clients[index].clientId);
             }
 
             break;
@@ -101,8 +101,17 @@ GameServer::GameServer(const Context& context, int partyNumber):
 {
     m_gameStarted = false;
     m_partyNumber = partyNumber;
-    m_firstInvalidIndex = 0;
     m_lastClientId = 0;
+    m_lastSnapshotId = 0;
+
+    //Resize this vector to avoid dynamically adding elements
+    //(this will still happen if more clients connect)
+    m_clients.resize(INITIAL_CLIENTS_SIZE);
+
+    m_entityManager.allocate();
+
+    //Test entity creation
+    m_entityManager.createEntity(EntityType::TEST_CHARACTER, Vector2(100.f, 100.f));
 
     if (!context.local) {
         m_endpoint.ParseString("127.0.0.1:7000");
@@ -113,7 +122,7 @@ GameServer::GameServer(const Context& context, int partyNumber):
         m_pollId.listenSocket = context.localCon2;
         
         int index = addClient();
-        mClients_connectionId[index] = context.localCon2;
+        m_clients[index].connectionId = context.localCon2;
 
         printMessage("Adding client in local connection");
     }
@@ -128,16 +137,12 @@ GameServer::GameServer(const Context& context, int partyNumber):
 
    sigaction(SIGINT, &sigIntHandler, NULL);
 #endif // _WIN32
-
-    //Resize this vector to avoid dynamically adding elements
-    //(this will still happen if more clients connect)
-    _resizeClients_impl(INITIAL_CLIENTS_SIZE);
 }
 
 GameServer::~GameServer()
 {
-    for (int i = 0; i < m_firstInvalidIndex; ++i) {
-        m_pInterface->CloseConnection(mClients_connectionId[i], 0, nullptr, false);
+    for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
+        m_pInterface->CloseConnection(m_clients[i].connectionId, 0, nullptr, false);
     }
 
     m_pInterface->CloseListenSocket(m_pollId.listenSocket);
@@ -166,8 +171,8 @@ void GameServer::update(const sf::Time& eTime, bool& running)
     if (!m_gameStarted) {
         int playersReady = 0;
 
-        for (int i = 0; i < m_firstInvalidIndex; ++i) {
-            if (mClients_isReady[i]) {
+        for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
+            if (m_clients[i].isReady) {
                 playersReady++;
             }
         }
@@ -177,22 +182,24 @@ void GameServer::update(const sf::Time& eTime, bool& running)
 
             printMessage("Game starting");
 
-            //remove players not in party
-            for (int i = mClients_clientId.size() - 1; i >= m_partyNumber; --i) {
-                //close connection with players connected
-                if (i < m_firstInvalidIndex) {
-                    HSteamNetConnection connection = mClients_connectionId.back();
-                    m_pInterface->CloseConnection(connection, 0, nullptr, false);
-                }
-
-                _popClient_impl();
+            //remove valid clients that didn't make it into the party
+            for (int i = m_partyNumber; i < m_clients.firstInvalidIndex(); ++i) {
+                m_pInterface->CloseConnection(m_clients[i].connectionId, 0, nullptr, false);
+                m_clients.removeElement(m_clients[i].clientId);
             }
+
+            //to save space, since no new clients are gonna be added
+            m_clients.removeInvalidData();
 
             //inform the players that the game is starting
             //start the main game level
         }
     }
-    
+
+    m_worldTime += eTime;
+
+    /////////////////////////////////////////////////////////////////////////////
+
     //Important to note that even if the game hasn't started yet
     //the idea is to be able to walk around and do a bunch of activities
     //with your character
@@ -202,9 +209,59 @@ void GameServer::update(const sf::Time& eTime, bool& running)
     
     //When all party members are ready the game starts 
     //All the other players are kicked out
+
+    m_entityManager.update(eTime);
 }
 
-void GameServer::processPacket(HSteamNetConnection connectionId, CRCPacket* packet)
+void GameServer::sendSnapshots()
+{
+    //will store oldest snapshot used by clients
+    u32 oldestSnapshotId = -1;
+
+    //Take current snapshot
+    u32 snapshotId = ++m_lastSnapshotId;
+    Snapshot& snapshot = m_snapshots.emplace(snapshotId, Snapshot()).first->second;
+
+    snapshot.worldTime = m_worldTime;
+    snapshot.id = snapshotId;
+    snapshot.entityManager = std::unique_ptr<EntityManager>(new EntityManager());
+
+    m_entityManager.takeSnapshot(snapshot.entityManager.get());
+
+    for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
+        CRCPacket outPacket;
+        outPacket << (u8) ClientCommand::Snapshot;
+        outPacket << m_lastSnapshotId;
+        outPacket << m_clients[i].snapshotId;
+
+        if (m_clients[i].snapshotId < oldestSnapshotId) {
+            oldestSnapshotId = m_clients[i].snapshotId;
+        }
+
+        auto it = m_snapshots.find(m_clients[i].snapshotId);
+        EntityManager* snapshotManager = nullptr;
+
+        if (it != m_snapshots.end()) {
+            snapshotManager = it->second.entityManager.get();
+        }
+
+        m_entityManager.packData(snapshotManager, outPacket);
+
+        sendPacket(outPacket, m_clients[i].connectionId, false);
+    }
+
+    //snapshots no longer needed are deleted
+    auto it = m_snapshots.begin();
+    while (it != m_snapshots.end()) {
+        if (it->first < oldestSnapshotId) {
+            it = m_snapshots.erase(it);
+        } else {
+            it = std::next(it);
+        }
+    }
+}
+
+void GameServer::processPacket(HSteamNetConnection connectionId, CRCPacket& packet)
 {
     int index = getIndexByConnectionId(connectionId);
 
@@ -213,33 +270,45 @@ void GameServer::processPacket(HSteamNetConnection connectionId, CRCPacket* pack
         return;
     }
 
-    while (!packet->endOfPacket()) {
+    while (!packet.endOfPacket()) {
         u8 command = 0;
-        *packet >> command;
+        packet >> command;
 
         handleCommand(command, index, packet);
     }
 }
 
-void GameServer::handleCommand(u8 command, int index, CRCPacket* packet)
+void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
 {
     switch (ServerCommand(command))
     {
         case ServerCommand::Null:
         {
-            printMessage("handleCommand error - NULL command (client %d)", mClients_clientId[index]);
+            printMessage("handleCommand error - NULL command (client %d)", m_clients[index].clientId);
 
             //receiving null command invalidates the rest of the packet
-            packet->clear();
+            packet.clear();
             break;
         }
 
         case ServerCommand::PlayerReady:
         {
             bool ready;
-            *packet >> ready;
+            packet >> ready;
 
-            mClients_isReady[index] = ready;
+            m_clients[index].isReady = ready;
+            break;
+        }
+
+        case ServerCommand::LatestSnapshotId:
+        {
+            u32 latestId;
+            packet >> latestId;
+
+            if (latestId <= m_lastSnapshotId && latestId >= m_clients[index].snapshotId) {
+                m_clients[index].snapshotId = latestId;
+            }
+
             break;
         }
     }
@@ -247,100 +316,31 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket* packet)
 
 int GameServer::addClient()
 {
-    if (m_firstInvalidIndex >= mClients_clientId.size()) {
-        _pushClient_impl();
-    }
+    u32 clientId = ++m_lastClientId;
+    int index = m_clients.addElement(clientId);
 
-    _resetClient_impl(m_firstInvalidIndex);
-    mClients_clientId[m_firstInvalidIndex] = m_lastClientId++;
+    m_clients[index].clientId = clientId;
 
-    return m_firstInvalidIndex++;
-}
-
-void GameServer::removeClient(int index)
-{
-    if (!isIndexValid(index)){
-        printMessage("removeClient error - Invalid index %d", index);
-        return;
-    }
-
-    if (index >= m_firstInvalidIndex) {
-        printMessage("removeClient error - Trying to remove nonexistent client");
-        return;
-    }
-
-    m_firstInvalidIndex--;
-
-    std::swap(mClients_clientId[index], mClients_clientId[m_firstInvalidIndex]);
-    std::swap(mClients_connectionId[index], mClients_connectionId[m_firstInvalidIndex]);
-    std::swap(mClients_displayName[index], mClients_displayName[m_firstInvalidIndex]);
-    std::swap(mClients_isReady[index], mClients_isReady[m_firstInvalidIndex]);
-    std::swap(mClients_teamId[index], mClients_teamId[m_firstInvalidIndex]);
+    return index;
 }
 
 bool GameServer::addClientToPoll(int index)
 {
-    if (!isIndexValid(index)) {
+    if (!m_clients.isIndexValid(index)) {
         printMessage("addToPoll error - Invalid index %d", index);
         return false;
     }
 
-    return m_pInterface->SetConnectionPollGroup(mClients_connectionId[index], m_pollId.pollGroup);
+    return m_pInterface->SetConnectionPollGroup(m_clients[index].connectionId, m_pollId.pollGroup);
 }
 
 int GameServer::getIndexByConnectionId(HSteamNetConnection connectionId) const
 {
-    for (int i = 0; i < mClients_connectionId.size(); ++i) {
-        if (mClients_connectionId[i] == connectionId) {
+    for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
+        if (m_clients[i].connectionId == connectionId) {
             return i;
         }
     }
 
     return -1;
-}
-
-bool GameServer::isIndexValid(int index) const
-{
-    return (index >= 0 && index < mClients_clientId.size());
-}
-
-void GameServer::_popClient_impl()
-{
-    mClients_clientId.pop_back();
-    mClients_connectionId.pop_back();
-    mClients_displayName.pop_back();
-    mClients_isReady.pop_back();
-    mClients_teamId.pop_back();
-}
-
-void GameServer::_pushClient_impl()
-{
-    mClients_clientId.push_back(-1);
-    mClients_connectionId.push_back(k_HSteamNetConnection_Invalid);
-    mClients_displayName.push_back("");
-    mClients_isReady.push_back(false);
-    mClients_teamId.push_back(0);
-}
-
-void GameServer::_resetClient_impl(int index)
-{
-    if (!isIndexValid(index)) {
-        printMessage("resetClient error - Invalid index %d", index);
-        return;
-    }
-
-    mClients_clientId[index] = -1;
-    mClients_connectionId[index] = k_HSteamNetConnection_Invalid;
-    mClients_displayName[index] = "Default";
-    mClients_isReady[index] = false;
-    mClients_teamId[index] = 0;
-}
-
-void GameServer::_resizeClients_impl(int size)
-{
-    mClients_clientId.resize(size, -1);
-    mClients_connectionId.resize(size, k_HSteamNetConnection_Invalid);
-    mClients_displayName.resize(size, "");
-    mClients_isReady.resize(size, false);
-    mClients_teamId.resize(size, 0);    
 }

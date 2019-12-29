@@ -2,11 +2,13 @@
 
 #include <steam/steamnetworkingsockets.h>
 #include <SFML/System/Time.hpp>
+#include <unordered_map>
 
 #include "context.hpp"
+#include "bucket.hpp"
 #include "net_peer.hpp"
 
-// #include "entity_manager.hpp"
+#include "server_entity_manager.hpp"
 
 class GameServer;
 
@@ -25,28 +27,41 @@ class GameServer : public InContext, public NetPeer
 public:
     friend struct GameServerCallbacks;
 
+    struct ClientInfo {
+        u32 clientId = 0;
+        HSteamNetConnection connectionId = k_HSteamNetConnection_Invalid;
+        bool isReady = false;
+        u32 snapshotId = 0;
+    };
+
+    struct ClientInfo_cold {
+        u8 teamId = 0;
+        //display name as well
+        //other data that we're not gonna use that much
+    };
+
+    struct Snapshot {
+        std::unique_ptr<EntityManager> entityManager = nullptr;
+        u32 id = 0;
+        sf::Time worldTime;
+    };
+
 public:
     GameServer(const Context& context, int partyNumber);
     ~GameServer();
 
     void receiveLoop();
     void update(const sf::Time& eTime, bool& running);
+    void sendSnapshots();
 
-    void processPacket(HSteamNetConnection connectionId, CRCPacket* packet);
-    void handleCommand(u8 command, int index, CRCPacket* packet);
+    void processPacket(HSteamNetConnection connectionId, CRCPacket& packet);
+    void handleCommand(u8 command, int index, CRCPacket& packet);
 
     int addClient();
-    void removeClient(int index);
     
     bool addClientToPoll(int index);
     int getIndexByConnectionId(HSteamNetConnection connectionId) const;
     bool isIndexValid(int index) const;
-
-private:
-    void _popClient_impl();
-    void _pushClient_impl();
-    void _resetClient_impl(int index);
-    void _resizeClients_impl(int size);
 
 private:
     GameServerCallbacks m_gameServerCallbacks;
@@ -62,15 +77,14 @@ private:
     //used to safely shutdown the server with Ctrl+C
     static bool SIGNAL_SHUTDOWN;
 
-    //TODO: Change this to use Buckets
-    std::vector<int> mClients_clientId;
-    std::vector<HSteamNetConnection> mClients_connectionId;
-    //TODO: Make displayName fixed size
-    std::vector<std::string> mClients_displayName;
-    std::vector<bool> mClients_isReady;
-    std::vector<u8> mClients_teamId;
-    int m_firstInvalidIndex;
-    int m_lastClientId;
+    Bucket<ClientInfo> m_clients;
+    u32 m_lastClientId;
+
+    std::unordered_map<u32, Snapshot> m_snapshots;
+    EntityManager m_entityManager;
+    u32 m_lastSnapshotId;
+
+    sf::Time m_worldTime;
 
     //initial size of the clients vector
     //will grow to accomodate more if needed

@@ -11,6 +11,7 @@ template <typename T> inline int sign(T number);
 template <typename T> inline T clamp(T value, T upper, T lower);
 
 inline double lerp(double x0, double x1, double t, double d);
+inline Vector2 lerpVec2(const Vector2& vec0, const Vector2 vec1, double t, double d);
 inline float hermite(float v0, float v1, float x0, float x1, float t, float d);
 
 inline float degToRad(float angle);

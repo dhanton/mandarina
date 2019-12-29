@@ -109,8 +109,14 @@ void NetPeer::receiveLoop(u32 id)
 
         HSteamNetConnection senderId = msg->GetConnection();
 
-        CRCPacket* inPacket = new CRCPacket();
-        inPacket->onReceive(msg->GetData(), msg->GetSize());
+        //TODO: Why are we using a pointer here??
+        // CRCPacket* inPacket = new CRCPacket();
+        // inPacket->onReceive(msg->GetData(), msg->GetSize());
+
+        // processPacket(senderId, inPacket);
+
+        CRCPacket inPacket;
+        inPacket.onReceive(msg->GetData(), msg->GetSize());
 
         processPacket(senderId, inPacket);
 

@@ -28,6 +28,13 @@ double lerp(double x0, double x1, double t, double d)
     return (1 - t) * x0 + t * x1;
 }
 
+Vector2 lerpVec2(const Vector2& vec0, const Vector2 vec1, double t, double d)
+{
+    Vector2 result;
+    result.x = lerp(vec0.x, vec1.x, t, d);
+    result.y = lerp(vec0.y, vec1.y, t, d);
+    return result;
+}
 
 float hermite(float v0, float v1, float x0, float x1, float t, float d)
 {
