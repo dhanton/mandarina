@@ -38,6 +38,7 @@ public:
     void receiveLoop();
     void update(sf::Time eTime);
     void renderUpdate(sf::Time eTime);
+    void updateWorldTime(sf::Time eTime);
 
     void processPacket(HSteamNetConnection connectionId, CRCPacket& packet);
     void handleCommand(u8 command, CRCPacket& packet);

@@ -94,8 +94,6 @@ void GameClient::update(sf::Time eTime)
 {
     if (!m_connected) return;
 
-    m_worldTime += eTime;
-
     sendLatestSnapshotId();
 }
 
@@ -121,6 +119,11 @@ void GameClient::renderUpdate(sf::Time eTime)
 
         m_entityManager.performInterpolation(&m_interSnapshotIt->entityManager, &next_it->entityManager, m_interElapsed.asSeconds(), totalTime.asSeconds());
     }
+}
+
+void GameClient::updateWorldTime(sf::Time eTime)
+{
+    m_worldTime += eTime;
 }
 
 void GameClient::processPacket(HSteamNetConnection connectionId, CRCPacket& packet)

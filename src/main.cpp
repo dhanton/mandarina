@@ -89,13 +89,14 @@ int main(int argc, char* argv[])
                 }
             }
 
+            client.updateWorldTime(eTime);
             client.receiveLoop();
 
             if (updateTimer >= updateSpeed) {
                 client.update(updateSpeed);
                 updateTimer -= updateSpeed;
             }
-
+            
             client.renderUpdate(eTime);
 
             window.clear();
