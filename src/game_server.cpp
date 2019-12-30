@@ -224,9 +224,8 @@ void GameServer::sendSnapshots()
 
     snapshot.worldTime = m_worldTime;
     snapshot.id = snapshotId;
-    snapshot.entityManager = std::unique_ptr<EntityManager>(new EntityManager());
 
-    m_entityManager.takeSnapshot(snapshot.entityManager.get());
+    m_entityManager.takeSnapshot(&snapshot.entityManager);
 
     for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
         CRCPacket outPacket;
@@ -242,7 +241,7 @@ void GameServer::sendSnapshots()
         EntityManager* snapshotManager = nullptr;
 
         if (it != m_snapshots.end()) {
-            snapshotManager = it->second.entityManager.get();
+            snapshotManager = &it->second.entityManager;
         }
 
         m_entityManager.packData(snapshotManager, outPacket);

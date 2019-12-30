@@ -41,7 +41,7 @@ public:
     };
 
     struct Snapshot {
-        std::unique_ptr<EntityManager> entityManager = nullptr;
+        EntityManager entityManager;
         u32 id = 0;
         sf::Time worldTime;
     };
