@@ -75,10 +75,10 @@ void NetPeer::sendPacket(CRCPacket &packet, HSteamNetConnection connectionId, bo
     size_t dataSize = packet.getDataSize();
 
     //We used shared pointer to ensure the message lives while its being sent
-    //TODO: Test if this is still needed
+    //@TODO: Test if this is still needed
     auto packet_ptr = std::make_shared<CRCPacket>(packet);
 
-    //TODO: Change message type to unreliable no delay if delay is high
+    //@TODO: Change message type to unreliable no delay if delay is high
     //Those 4 extra bytes are the CRC Key (that's not included in dataSize)
     EResult result = m_pInterface->SendMessageToConnection(connectionId, packet.onSend(dataSize), dataSize + 4,
                                                                        reliable ? k_nSteamNetworkingSend_Reliable : k_nSteamNetworkingSend_Unreliable,
@@ -109,7 +109,7 @@ void NetPeer::receiveLoop(u32 id)
 
         HSteamNetConnection senderId = msg->GetConnection();
 
-        //TODO: Why are we using a pointer here??
+        //@TODO: Why are we using a pointer here??
         // CRCPacket* inPacket = new CRCPacket();
         // inPacket->onReceive(msg->GetData(), msg->GetSize());
 

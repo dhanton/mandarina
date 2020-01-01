@@ -125,6 +125,22 @@ int Bucket<T>::getIndexByUniqueId(u32 uniqueId) const
 }
 
 template<typename T>
+T* Bucket<T>::atIndex(int index)
+{
+    if (!isIndexValid(index)) return nullptr;
+
+    return &m_elements[index];
+}
+
+template<typename T>    
+const T* Bucket<T>::atIndex(int index) const
+{
+    if (!isIndexValid(index)) return nullptr;
+
+    return &m_elements[index];
+}
+
+template<typename T>
 T* Bucket<T>::atUniqueId(u32 uniqueId)
 {
     int index = getIndexByUniqueId(uniqueId);

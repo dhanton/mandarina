@@ -31,13 +31,19 @@ public:
         u32 clientId = 0;
         HSteamNetConnection connectionId = k_HSteamNetConnection_Invalid;
         bool isReady = false;
+
         u32 snapshotId = 0;
+        u8 teamId = 0;
+        u32 controlledEntityUniqueId = 0;
+
+        u16 latestInputId = 0;
     };
 
+    //data we're not using as much
+    //@TODO: Should we use this??
     struct ClientInfo_cold {
-        u8 teamId = 0;
-        //display name as well
-        //other data that we're not gonna use that much
+        //display name
+        //cosmetics??
     };
 
     struct Snapshot {
@@ -56,6 +62,7 @@ public:
 
     void processPacket(HSteamNetConnection connectionId, CRCPacket& packet);
     void handleCommand(u8 command, int index, CRCPacket& packet);
+    void onConnectionCompleted(HSteamNetConnection connectionId);
 
     int addClient();
     

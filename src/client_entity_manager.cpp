@@ -20,12 +20,7 @@ C_EntityManager::C_EntityManager():
 
 void C_EntityManager::update(sf::Time eTime)
 {    
-    //sort entitities that require it by their flying height
-    //others just by position + height
-    // std::sort(m_characters.begin(), m_characters.begin() + m_characters.firstInvalidIndex(),
-        // [] (const C_TestCharacter& lhs, const C_TestCharacter& rhs) {
-            // return lhs.pos.y + lhs.flyingHeight < rhs.pos.y + rhs.flyingHeight;
-        // });
+
 }
 
 void C_EntityManager::performInterpolation(const C_EntityManager* prevSnapshot, const C_EntityManager* nextSnapshot, double elapsedTime, double totalTime)
@@ -44,6 +39,7 @@ void C_EntityManager::performInterpolation(const C_EntityManager* prevSnapshot, 
         C_TestCharacter& entity = m_characters[i];
         
         // don't interpolate position or aimAngle for the character we're controlling
+        //@TODO: Only continue if we can move the character (not rooted or stunned or movingFixed)
         if (entity.uniqueId == m_controlledEntityUniqueId) continue;
 
         const C_TestCharacter* prevEntity = prevSnapshot->m_characters.atUniqueId(entity.uniqueId);
@@ -74,27 +70,25 @@ void C_EntityManager::copySnapshotData(const C_EntityManager* snapshot)
 
     int index = m_characters.getIndexByUniqueId(m_controlledEntityUniqueId);
 
+    //copy only entities that don't exist locally
     for (int i = 0; i < snapshot->m_characters.firstInvalidIndex(); ++i) {
         const C_TestCharacter& snapshotCharacter = snapshot->m_characters[i];
 
         int index = m_characters.getIndexByUniqueId(snapshotCharacter.uniqueId);
 
-        //character doesn't exist locally
         if (index == -1) {
-            //create it
             int thisIndex = m_characters.addElement(snapshotCharacter.uniqueId);
             m_characters[thisIndex] = snapshotCharacter;
         }
     }
 }
 
-//TODO: Implementation is very similar to method above
+//@TODO: Implementation is very similar to method above
 //Generalize in one single _copyFromSnapshot_impl method 
 //that can take a packet or just the snapshot
 void C_EntityManager::loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inPacket)
 {
     if (prevSnapshot) {
-        //TODO: check this hasn't changed in packet
         m_controlledEntityUniqueId = prevSnapshot->m_controlledEntityUniqueId;
     }
 
@@ -133,23 +127,42 @@ void C_EntityManager::loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inP
     }
 }
 
-void C_EntityManager::allocate()
+void C_EntityManager::allocateAll()
 {
     m_characters.resize(100);
 }
 
 void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
-    //elements are already ordered when needed (cortesy of update)
-    
-    sf::Sprite sprite;
+    //We have to sort all objects together by their height (accounting for flying objects)
+    //(this has to be done every frame, otherwise the result might not look super good)
+    //**vector sorting is faster because of the O(1) access operation**
+
+    //pair of (Sprite, flyingHeight)
+    using Node = std::pair<sf::Sprite, float>;
+
+    std::vector<Node> spriteNodes;
 
     for (int i = 0; i < m_characters.firstInvalidIndex(); ++i) {
+        spriteNodes.emplace_back(sf::Sprite(), static_cast<float>(m_characters[i].flyingHeight));
+
+        sf::Sprite& sprite = spriteNodes.back().first;
+
         sprite.setTexture(m_context.textures->getResource(m_characters[i].textureId));
         sprite.setScale(m_characters[i].scale, m_characters[i].scale);
         sprite.setRotation(m_characters[i].rotation);
         sprite.setPosition(m_characters[i].pos);
+    }
 
-        target.draw(sprite, states);
+    //include the rest of the entities in the vector
+
+    std::sort(spriteNodes.begin(), spriteNodes.end(),
+        [] (const Node& lhs, const Node& rhs) {
+            return lhs.first.getPosition().y + lhs.first.getLocalBounds().height - lhs.second < 
+                   rhs.first.getPosition().y + rhs.first.getLocalBounds().height - rhs.second;
+        });
+
+    for (const auto& node : spriteNodes) {
+        target.draw(node.first, states);
     }
 }

@@ -8,5 +8,6 @@ enum class ClientCommand {
 enum class ServerCommand {
     Null,
     PlayerReady,
-    LatestSnapshotId
+    LatestSnapshotId,
+    PlayerInput
 };

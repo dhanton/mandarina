@@ -3,6 +3,7 @@
 #include <csignal>
 
 #include "network_commands.hpp"
+#include "player_input.hpp"
 
 GameServerCallbacks::GameServerCallbacks(GameServer* p)
 {
@@ -75,11 +76,7 @@ void GameServerCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
 
         case k_ESteamNetworkingConnectionState_Connected:
         {
-            int index = parent->getIndexByConnectionId(info->m_hConn);
-
-            if (index != -1) {
-                parent->printMessage("Connection completed with client %d", parent->m_clients[index].clientId);
-            }
+            parent->onConnectionCompleted(info->m_hConn);
 
             break;
         }
@@ -108,10 +105,11 @@ GameServer::GameServer(const Context& context, int partyNumber):
     //(this will still happen if more clients connect)
     m_clients.resize(INITIAL_CLIENTS_SIZE);
 
-    m_entityManager.allocate();
-
-    //Test entity creation
-    m_entityManager.createEntity(EntityType::TEST_CHARACTER, Vector2(100.f, 100.f));
+    m_entityManager.allocateAll();
+    
+    m_entityManager.createEntity(EntityType::TEST_CHARACTER, Vector2(300.f, 150.f));
+    m_entityManager.createEntity(EntityType::TEST_CHARACTER, Vector2(500.f, 300.f));
+    m_entityManager.createEntity(EntityType::TEST_CHARACTER, Vector2(600.f, 200.f));
 
     if (!context.local) {
         m_endpoint.ParseString("127.0.0.1:7000");
@@ -125,6 +123,8 @@ GameServer::GameServer(const Context& context, int partyNumber):
         m_clients[index].connectionId = context.localCon2;
 
         printMessage("Adding client in local connection");
+
+        onConnectionCompleted(context.localCon2);
     }
 
 #ifndef _WIN32
@@ -232,6 +232,10 @@ void GameServer::sendSnapshots()
         outPacket << (u8) ClientCommand::Snapshot;
         outPacket << m_lastSnapshotId;
         outPacket << m_clients[i].snapshotId;
+        outPacket << m_clients[i].latestInputId;
+
+        //@TODO: See if this is the best way to send this
+        outPacket << m_clients[i].controlledEntityUniqueId;
 
         if (m_clients[i].snapshotId < oldestSnapshotId) {
             oldestSnapshotId = m_clients[i].snapshotId;
@@ -268,6 +272,15 @@ void GameServer::processPacket(HSteamNetConnection connectionId, CRCPacket& pack
         printMessage("processPacket error - Invalid connection id %d", connectionId);
         return;
     }
+
+    //@TODO: Check packets are not super big to avoid
+    //attackers slowing down the server with the proccessing of big packets
+    //packets from clients are supposed to be very small (only inputs and snapshotId)
+    // if (packet.getDataSize() > 20000) {
+    //     display some message;
+    //     ??disconnect the client??
+    //     return;
+    // }
 
     while (!packet.endOfPacket()) {
         u8 command = 0;
@@ -310,6 +323,62 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
 
             break;
         }
+
+        case ServerCommand::PlayerInput:
+        {
+            PlayerInput playerInput;
+
+            u8 inputNumber;
+            packet >> inputNumber;
+
+            if (inputNumber == 0) break;
+
+            if (inputNumber > 4) {
+                printMessage("PlayerInput error - Too many inputs (%d)", inputNumber);
+                packet.clear();
+
+                break;
+            }
+
+            TestCharacter* entity = m_entityManager.m_characters.atUniqueId(m_clients[index].controlledEntityUniqueId);
+
+            //we still have to load the data even if the entity doesn't exist
+
+            for (int i = 0; i < inputNumber; ++i) {
+                PlayerInput_loadFromData(playerInput, packet);
+
+                //we trust the client as long as the applied time stays within reasonable values
+                playerInput.timeApplied = std::min(playerInput.timeApplied, sf::seconds(0.1));
+
+                //only apply inputs that haven't been applied yet
+                if (entity && playerInput.id > m_clients[index].latestInputId) {
+                    TestCharacter_applyInput(*entity, playerInput);
+
+                    m_clients[index].latestInputId = playerInput.id;
+                }
+            }
+
+            break;
+        }
+    }
+}
+
+void GameServer::onConnectionCompleted(HSteamNetConnection connectionId)
+{
+    int index = getIndexByConnectionId(connectionId);
+
+    if (index != -1) {
+        //@TODO: Create based on game mode settings (position, teamId) and hero selection (class type)
+
+        int entityIndex = m_entityManager.createEntity(EntityType::TEST_CHARACTER, Vector2(100.f, 100.f));
+        TestCharacter* entity = m_entityManager.m_characters.atIndex(entityIndex);
+
+        if (entity) {
+            m_clients[index].controlledEntityUniqueId = entity->uniqueId;
+            entity->teamId = m_clients[index].teamId;
+        }
+
+        printMessage("Connection completed with client %d", m_clients[index].clientId);
     }
 }
 

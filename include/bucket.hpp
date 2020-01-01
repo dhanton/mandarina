@@ -34,7 +34,11 @@ public:
 
     int getIndexByUniqueId(u32 uniqueId) const;
 
-    //might return nullptr (if uniqueId is not found)
+    //returns nullptr if element is not found
+    T* atIndex(int index);
+    const T* atIndex(int index) const;
+    
+    //returns nullptr if element is not found
     T* atUniqueId(u32 uniqueId);
     const T* atUniqueId(u32 uniqueId) const;
 

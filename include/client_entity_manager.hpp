@@ -23,12 +23,14 @@ public:
 
     void loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inPacket);
 
-    void allocate();
-    
+    void allocateAll();
+
+public:
+    Bucket<C_TestCharacter> m_characters;
+    u32 m_controlledEntityUniqueId;
+
 private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const;
 
-    u32 m_controlledEntityUniqueId;
 
-    Bucket<C_TestCharacter> m_characters;
 };

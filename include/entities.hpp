@@ -5,6 +5,7 @@
 #include "defines.hpp"
 #include "crcpacket.hpp"
 #include "texture_ids.hpp"
+#include "player_input.hpp"
 
 enum class EntityType {
     NONE,
@@ -53,6 +54,22 @@ enum class EntityType {
     This is not super elegant but it's more memory efficient than having lambdas or virtual inheritance
 */
 
+//Maybe do this for entities? (as local structs)
+//and then have one in Entity and in C_Entity like so:
+// _EntityNetData netData;
+// or struct Entity : _EntityNetData
+namespace {
+    struct _BaseEntityNetData {
+        u32 uniqueId;
+        Vector2 pos;
+        u8 teamId;
+    };
+
+    struct _EntityNetData : _BaseEntityNetData {
+        u16 movementSpeed;
+        u8 flyingHeight;
+    };
+}
 
 struct C_TestCharacter
 {
@@ -63,10 +80,9 @@ struct C_TestCharacter
     float scale;
     float rotation;
     u8 flyingHeight;
+    u8 teamId;
+    u16 movementSpeed;
 };
-
-//Functions are not defined globally to make 
-//structs as compact as possible in memory
 
 struct TestCharacter
 {
@@ -75,6 +91,8 @@ struct TestCharacter
     Vector2 vel;
     u16 flags;
     u8 flyingHeight;
+    u8 teamId;
+    u16 movementSpeed;
 };
 
 void TestCharacter_init(TestCharacter& entity);
@@ -89,3 +107,7 @@ void C_TestCharacter_interpolate(C_TestCharacter& entity, const C_TestCharacter*
 void C_TestCharacter_copySnapshotData(C_TestCharacter& entity, const C_TestCharacter* other);
 
 void TestCharacter_update(TestCharacter& entity, sf::Time eTime);
+
+//@TODO: Check against collision
+void TestCharacter_applyInput(TestCharacter& entity, PlayerInput& input);
+void C_TestCharacter_applyInput(C_TestCharacter& entity, PlayerInput& input, sf::Time dt);

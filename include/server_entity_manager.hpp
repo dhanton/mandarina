@@ -16,13 +16,13 @@ public:
     void takeSnapshot(EntityManager* snapshot) const;
     void packData(const EntityManager* snapshot, CRCPacket& outPacket) const;
 
-    void allocate();
+    void allocateAll();
+    
+public:
+    Bucket<TestCharacter> m_characters;
 
 private:
     inline u32 _getNewUniqueId();
 
     u32 m_lastUniqueId;
-
-public:
-    Bucket<TestCharacter> m_characters;
 };

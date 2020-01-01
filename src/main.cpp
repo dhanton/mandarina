@@ -70,29 +70,41 @@ int main(int argc, char* argv[])
         sf::Clock clock;
 
         const sf::Time updateSpeed = sf::seconds(1.f/30.f);
+        const sf::Time inputSpeed = sf::seconds(1.f/30.f);
+
         sf::Time updateTimer;
+        sf::Time inputTimer;
 
         while (running) {
             sf::Time eTime = clock.restart();
 
             updateTimer += eTime;
-
-            sf::Event event;
-
-            while (window.pollEvent(event)) {
-                if (event.type == sf::Event::Closed) {
-                    running = false;
-                }
-
-                if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
-                    running = false;
-                }
-            }
+            inputTimer += eTime;
 
             client.updateWorldTime(eTime);
             client.receiveLoop();
 
-            if (updateTimer >= updateSpeed) {
+            while (inputTimer >= inputSpeed) {
+                sf::Event event;
+
+                client.saveCurrentInput();
+
+                while (window.pollEvent(event)) {
+                    if (event.type == sf::Event::Closed) {
+                        running = false;
+                    }
+
+                    if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
+                        running = false;
+                    }
+
+                    client.handleInput(event);
+                }
+
+                inputTimer -= inputSpeed;
+            }
+
+            while (updateTimer >= updateSpeed) {
                 client.update(updateSpeed);
                 updateTimer -= updateSpeed;
             }
@@ -116,7 +128,7 @@ int main(int argc, char* argv[])
 
         sf::Clock clock;
 
-        //TODO: Load this from json config file
+        //@TODO: Load this from json config file
         const sf::Time updateSpeed = sf::seconds(1.f/30.f);
         const sf::Time snapshotSpeed = sf::seconds(1.f/20.f);
 

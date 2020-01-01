@@ -41,33 +41,25 @@ void EntityManager::packData(const EntityManager* snapshot, CRCPacket& outPacket
 {
     outPacket << (u16) m_characters.firstInvalidIndex();
 
-    //tell the client if controlled entity uniqueId has changed
-
     for (int i = 0; i < m_characters.firstInvalidIndex(); ++i) {
         const TestCharacter& character = m_characters[i];
-
-        //automatically construct hash table in ClientEntityManager
-        //using uniqueIds sent by the server
-        //use this to create ClientSnapshots easily
-
-        outPacket << character.uniqueId;
-
         const TestCharacter* prevEntity = nullptr;
 
         if (snapshot) {
             prevEntity = snapshot->m_characters.atUniqueId(character.uniqueId);
         }
 
+        outPacket << character.uniqueId;
         TestCharacter_packData(character, prevEntity, outPacket);
     }
+}
+
+void EntityManager::allocateAll()
+{
+    m_characters.resize(100);
 }
 
 inline u32 EntityManager::_getNewUniqueId()
 {
     return ++m_lastUniqueId;
-}
-
-void EntityManager::allocate()
-{
-    m_characters.resize(100);
 }
