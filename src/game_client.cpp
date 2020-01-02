@@ -110,6 +110,7 @@ void GameClient::update(sf::Time eTime)
         printMessage("Trying to send more inputs than possible (%d)", inputNumber);
 
         m_inputSnapshots.clear();
+        m_firstNonSentInput_it = m_inputSnapshots.end();
 
     } else {
         outPacket << (u8) ServerCommand::PlayerInput;
@@ -232,7 +233,7 @@ void GameClient::checkServerInput(u16 inputId, const Vector2& endPosition, Vecto
     if (it == m_inputSnapshots.end()) return;
 
     //we correct for even the tiniest of differences, 
-    //to make sure floating point error doesn't scalate
+    //to make sure floating point error doesn't escalate
     if (it->endPosition == endPosition) {
         it = m_inputSnapshots.erase(it);
 
@@ -244,7 +245,6 @@ void GameClient::checkServerInput(u16 inputId, const Vector2& endPosition, Vecto
         // recalculate all the positions of all the inputs starting from this one
         while (it != m_inputSnapshots.end()) {
             PlayerInput_repeatAppliedInput(it->input, newPos, movementSpeed);
-
             it->endPosition = newPos;
 
             it = std::next(it);

@@ -129,6 +129,7 @@ int main(int argc, char* argv[])
         sf::Clock clock;
 
         //@TODO: Load this from json config file
+        //**see how valve does it for counter strike, in regards to update/snapshot/input rates config**
         const sf::Time updateSpeed = sf::seconds(1.f/30.f);
         const sf::Time snapshotSpeed = sf::seconds(1.f/20.f);
 
