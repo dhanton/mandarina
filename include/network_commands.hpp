@@ -9,5 +9,6 @@ enum class ServerCommand {
     Null,
     PlayerReady,
     LatestSnapshotId,
-    PlayerInput
+    PlayerInput,
+    InputRate
 };

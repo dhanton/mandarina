@@ -11,7 +11,7 @@
 enum class ExecMode {
     Client,
     Server,
-    LocalConnection
+    LocalConnection 
 };
 
 int main(int argc, char* argv[])
@@ -49,134 +49,60 @@ int main(int argc, char* argv[])
     //can be shared between client and server (in case of local connection)
     bool running = true;
 
-    auto clientFunc = [&] () {
-        TextureLoader textures;
-        textures.loadResource("../../data/diablo.png", TextureId::DIABLO);
+    Context context;
+    context.local = (execMode == ExecMode::LocalConnection);
+    context.localCon1 = localCon1;
+    context.localCon2 = localCon2;
 
-        sf::RenderWindow window{{960, 640}, "Mandarina Prototype", sf::Style::Titlebar | sf::Style::Close};
+    std::unique_ptr<TextureLoader> textures;
+    
+    //only load textures in client
+    if (execMode == ExecMode::Client || execMode == ExecMode::LocalConnection) {
+        textures = std::unique_ptr<TextureLoader>(new TextureLoader());
+        textures->loadResource("../../data/diablo.png", TextureId::DIABLO);
 
-        SteamNetworkingIPAddr serverAddr;
-        serverAddr.ParseString("127.0.0.1:7000");
+        context.textures = textures.get();
+    }
 
-        Context context;
-        context.local = (execMode == ExecMode::LocalConnection);
-        context.localCon1 = localCon1;
-        context.localCon2 = localCon2;
-        context.textures = &textures;
-        context.CLIENT = true;
+    SteamNetworkingIPAddr serverAddr;
+    serverAddr.ParseString("127.0.0.1:7000");
 
-        GameClient client(context, serverAddr);
-
-        sf::Clock clock;
-
-        const sf::Time updateSpeed = sf::seconds(1.f/30.f);
-        const sf::Time inputSpeed = sf::seconds(1.f/30.f);
-
-        sf::Time updateTimer;
-        sf::Time inputTimer;
-
-        while (running) {
-            sf::Time eTime = clock.restart();
-
-            updateTimer += eTime;
-            inputTimer += eTime;
-
-            client.updateWorldTime(eTime);
-            client.receiveLoop();
-
-            while (inputTimer >= inputSpeed) {
-                sf::Event event;
-
-                client.saveCurrentInput();
-
-                while (window.pollEvent(event)) {
-                    if (event.type == sf::Event::Closed) {
-                        running = false;
-                    }
-
-                    if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
-                        running = false;
-                    }
-
-                    client.handleInput(event);
-                }
-
-                inputTimer -= inputSpeed;
-            }
-
-            while (updateTimer >= updateSpeed) {
-                client.update(updateSpeed);
-                updateTimer -= updateSpeed;
-            }
-            
-            client.renderUpdate(eTime);
-
-            window.clear();
-            window.draw(client);
-            window.display();
-        }
-    };
-
-    auto serverFunc = [&] () {
-        Context context;
-        context.local = (execMode == ExecMode::LocalConnection);
-        context.localCon1 = localCon1;
-        context.localCon2 = localCon2;
-        context.SERVER = true;
-
-        GameServer server(context, 1);
-
-        sf::Clock clock;
-
-        //@TODO: Load this from json config file
-        //**see how valve does it for counter strike, in regards to update/snapshot/input rates config**
-        const sf::Time updateSpeed = sf::seconds(1.f/30.f);
-        const sf::Time snapshotSpeed = sf::seconds(1.f/20.f);
-
-        sf::Time updateTimer;
-        sf::Time snapshotTimer;
-
-        while (running) {
-            sf::Time eTime = clock.restart();
-
-            updateTimer += eTime;
-            snapshotTimer += eTime;
-
-            server.receiveLoop();
-
-            if (updateTimer >= updateSpeed) {
-                server.update(updateSpeed, running);
-                updateTimer -= updateSpeed;
-            }
-
-            if (snapshotTimer >= snapshotSpeed) {
-                server.sendSnapshots();
-                snapshotTimer -= snapshotSpeed;
-            }
-
-            //Remove this for maximum performance (more CPU usage)
-            // std::this_thread::sleep_for(std::chrono::milliseconds(5));
-        }
-
-    };
+    //client and server are not created in the main context so that
+    //they call their deleter before GameNetworkingSockets is killed
 
     switch (execMode) {
         case ExecMode::Client:
         {
-            clientFunc();
+            context.CLIENT = true;
+
+            GameClient client(context, serverAddr);
+            client.mainLoop(running);
+
             break;
         }
 
         case ExecMode::Server:
         {
-            serverFunc();
+            context.SERVER = true;
+
+            GameServer server(context, 1);
+            server.mainLoop(running);
+
             break;
         }
 
         case ExecMode::LocalConnection:
         {
-            std::thread thread(serverFunc);
-            clientFunc();
+            context.CLIENT = true;
+            context.SERVER = true;
+
+            GameServer server(context, 1);
+
+            std::thread thread(&GameServer::mainLoop, &server, std::ref(running));
+
+            GameClient client(context, serverAddr);
+            client.mainLoop(running);
+
             thread.join();
             break;
         }

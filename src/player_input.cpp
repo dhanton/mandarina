@@ -90,6 +90,14 @@ void PlayerInput_handleKeyboardInput(PlayerInput& playerInput, const sf::Event& 
     }
 }
 
+void PlayerInput_clearKeys(PlayerInput& playerInput)
+{
+    playerInput.left = false;
+    playerInput.right = false;
+    playerInput.up = false;
+    playerInput.down = false;
+}
+
 std::string PlayerInput_toString(const PlayerInput& input)
 {
     std::stringstream ss;

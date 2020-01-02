@@ -56,6 +56,8 @@ public:
     GameServer(const Context& context, int partyNumber);
     ~GameServer();
 
+    void mainLoop(bool& running);
+
     void receiveLoop();
     void update(const sf::Time& eTime, bool& running);
     void sendSnapshots();

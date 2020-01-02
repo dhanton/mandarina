@@ -1,5 +1,6 @@
 #include "game_server.hpp"
 
+#include <SFML/System/Clock.hpp>
 #include <csignal>
 
 #include "network_commands.hpp"
@@ -147,6 +148,41 @@ GameServer::~GameServer()
 
     m_pInterface->CloseListenSocket(m_pollId.listenSocket);
     m_pInterface->DestroyPollGroup(m_pollId.pollGroup);
+}
+
+void GameServer::mainLoop(bool& running)
+{
+    sf::Clock clock;
+
+    //@TODO: Load this from json config file
+    //**see how valve does it for counter strike, in regards to update/snapshot/input rates config**
+    const sf::Time updateSpeed = sf::seconds(1.f/30.f);
+    const sf::Time snapshotSpeed = sf::seconds(1.f/20.f);
+
+    sf::Time updateTimer;
+    sf::Time snapshotTimer;
+
+    while (running) {
+        sf::Time eTime = clock.restart();
+
+        updateTimer += eTime;
+        snapshotTimer += eTime;
+
+        receiveLoop();
+
+        if (updateTimer >= updateSpeed) {
+            update(updateSpeed, running);
+            updateTimer -= updateSpeed;
+        }
+
+        if (snapshotTimer >= snapshotSpeed) {
+            sendSnapshots();
+            snapshotTimer -= snapshotSpeed;
+        }
+
+        //Remove this for maximum performance (more CPU usage)
+        // std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
 }
 
 void GameServer::receiveLoop()
@@ -343,9 +379,13 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
             TestCharacter* entity = m_entityManager.m_characters.atUniqueId(m_clients[index].controlledEntityUniqueId);
 
             //we still have to load the data even if the entity doesn't exist
+            //@EXPLOIT: Players can send any number of inputs as fast as possible with different commands
 
             for (int i = 0; i < inputNumber; ++i) {
                 PlayerInput_loadFromData(playerInput, packet);
+
+                //@WIP: Time applied is the time the client has set up
+                //(don't send it over the network anymore)
 
                 //we trust the client as long as the applied time stays within reasonable values
                 playerInput.timeApplied = std::min(playerInput.timeApplied, sf::seconds(0.1));
@@ -357,6 +397,19 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
                     m_clients[index].latestInputId = playerInput.id;
                 }
             }
+
+            break;
+        }
+
+        case ServerCommand::InputRate:
+        {
+            //@WIP: Modify the client's input rate here
+
+            //by default all clients start with the same rate (1/30)
+            //clients can turn it up and down with limits [1/20, ..., serverConfig.maxInputRate]
+
+            //inputs are stored in a queue and applied before each update
+            //queue has a size limit (corresponding to the client inputRate and the server updateRate)
 
             break;
         }

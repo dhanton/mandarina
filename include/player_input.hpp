@@ -25,6 +25,7 @@ void PlayerInput_packData(PlayerInput& playerInput, CRCPacket& outPacket);
 void PlayerInput_loadFromData(PlayerInput& playerInput, CRCPacket& inPacket);
 
 void PlayerInput_handleKeyboardInput(PlayerInput& playerInput, const sf::Event& event);
+void PlayerInput_clearKeys(PlayerInput& playerInput);
 
 std::string PlayerInput_toString(const PlayerInput& input);
 

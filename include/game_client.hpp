@@ -21,7 +21,7 @@ struct GameClientCallbacks : public ISteamNetworkingSocketsCallbacks
     GameClient* parent;
 };
 
-class GameClient : public InContext, public NetPeer, public sf::Drawable
+class GameClient : public InContext, public NetPeer
 {
 public:
     friend struct GameClientCallbacks;
@@ -43,6 +43,8 @@ public:
     GameClient(const Context& context, const SteamNetworkingIPAddr& endpoint);
     ~GameClient();
 
+    void mainLoop(bool& running);
+
     void receiveLoop();
     void update(sf::Time eTime);
     void renderUpdate(sf::Time eTime);
@@ -51,7 +53,7 @@ public:
     void setupNextInterpolation();
 
     //called once for each input in every input frame
-    void handleInput(const sf::Event& event);
+    void handleInput(const sf::Event& event, bool focused);
 
     //called at the end of every input frame
     void saveCurrentInput();
@@ -68,8 +70,6 @@ public:
     Snapshot* findSnapshotById(u32 snapshotId);
 
 private:
-    void draw(sf::RenderTarget& target, sf::RenderStates states) const;
-
     GameClientCallbacks m_gameClientCallbacks;
     HSteamNetConnection m_serverConnectionId;
     bool m_connected;

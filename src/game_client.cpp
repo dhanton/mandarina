@@ -89,6 +89,70 @@ GameClient::~GameClient()
     m_pInterface->CloseConnection(m_serverConnectionId, 0, nullptr, false);
 }
 
+void GameClient::mainLoop(bool& running)
+{
+    sf::RenderWindow window{{960, 640}, "Mandarina Prototype", sf::Style::Titlebar | sf::Style::Close};
+
+    sf::Clock clock;
+
+    const sf::Time updateSpeed = sf::seconds(1.f/30.f);
+    const sf::Time inputSpeed = sf::seconds(1.f/30.f);
+
+    sf::Time updateTimer;
+    sf::Time inputTimer;
+
+    bool focused = true;
+
+    while (running) {
+        sf::Time eTime = clock.restart();
+
+        updateTimer += eTime;
+        inputTimer += eTime;
+
+        updateWorldTime(eTime);
+        receiveLoop();
+
+        while (inputTimer >= inputSpeed) {
+            sf::Event event;
+
+            saveCurrentInput();
+
+            while (window.pollEvent(event)) {
+                if (event.type == sf::Event::GainedFocus) {
+                    focused = true;
+                }
+
+                if (event.type == sf::Event::LostFocus) {
+                    focused = false;
+                }
+                
+                if (event.type == sf::Event::Closed) {
+                    running = false;
+                }
+
+                if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
+                    running = false;
+                }
+
+                handleInput(event, focused);
+            }
+
+            inputTimer -= inputSpeed;
+        }
+
+        while (updateTimer >= updateSpeed) {
+            update(updateSpeed);
+            updateTimer -= updateSpeed;
+        }
+        
+        renderUpdate(eTime);
+
+        window.clear();
+        window.draw(m_entityManager);
+        window.display();
+    }
+}
+
 void GameClient::receiveLoop()
 {
     NetPeer::receiveLoop(m_serverConnectionId);
@@ -181,11 +245,15 @@ void GameClient::setupNextInterpolation()
     }
 }
 
-void GameClient::handleInput(const sf::Event& event)
+void GameClient::handleInput(const sf::Event& event, bool focused)
 {
     if (!m_connected) return;
 
-    PlayerInput_handleKeyboardInput(m_currentInput, event);
+    if (focused) {
+        PlayerInput_handleKeyboardInput(m_currentInput, event);
+    } else {
+        PlayerInput_clearKeys(m_currentInput);
+    }
 }
 
 void GameClient::saveCurrentInput()
@@ -361,9 +429,4 @@ void GameClient::writeLatestSnapshotId(CRCPacket& packet)
 {
     packet << (u8) ServerCommand::LatestSnapshotId;
     packet << m_snapshots.back().id;
-}
-
-void GameClient::draw(sf::RenderTarget& target, sf::RenderStates states) const
-{
-    target.draw(m_entityManager, states);
 }
