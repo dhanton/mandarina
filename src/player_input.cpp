@@ -15,11 +15,7 @@ void PlayerInput_packData(PlayerInput& playerInput, CRCPacket& outPacket)
     stream.pushBit(playerInput.up);
     stream.pushBit(playerInput.down);
 
-    //since applied times are usually small
-    //microseconds can be represented using 32 bits without losing data
-
     outPacket << playerInput.id;
-    outPacket << static_cast<u32>(playerInput.timeApplied.asMicroseconds());
     outPacket << stream.popByte();
     outPacket << Helper_angleTo16bit(playerInput.aimAngle);
 }
@@ -27,10 +23,6 @@ void PlayerInput_packData(PlayerInput& playerInput, CRCPacket& outPacket)
 void PlayerInput_loadFromData(PlayerInput& playerInput, CRCPacket& inPacket)
 {
     inPacket >> playerInput.id;
-
-    u32 timeApplied;
-    inPacket >> timeApplied;
-    playerInput.timeApplied = sf::microseconds(static_cast<u64>(timeApplied));
 
     BitStream stream;
 

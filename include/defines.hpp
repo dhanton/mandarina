@@ -7,14 +7,20 @@
 using Vector2 = sf::Vector2f;
 
 using u8 = uint8_t;
-using u16 = uint16_t;
-using u32 = uint32_t;
-using u64 = uint64_t;
-
 using s8 = int8_t;
+
+using u16 = uint16_t;
 using s16 = int16_t;
+
+using u32 = uint32_t;
 using s32 = int32_t;
-using s64 = int64_t;
+
+// using u64 = uint64_t;
+// using s64 = int64_t;
+
+//@TODO: Modify CRCPacket to use the type above
+using u64 = unsigned long long;
+using s64 = signed long long;
 
 #define PI 3.14159265358979323846
 #define SQRT2 1.41421356237309504880

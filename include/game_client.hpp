@@ -88,7 +88,4 @@ private:
 
     std::list<InputSnapshot> m_inputSnapshots;
     PlayerInput m_currentInput;
-
-    //first InputSnapshot that hasn't been sent yet
-    std::list<InputSnapshot>::iterator m_firstNonSentInput_it;
 };

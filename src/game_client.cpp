@@ -64,7 +64,6 @@ GameClient::GameClient(const Context& context, const SteamNetworkingIPAddr& endp
     m_interSnapshot_it = m_snapshots.begin();
     m_requiredSnapshotsToRender = 3;
 
-    m_firstNonSentInput_it = m_inputSnapshots.begin();
     m_currentInput.id = 1;
 
     if (!context.local) {
@@ -167,28 +166,6 @@ void GameClient::update(sf::Time eTime)
     CRCPacket outPacket;
     writeLatestSnapshotId(outPacket);
 
-    //O(n) operation, but since inputs is small it doesn't matter
-    int inputNumber = std::distance(m_firstNonSentInput_it, m_inputSnapshots.end());
-
-    if (inputNumber > 4) {
-        printMessage("Trying to send more inputs than possible (%d)", inputNumber);
-
-        m_inputSnapshots.clear();
-        m_firstNonSentInput_it = m_inputSnapshots.end();
-
-    } else {
-        outPacket << (u8) ServerCommand::PlayerInput;
-        outPacket << static_cast<u8>(inputNumber);
-
-        //send all inputs that haven't been sent before
-        while (m_firstNonSentInput_it != m_inputSnapshots.end()) {
-            PlayerInput_packData(m_firstNonSentInput_it->input, outPacket);
-
-            m_firstNonSentInput_it = std::next(m_firstNonSentInput_it);
-        }
-    }
-
-
     sendPacket(outPacket, m_serverConnectionId, false);
 }
 
@@ -233,9 +210,6 @@ void GameClient::setupNextInterpolation()
 {
     m_entityManager.copySnapshotData(&m_interSnapshot_it->entityManager);
 
-    //to ensure we can recalculate inputs properly
-    saveCurrentInput();
-
     //we need the end position of controlled entity in the server for this snapshot
     C_TestCharacter* snapshotEntity =  m_interSnapshot_it->entityManager.m_characters.atUniqueId(m_interSnapshot_it->entityManager.m_controlledEntityUniqueId);
     C_TestCharacter* controlledEntity = m_entityManager.m_characters.atUniqueId(m_entityManager.m_controlledEntityUniqueId);
@@ -262,13 +236,17 @@ void GameClient::saveCurrentInput()
 
     if (!entity) return;
 
+    //send this input
+    {
+        CRCPacket outPacket;
+        outPacket << (u8) ServerCommand::PlayerInput;
+        PlayerInput_packData(m_currentInput, outPacket);
+        sendPacket(outPacket, m_serverConnectionId, false);
+    }
+
     m_inputSnapshots.push_back(InputSnapshot());
     m_inputSnapshots.back().input = m_currentInput;
     m_inputSnapshots.back().endPosition = entity->pos;
-
-    if (m_firstNonSentInput_it == m_inputSnapshots.end()) {
-        m_firstNonSentInput_it = std::next(m_inputSnapshots.end(), -1);
-    }
 
     //reset input timer
     m_currentInput.timeApplied = sf::Time::Zero;
@@ -318,6 +296,8 @@ void GameClient::checkServerInput(u16 inputId, const Vector2& endPosition, Vecto
             it = std::next(it);
         }
 
+        //repeat as much as possible of the current input (timeApplied is less than InputRate)
+        PlayerInput_repeatAppliedInput(m_currentInput, newPos, movementSpeed);
         recalculatedPos.x = newPos.x;
         recalculatedPos.y = newPos.y;
     }

@@ -2,6 +2,7 @@
 
 #include <SFML/System/Clock.hpp>
 #include <csignal>
+#include <cmath>
 
 #include "network_commands.hpp"
 #include "player_input.hpp"
@@ -102,6 +103,22 @@ GameServer::GameServer(const Context& context, int partyNumber):
     m_lastClientId = 0;
     m_lastSnapshotId = 0;
 
+    //@TODO:
+    ////////////////////////// THINGS TO LOAD FROM JSON FILE ////////////////////////////////////
+    m_updateRate = sf::seconds(1.f/30.f);
+    m_snapshotRate = sf::seconds(1.f/20.f);
+    m_defaultInputRate = sf::seconds(1.f/30.f);
+
+    m_canClientsChangeInputRate = false;
+    m_canClientsChangeSnapshotRate = false;
+
+    m_maxInputRate = sf::seconds(1.f/120.f);
+    m_minInputRate = sf::seconds(1.f/20.f);
+    m_maxSnapshotRate = m_updateRate;
+    m_minSnapshotRate = sf::seconds(1.f/10.f);
+
+    /////////////////////////////////////////////////////////////////////////////////////////////
+
     //Resize this vector to avoid dynamically adding elements
     //(this will still happen if more clients connect)
     m_clients.resize(INITIAL_CLIENTS_SIZE);
@@ -154,11 +171,6 @@ void GameServer::mainLoop(bool& running)
 {
     sf::Clock clock;
 
-    //@TODO: Load this from json config file
-    //**see how valve does it for counter strike, in regards to update/snapshot/input rates config**
-    const sf::Time updateSpeed = sf::seconds(1.f/30.f);
-    const sf::Time snapshotSpeed = sf::seconds(1.f/20.f);
-
     sf::Time updateTimer;
     sf::Time snapshotTimer;
 
@@ -170,14 +182,16 @@ void GameServer::mainLoop(bool& running)
 
         receiveLoop();
 
-        if (updateTimer >= updateSpeed) {
-            update(updateSpeed, running);
-            updateTimer -= updateSpeed;
+        if (updateTimer >= m_updateRate) {
+            update(m_updateRate, running);
+            updateTimer -= m_updateRate;
         }
 
-        if (snapshotTimer >= snapshotSpeed) {
+        //@TODO: Send snapshots at different rates for different clients
+        //(if m_canClientsChangeSnapshotRate == true)
+        if (snapshotTimer >= m_snapshotRate) {
             sendSnapshots();
-            snapshotTimer -= snapshotSpeed;
+            snapshotTimer -= m_snapshotRate;
         }
 
         //Remove this for maximum performance (more CPU usage)
@@ -245,6 +259,11 @@ void GameServer::update(const sf::Time& eTime, bool& running)
     
     //When all party members are ready the game starts 
     //All the other players are kicked out
+
+    //reset number of inputs sent (for next update)
+    for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
+        m_clients[i].inputsSent = 0;
+    }
 
     m_entityManager.update(eTime);
 }
@@ -364,52 +383,55 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
         {
             PlayerInput playerInput;
 
-            u8 inputNumber;
-            packet >> inputNumber;
+            float maxInputNumber = m_updateRate.asSeconds()/m_clients[index].inputRate.asSeconds();
 
-            if (inputNumber == 0) break;
-
-            if (inputNumber > 4) {
-                printMessage("PlayerInput error - Too many inputs (%d)", inputNumber);
+            if (m_clients[index].inputsSent >= std::floor(maxInputNumber)) {
+                printMessage("Client %d has already sent too many inputs this update", index);
                 packet.clear();
-
                 break;
             }
 
+            //we still have to load the data even if the entity doesn't exist
+            PlayerInput_loadFromData(playerInput, packet);
+            playerInput.timeApplied = m_clients[index].inputRate;
+
             TestCharacter* entity = m_entityManager.m_characters.atUniqueId(m_clients[index].controlledEntityUniqueId);
 
-            //we still have to load the data even if the entity doesn't exist
-            //@EXPLOIT: Players can send any number of inputs as fast as possible with different commands
+            //only apply inputs that haven't been applied yet
+            if (entity && playerInput.id > m_clients[index].latestInputId) {
+                TestCharacter_applyInput(*entity, playerInput);
 
-            for (int i = 0; i < inputNumber; ++i) {
-                PlayerInput_loadFromData(playerInput, packet);
-
-                //@WIP: Time applied is the time the client has set up
-                //(don't send it over the network anymore)
-
-                //we trust the client as long as the applied time stays within reasonable values
-                playerInput.timeApplied = std::min(playerInput.timeApplied, sf::seconds(0.1));
-
-                //only apply inputs that haven't been applied yet
-                if (entity && playerInput.id > m_clients[index].latestInputId) {
-                    TestCharacter_applyInput(*entity, playerInput);
-
-                    m_clients[index].latestInputId = playerInput.id;
-                }
+                m_clients[index].latestInputId = playerInput.id;
             }
 
             break;
         }
 
-        case ServerCommand::InputRate:
+        case ServerCommand::ChangeInputRate:
         {
-            //@WIP: Modify the client's input rate here
+            u64 inputRate_u64;
+            packet >> inputRate_u64;
 
-            //by default all clients start with the same rate (1/30)
-            //clients can turn it up and down with limits [1/20, ..., serverConfig.maxInputRate]
+            sf::Time inputRate = sf::microseconds(inputRate_u64);
 
-            //inputs are stored in a queue and applied before each update
-            //queue has a size limit (corresponding to the client inputRate and the server updateRate)
+            if (m_canClientsChangeInputRate && inputRate <= m_maxInputRate && inputRate >= m_minInputRate) {
+                m_clients[index].inputRate = inputRate;
+            }
+
+            break;
+        }
+
+        case ServerCommand::ChangeSnapshotRate:
+        {
+            //@WIP: This doesn't do anything for now
+            u64 snapshotRate_u64;
+            packet >> snapshotRate_u64;
+
+            sf::Time snapshotRate = sf::microseconds(snapshotRate_u64);
+
+            if (m_canClientsChangeSnapshotRate && snapshotRate <= m_maxSnapshotRate && snapshotRate >= m_minSnapshotRate) {
+                m_clients[index].snapshotRate = snapshotRate;
+            }
 
             break;
         }
@@ -422,6 +444,9 @@ void GameServer::onConnectionCompleted(HSteamNetConnection connectionId)
 
     if (index != -1) {
         //@TODO: Create based on game mode settings (position, teamId) and hero selection (class type)
+
+        m_clients[index].snapshotRate = m_snapshotRate;
+        m_clients[index].inputRate = m_defaultInputRate;
 
         int entityIndex = m_entityManager.createEntity(EntityType::TEST_CHARACTER, Vector2(100.f, 100.f));
         TestCharacter* entity = m_entityManager.m_characters.atIndex(entityIndex);

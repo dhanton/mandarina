@@ -33,10 +33,13 @@ public:
         bool isReady = false;
 
         u32 snapshotId = 0;
+        sf::Time snapshotRate;
+        u16 latestInputId = 0;
+        sf::Time inputRate;
+        u8 inputsSent = 0; //this update
+
         u8 teamId = 0;
         u32 controlledEntityUniqueId = 0;
-
-        u16 latestInputId = 0;
     };
 
     //data we're not using as much
@@ -79,6 +82,17 @@ private:
     SteamNetworkingIPAddr m_endpoint;
 
     bool m_gameStarted;
+
+    sf::Time m_updateRate;
+    sf::Time m_snapshotRate;
+    sf::Time m_defaultInputRate;
+    
+    bool m_canClientsChangeInputRate;
+    bool m_canClientsChangeSnapshotRate;
+    sf::Time m_maxInputRate;
+    sf::Time m_minInputRate;
+    sf::Time m_maxSnapshotRate;
+    sf::Time m_minSnapshotRate;
 
     //Number of party members (clients) required to start the game
     int m_partyNumber;
