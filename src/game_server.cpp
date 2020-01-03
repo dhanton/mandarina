@@ -6,6 +6,7 @@
 
 #include "network_commands.hpp"
 #include "player_input.hpp"
+#include "helper.hpp"
 
 GameServerCallbacks::GameServerCallbacks(GameServer* p)
 {
@@ -414,9 +415,7 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
 
             sf::Time inputRate = sf::microseconds(inputRate_u64);
 
-            if (m_canClientsChangeInputRate && inputRate <= m_maxInputRate && inputRate >= m_minInputRate) {
-                m_clients[index].inputRate = inputRate;
-            }
+            m_clients[index].inputRate = Helper_clamp(inputRate, m_maxInputRate, m_minInputRate);
 
             break;
         }
@@ -429,9 +428,7 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
 
             sf::Time snapshotRate = sf::microseconds(snapshotRate_u64);
 
-            if (m_canClientsChangeSnapshotRate && snapshotRate <= m_maxSnapshotRate && snapshotRate >= m_minSnapshotRate) {
-                m_clients[index].snapshotRate = snapshotRate;
-            }
+            m_clients[index].snapshotRate = Helper_clamp(snapshotRate, m_maxSnapshotRate, m_minSnapshotRate);
 
             break;
         }

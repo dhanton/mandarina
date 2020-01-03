@@ -66,6 +66,12 @@ GameClient::GameClient(const Context& context, const SteamNetworkingIPAddr& endp
 
     m_currentInput.id = 1;
 
+    ////////////////////// THIINGS TO LOAD FROM JSON FILE ////////////////////////
+    m_updateRate = sf::seconds(1.f/30.f);
+    m_inputRate = sf::seconds(1.f/30.f);
+
+    //////////////////////////////////////////////////////////////////////////////
+
     if (!context.local) {
         m_serverConnectionId = connectToServer(endpoint);
         m_connected = false;
@@ -94,9 +100,6 @@ void GameClient::mainLoop(bool& running)
 
     sf::Clock clock;
 
-    const sf::Time updateSpeed = sf::seconds(1.f/30.f);
-    const sf::Time inputSpeed = sf::seconds(1.f/30.f);
-
     sf::Time updateTimer;
     sf::Time inputTimer;
 
@@ -104,17 +107,16 @@ void GameClient::mainLoop(bool& running)
 
     while (running) {
         sf::Time eTime = clock.restart();
+        
+        m_worldTime += eTime;
 
         updateTimer += eTime;
         inputTimer += eTime;
 
-        updateWorldTime(eTime);
         receiveLoop();
 
-        while (inputTimer >= inputSpeed) {
+        while (inputTimer >= m_inputRate) {
             sf::Event event;
-
-            saveCurrentInput();
 
             while (window.pollEvent(event)) {
                 if (event.type == sf::Event::GainedFocus) {
@@ -136,12 +138,13 @@ void GameClient::mainLoop(bool& running)
                 handleInput(event, focused);
             }
 
-            inputTimer -= inputSpeed;
+            saveCurrentInput();
+            inputTimer -= m_inputRate;
         }
 
-        while (updateTimer >= updateSpeed) {
-            update(updateSpeed);
-            updateTimer -= updateSpeed;
+        while (updateTimer >= m_inputRate) {
+            update(m_inputRate);
+            updateTimer -= m_inputRate;
         }
         
         renderUpdate(eTime);
@@ -189,21 +192,27 @@ void GameClient::renderUpdate(sf::Time eTime)
             totalTime = next_it->worldTime - m_interSnapshot_it->worldTime;
         }
 
-        m_entityManager.performInterpolation(&m_interSnapshot_it->entityManager, &next_it->entityManager, m_interElapsed.asSeconds(), totalTime.asSeconds());
+        m_entityManager.performInterpolation(&m_interSnapshot_it->entityManager, &next_it->entityManager, 
+                                             m_interElapsed.asSeconds(), totalTime.asSeconds());
 
-        //move the controlled entity using the current input
-        u32 controlledId = m_entityManager.m_controlledEntityUniqueId;
-        C_TestCharacter* entity = m_entityManager.m_characters.atUniqueId(controlledId);
+        //interpolate the controlled entity between the latest two inputs
+        C_TestCharacter* entity = m_entityManager.m_characters.atUniqueId(m_entityManager.m_controlledEntityUniqueId);
 
-        if (entity) {
-            C_TestCharacter_applyInput(*entity, m_currentInput, eTime);
+        if (entity && !m_inputSnapshots.empty()) {
+            m_controlledEntityInterTimer += eTime;
+
+            //interpolate using current entity position if there's only one input available
+            Vector2 oldPos = entity->pos;
+            auto oldIt = std::next(m_inputSnapshots.end(), -2);
+
+            if (oldIt != m_inputSnapshots.end()) {
+                oldPos = oldIt->endPosition;
+            }
+
+            entity->pos = Helper_lerpVec2(oldPos, m_inputSnapshots.back().endPosition, 
+                                          m_controlledEntityInterTimer.asSeconds(), m_inputRate.asSeconds());
         }
     }
-}
-
-void GameClient::updateWorldTime(sf::Time eTime)
-{
-    m_worldTime += eTime;
 }
 
 void GameClient::setupNextInterpolation()
@@ -215,7 +224,7 @@ void GameClient::setupNextInterpolation()
     C_TestCharacter* controlledEntity = m_entityManager.m_characters.atUniqueId(m_entityManager.m_controlledEntityUniqueId);
 
     if (snapshotEntity && controlledEntity) {
-        checkServerInput(m_interSnapshot_it->latestAppliedInput, snapshotEntity->pos, controlledEntity->pos, controlledEntity->movementSpeed);
+        checkServerInput(m_interSnapshot_it->latestAppliedInput, snapshotEntity->pos, controlledEntity->movementSpeed);
     }
 }
 
@@ -234,7 +243,21 @@ void GameClient::saveCurrentInput()
 {
     C_TestCharacter* entity = m_entityManager.m_characters.atUniqueId(m_entityManager.m_controlledEntityUniqueId);
 
+    //@TODO: Should we send inputs even if there's no entity
+    //to ensure players can move the entity as soon as available?
     if (!entity) return;
+
+    //we don't want to modify entity position just yet (we want to interpolate it smoothly)
+    Vector2 entityPos = entity->pos;
+
+    //apply input using the previous input position if possible
+    if (!m_inputSnapshots.empty()) {
+        entityPos = m_inputSnapshots.back().endPosition;
+    }
+
+    PlayerInput_applyInput(m_currentInput, entityPos, entity->movementSpeed, m_inputRate);
+    
+    //@TODO: Check for collisions
 
     //send this input
     {
@@ -246,17 +269,22 @@ void GameClient::saveCurrentInput()
 
     m_inputSnapshots.push_back(InputSnapshot());
     m_inputSnapshots.back().input = m_currentInput;
-    m_inputSnapshots.back().endPosition = entity->pos;
+    m_inputSnapshots.back().endPosition = entityPos;
 
     //reset input timer
     m_currentInput.timeApplied = sf::Time::Zero;
+    m_controlledEntityInterTimer = sf::Time::Zero;
+
     m_currentInput.id++;
 }
 
-void GameClient::checkServerInput(u16 inputId, const Vector2& endPosition, Vector2& recalculatedPos, u16 movementSpeed)
+void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 movementSpeed)
 {
-    if (inputId == 0) {        
-        recalculatedPos = endPosition;
+    if (inputId == 0) {
+        if (!m_inputSnapshots.empty()) {
+            m_inputSnapshots.back().endPosition = endPosition;
+        }
+
         return;
     }
 
@@ -264,7 +292,8 @@ void GameClient::checkServerInput(u16 inputId, const Vector2& endPosition, Vecto
 
     //find the snapshot corresponding to inputId (while also deleting older ids)
     while (it != m_inputSnapshots.end()) {
-        if (it->input.id < inputId) {
+        //we want to leave at least two inputs to interpolate properly
+        if (it->input.id < inputId && m_inputSnapshots.size() > 2) {
             it = m_inputSnapshots.erase(it);
         } else {
             if (it->input.id == inputId) {
@@ -278,15 +307,19 @@ void GameClient::checkServerInput(u16 inputId, const Vector2& endPosition, Vecto
     //if there's no input, that means it was already checked
     if (it == m_inputSnapshots.end()) return;
 
+    Vector2 predictedEndPos = it->endPosition;
+
+    //we want to leave at least two inputs to interpolate properly
+    if (m_inputSnapshots.size() > 2) {
+        it = m_inputSnapshots.erase(it);
+    }
+
     //we correct for even the tiniest of differences, 
     //to make sure floating point error doesn't escalate
-    if (it->endPosition == endPosition) {
-        it = m_inputSnapshots.erase(it);
+    if (predictedEndPos != endPosition) {
+        printMessage("Incorrect prediction - Delta: %f", Helper_vec2length(predictedEndPos - endPosition));
 
-    } else {
         Vector2 newPos = endPosition;
-
-        it = m_inputSnapshots.erase(it);
 
         // recalculate all the positions of all the inputs starting from this one
         while (it != m_inputSnapshots.end()) {
@@ -295,11 +328,6 @@ void GameClient::checkServerInput(u16 inputId, const Vector2& endPosition, Vecto
 
             it = std::next(it);
         }
-
-        //repeat as much as possible of the current input (timeApplied is less than InputRate)
-        PlayerInput_repeatAppliedInput(m_currentInput, newPos, movementSpeed);
-        recalculatedPos.x = newPos.x;
-        recalculatedPos.y = newPos.y;
     }
 }
 
@@ -331,7 +359,7 @@ void GameClient::handleCommand(u8 command, CRCPacket& packet)
             u32 snapshotId, prevSnapshotId;
             packet >> snapshotId >> prevSnapshotId;
 
-            u16 appliedPlayerInputId;
+            u32 appliedPlayerInputId;
             packet >> appliedPlayerInputId;
 
             u32 controlledEntityUniqueId;

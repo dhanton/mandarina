@@ -34,7 +34,7 @@ public:
 
         u32 snapshotId = 0;
         sf::Time snapshotRate;
-        u16 latestInputId = 0;
+        u32 latestInputId = 0;
         sf::Time inputRate;
         u8 inputsSent = 0; //this update
 

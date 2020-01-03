@@ -11,3 +11,8 @@ float Helper_angleFrom16bit(u16 angle);
 
 template<typename T>
 float Helper_vec2length(const sf::Vector2<T>& vec);
+
+template<typename T>
+T Helper_clamp(T value, T upper, T lower);
+
+#include "helper.inl"

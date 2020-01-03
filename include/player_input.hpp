@@ -15,7 +15,7 @@ struct PlayerInput
 
     float aimAngle = 0.f;
 
-    u16 id = 0;
+    u32 id = 0;
 
     //amount of time this input has been applied
     sf::Time timeApplied;

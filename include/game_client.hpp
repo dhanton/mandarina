@@ -31,7 +31,7 @@ public:
         u32 id = 0;
         sf::Time worldTime;
 
-        u16 latestAppliedInput = 0;
+        u32 latestAppliedInput = 0;
     };
 
     struct InputSnapshot {
@@ -48,7 +48,6 @@ public:
     void receiveLoop();
     void update(sf::Time eTime);
     void renderUpdate(sf::Time eTime);
-    void updateWorldTime(sf::Time eTime);
 
     void setupNextInterpolation();
 
@@ -59,7 +58,7 @@ public:
     void saveCurrentInput();
 
     //check server input was correct and redo all inputs otherwise
-    void checkServerInput(u16 inputId, const Vector2& endPosition, Vector2& recalculatedPos, u16 movementSpeed);
+    void checkServerInput(u32 inputId, const Vector2& endPosition, u16 movementSpeed);
 
     void processPacket(HSteamNetConnection connectionId, CRCPacket& packet);
     void handleCommand(u8 command, CRCPacket& packet);
@@ -73,6 +72,9 @@ private:
     GameClientCallbacks m_gameClientCallbacks;
     HSteamNetConnection m_serverConnectionId;
     bool m_connected;
+
+    sf::Time m_updateRate;
+    sf::Time m_inputRate;
 
     C_EntityManager m_entityManager;
     std::list<Snapshot> m_snapshots;
@@ -88,4 +90,7 @@ private:
 
     std::list<InputSnapshot> m_inputSnapshots;
     PlayerInput m_currentInput;
+
+    //timer for the interpolation of controlled entity
+    sf::Time m_controlledEntityInterTimer;
 };
