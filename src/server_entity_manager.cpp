@@ -7,58 +7,63 @@ EntityManager::EntityManager()
 
 void EntityManager::update(sf::Time eTime)
 {
-    for (int i = 0; i < m_characters.firstInvalidIndex(); ++i) {
-        TestCharacter_update(m_characters[i], eTime);
+    for (int i = 0; i < units.firstInvalidIndex(); ++i) {
+        Unit_update(units[i], eTime);
     }
 }
 
-int EntityManager::createEntity(EntityType type, const Vector2& pos)
+int EntityManager::createUnit(UnitType type, const Vector2& pos, u8 teamId)
 {
-    switch (type)
-    {
-        case EntityType::TEST_CHARACTER:
-        {
-            u32 uniqueId = _getNewUniqueId();
-            int index = m_characters.addElement(uniqueId);
-
-            TestCharacter& entity = m_characters[index];
-            entity.uniqueId = uniqueId;
-            entity.pos = pos;
-
-            TestCharacter_init(entity);
-
-            return index;
-        }
+    if (type <= UNIT_NONE || type >= UNIT_MAX_TYPES) {
+        std::cout << "EntityManager::createUnit error - Invalid type" << std::endl;
+        return -1;
     }
 
-    return -1;
+    u32 uniqueId = _getNewUniqueId();
+    int index = units.addElement(uniqueId);
+
+    Unit& unit = units[index];
+
+    //init has to go first since we're copying values
+    Unit_init(unit, type);
+
+    unit.pos = pos;
+    unit.teamId = teamId;
+    unit.uniqueId = uniqueId;
+
+    return index;
 }
 
 void EntityManager::takeSnapshot(EntityManager* snapshot) const
 {
-    m_characters.copyValidDataTo(snapshot->m_characters);
+    units.copyValidDataTo(snapshot->units);
 }
 
 void EntityManager::packData(const EntityManager* snapshot, CRCPacket& outPacket) const
 {
-    outPacket << (u16) m_characters.firstInvalidIndex();
+    outPacket << (u16) units.firstInvalidIndex();
 
-    for (int i = 0; i < m_characters.firstInvalidIndex(); ++i) {
-        const TestCharacter& character = m_characters[i];
-        const TestCharacter* prevEntity = nullptr;
+    for (int i = 0; i < units.firstInvalidIndex(); ++i) {
+        const Unit& unit = units[i];
+        const Unit* prevUnit = nullptr;
 
         if (snapshot) {
-            prevEntity = snapshot->m_characters.atUniqueId(character.uniqueId);
+            prevUnit = snapshot->units.atUniqueId(unit.uniqueId);
         }
 
-        outPacket << character.uniqueId;
-        TestCharacter_packData(character, prevEntity, outPacket);
+        outPacket << unit.uniqueId;
+
+        if (!prevUnit) {
+            outPacket << unit.type;
+        }
+
+        Unit_packData(unit, prevUnit, outPacket);
     }
 }
 
 void EntityManager::allocateAll()
 {
-    m_characters.resize(100);
+    units.resize(MAX_UNITS);
 }
 
 inline u32 EntityManager::_getNewUniqueId()

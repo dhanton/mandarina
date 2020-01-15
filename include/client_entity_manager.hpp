@@ -26,11 +26,9 @@ public:
     void allocateAll();
 
 public:
-    Bucket<C_TestCharacter> m_characters;
+    Bucket<C_Unit> units;
     u32 m_controlledEntityUniqueId;
 
 private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const;
-
-
 };

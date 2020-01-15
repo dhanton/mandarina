@@ -8,6 +8,6 @@
 namespace TextureId 
 {
     enum _TextureId {
-        DIABLO
+        RED_DEMON
     };
 }

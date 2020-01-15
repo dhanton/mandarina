@@ -14,9 +14,7 @@ public:
 
     void update(sf::Time eTime);
 
-    //@WIP: Make different functions for diffent entity types (unit, projectile, hero) (??)
-    //or is it better to pass an enum (??) or two enums (??)
-    int createEntity(EntityType type, const Vector2& pos);
+    int createUnit(UnitType type, const Vector2& pos, u8 teamId);
 
     void takeSnapshot(EntityManager* snapshot) const;
     void packData(const EntityManager* snapshot, CRCPacket& outPacket) const;
@@ -24,7 +22,7 @@ public:
     void allocateAll();
     
 public:
-    Bucket<TestCharacter> m_characters;
+    Bucket<Unit> units;
 
 private:
     inline u32 _getNewUniqueId();

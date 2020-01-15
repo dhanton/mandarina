@@ -8,11 +8,16 @@
 #include "res_loader.hpp"
 #include "texture_ids.hpp"
 
+#include "json_parser.hpp"
+
 enum class ExecMode {
     Client,
     Server,
     LocalConnection 
 };
+
+const std::string DATA_PATH = "../../data/";
+const std::string JSON_PATH = "../json/";
 
 int main(int argc, char* argv[])
 {
@@ -59,10 +64,15 @@ int main(int argc, char* argv[])
     //only load textures in client
     if (execMode == ExecMode::Client || execMode == ExecMode::LocalConnection) {
         textures = std::unique_ptr<TextureLoader>(new TextureLoader());
-        textures->loadResource("../../data/diablo.png", TextureId::DIABLO);
+        textures->loadResource(DATA_PATH + "diablo.png", TextureId::RED_DEMON);
 
         context.textures = textures.get();
     }
+
+    JsonParser jsonParser;
+    jsonParser.loadAll(JSON_PATH);
+
+    context.jsonParser = &jsonParser;
 
     SteamNetworkingIPAddr serverAddr;
     serverAddr.ParseString("127.0.0.1:7000");

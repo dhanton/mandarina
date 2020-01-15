@@ -35,36 +35,15 @@ void C_EntityManager::performInterpolation(const C_EntityManager* prevSnapshot, 
         return;
     }
 
-    for (int i = 0; i < m_characters.firstInvalidIndex(); ++i) {
-        C_TestCharacter& entity = m_characters[i];
-        
-        // don't interpolate position or aimAngle for the character we're controlling
-        //@TODO: Only continue if we can move the character (not rooted or stunned or movingFixed)
-        if (entity.uniqueId == m_controlledEntityUniqueId) continue;
+    for (int i = 0; i < units.firstInvalidIndex(); ++i) {
+        C_Unit& unit = units[i];
 
-        const C_TestCharacter* prevEntity = prevSnapshot->m_characters.atUniqueId(entity.uniqueId);
-        const C_TestCharacter* nextEntity = nextSnapshot->m_characters.atUniqueId(entity.uniqueId);
+        const C_Unit* prevUnit = prevSnapshot->units.atUniqueId(unit.uniqueId);
+        const C_Unit* nextUnit = nextSnapshot->units.atUniqueId(unit.uniqueId);
 
-        if (prevEntity && nextEntity) {
-            C_TestCharacter_interpolate(entity, prevEntity, nextEntity, elapsedTime, totalTime);
-        }
+        bool controlled = unit.uniqueId == m_controlledEntityUniqueId;
 
-        if (!prevEntity && nextEntity) {
-            //This is the first time the entity is being rendered
-            //creation callbacks
-
-            //@TODO: Keep track of already sent entities
-            //to see which entities are being sent for the first time
-            //in the entire game
-            //store it as ranges: entities between [1, 130] and [136, 400] were already sent
-            //this is probably the most efficient method in memory (sorted range pairs)
-            //or just a simple hash table
-        }
-
-        if (prevEntity && !nextEntity) {
-            //This is the last time entity is being rendered
-            //destruction callbacks
-        }
+        C_Unit_interpolate(unit, prevUnit, nextUnit, elapsedTime, totalTime, controlled);
     }
 
     //rest of the interpolations
@@ -75,17 +54,17 @@ void C_EntityManager::copySnapshotData(const C_EntityManager* snapshot)
     //controlledEntity might change
     m_controlledEntityUniqueId = snapshot->m_controlledEntityUniqueId;
 
-    int index = m_characters.getIndexByUniqueId(m_controlledEntityUniqueId);
+    int index = units.getIndexByUniqueId(m_controlledEntityUniqueId);
 
     //copy only entities that don't exist locally
-    for (int i = 0; i < snapshot->m_characters.firstInvalidIndex(); ++i) {
-        const C_TestCharacter& snapshotCharacter = snapshot->m_characters[i];
+    for (int i = 0; i < snapshot->units.firstInvalidIndex(); ++i) {
+        const C_Unit& snapshotUnit = snapshot->units[i];
 
-        int index = m_characters.getIndexByUniqueId(snapshotCharacter.uniqueId);
+        int index = units.getIndexByUniqueId(snapshotUnit.uniqueId);
 
         if (index == -1) {
-            int thisIndex = m_characters.addElement(snapshotCharacter.uniqueId);
-            m_characters[thisIndex] = snapshotCharacter;
+            int thisIndex = units.addElement(snapshotUnit.uniqueId);
+            units[thisIndex] = snapshotUnit;
         }
     }
 }
@@ -100,43 +79,46 @@ void C_EntityManager::loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inP
     }
 
     //number of characters
-    u16 testCharacterNumber;
-    inPacket >> testCharacterNumber;
+    u16 unitNumber;
+    inPacket >> unitNumber;
 
-    for (int i = 0; i < testCharacterNumber; ++i) {
+    for (int i = 0; i < unitNumber; ++i) {
         u32 uniqueId;
         inPacket >> uniqueId;
 
-        C_TestCharacter* prevEntity = nullptr;
+        C_Unit* prevUnit = nullptr;
         
         if (prevSnapshot) {
-            prevEntity = prevSnapshot->m_characters.atUniqueId(uniqueId);
+            prevUnit = prevSnapshot->units.atUniqueId(uniqueId);
         }
-        
-        //allocate the entity
-        int index = m_characters.addElement(uniqueId);
 
-        if (prevEntity) {
-            //if the entity existed in previous snapshot, copy it
-            m_characters[index] = *prevEntity;
+        //allocate the unit
+        int index = units.addElement(uniqueId);
+
+        if (prevUnit) {
+            //if the unit existed in previous snapshot, copy it
+            units[index] = *prevUnit;
 
         } else {
+            u8 unitType;
+            inPacket >> unitType;
+
             //otherwise initialize it
-            C_TestCharacter_init(m_characters[index]);
-            m_characters[index].uniqueId = uniqueId;
+            C_Unit_init(units[index], (UnitType) unitType);
+            units[index].uniqueId = uniqueId;
 
             //Entity creation callbacks might go here?
             //Or is it better to have them when the entity is rendered for the first time?
         }
 
         //in both cases it has to be loaded from packet
-        C_TestCharacter_loadFromData(m_characters[index], inPacket);       
+        C_Unit_loadFromData(units[index], inPacket);     
     }
 }
 
 void C_EntityManager::allocateAll()
 {
-    m_characters.resize(100);
+    units.resize(MAX_UNITS);
 }
 
 void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) const
@@ -150,15 +132,15 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
 
     std::vector<Node> spriteNodes;
 
-    for (int i = 0; i < m_characters.firstInvalidIndex(); ++i) {
-        spriteNodes.emplace_back(sf::Sprite(), static_cast<float>(m_characters[i].flyingHeight));
+    for (int i = 0; i < units.firstInvalidIndex(); ++i) {
+        spriteNodes.emplace_back(sf::Sprite(), static_cast<float>(units[i].flyingHeight));
 
         sf::Sprite& sprite = spriteNodes.back().first;
 
-        sprite.setTexture(m_context.textures->getResource(m_characters[i].textureId));
-        sprite.setScale(m_characters[i].scale, m_characters[i].scale);
-        sprite.setRotation(m_characters[i].rotation);
-        sprite.setPosition(m_characters[i].pos);
+        sprite.setTexture(m_context.textures->getResource(units[i].textureId));
+        sprite.setScale(units[i].scale, units[i].scale);
+        // sprite.setRotation(units[i].rotation);
+        sprite.setPosition(units[i].pos);
     }
 
     //include the rest of the entities in the vector

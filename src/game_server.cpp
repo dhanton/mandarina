@@ -99,6 +99,8 @@ GameServer::GameServer(const Context& context, int playersNeeded):
     //Still has to always be larger than playersNeeded
     INITIAL_CLIENTS_SIZE(playersNeeded * 2 + 10)
 {
+    loadUnitsFromJson(context.jsonParser);
+
     m_gameStarted = false;
     m_playersNeeded = playersNeeded;
     m_lastClientId = 0;
@@ -126,9 +128,9 @@ GameServer::GameServer(const Context& context, int playersNeeded):
 
     m_entityManager.allocateAll();
     
-    m_entityManager.createEntity(EntityType::TEST_CHARACTER, Vector2(300.f, 150.f));
-    m_entityManager.createEntity(EntityType::TEST_CHARACTER, Vector2(500.f, 300.f));
-    m_entityManager.createEntity(EntityType::TEST_CHARACTER, Vector2(600.f, 200.f));
+    m_entityManager.createUnit(UNIT_RedDemon, Vector2(300.f, 150.f), 0);
+    m_entityManager.createUnit(UNIT_RedDemon, Vector2(500.f, 300.f), 0);
+    m_entityManager.createUnit(UNIT_RedDemon, Vector2(600.f, 200.f), 0);
 
     if (!context.local) {
         m_endpoint.ParseString("127.0.0.1:7000");
@@ -396,11 +398,11 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
             PlayerInput_loadFromData(playerInput, packet);
             playerInput.timeApplied = m_clients[index].inputRate;
 
-            TestCharacter* entity = m_entityManager.m_characters.atUniqueId(m_clients[index].controlledEntityUniqueId);
+            Unit* unit = m_entityManager.units.atUniqueId(m_clients[index].controlledEntityUniqueId);
 
             //only apply inputs that haven't been applied yet
-            if (entity && playerInput.id > m_clients[index].latestInputId) {
-                TestCharacter_applyInput(*entity, playerInput);
+            if (unit && playerInput.id > m_clients[index].latestInputId) {
+                Unit_applyInput(*unit, playerInput);
 
                 m_clients[index].latestInputId = playerInput.id;
             }
@@ -445,12 +447,12 @@ void GameServer::onConnectionCompleted(HSteamNetConnection connectionId)
         m_clients[index].snapshotRate = m_snapshotRate;
         m_clients[index].inputRate = m_defaultInputRate;
 
-        int entityIndex = m_entityManager.createEntity(EntityType::TEST_CHARACTER, Vector2(100.f, 100.f));
-        TestCharacter* entity = m_entityManager.m_characters.atIndex(entityIndex);
+        int entityIndex = m_entityManager.createUnit(UNIT_RedDemon, Vector2(100.f, 100.f), m_clients[index].teamId);
+        Unit* unit = m_entityManager.units.atIndex(entityIndex);
 
-        if (entity) {
-            m_clients[index].controlledEntityUniqueId = entity->uniqueId;
-            entity->teamId = m_clients[index].teamId;
+        //just in case
+        if (unit) {
+            m_clients[index].controlledEntityUniqueId = unit->uniqueId;
         }
 
         printMessage("Connection completed with client %d", m_clients[index].clientId);

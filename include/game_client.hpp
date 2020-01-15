@@ -72,6 +72,7 @@ private:
     GameClientCallbacks m_gameClientCallbacks;
     HSteamNetConnection m_serverConnectionId;
     bool m_connected;
+    sf::Time m_infoTimer;
 
     sf::Time m_updateRate;
     sf::Time m_inputRate;

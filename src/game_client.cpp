@@ -60,6 +60,8 @@ GameClient::GameClient(const Context& context, const SteamNetworkingIPAddr& endp
     NetPeer(&m_gameClientCallbacks, false),
     m_entityManager(context)
 {
+    C_loadUnitsFromJson(context.jsonParser);
+
     m_entityManager.allocateAll();
     m_interSnapshot_it = m_snapshots.begin();
     m_requiredSnapshotsToRender = 3;
@@ -164,6 +166,20 @@ void GameClient::update(sf::Time eTime)
 {
     if (!m_connected) return;
 
+    m_infoTimer += eTime;
+
+    if (m_infoTimer >= sf::seconds(5.f)) {
+        SteamNetworkingQuickConnectionStatus status;
+        SteamNetworkingSockets()->GetQuickConnectionStatus(m_serverConnectionId, &status);
+
+        printMessage("-------------------------");
+        printMessage("Ping: %d", status.m_nPing);
+        printMessage("In/s: %f", status.m_flInBytesPerSec);
+        printMessage("Out/s: %f", status.m_flOutBytesPerSec);
+
+        m_infoTimer = sf::Time::Zero;
+    }
+
     m_entityManager.update(eTime);
 
     CRCPacket outPacket;
@@ -196,21 +212,21 @@ void GameClient::renderUpdate(sf::Time eTime)
                                              m_interElapsed.asSeconds(), totalTime.asSeconds());
 
         //interpolate the controlled entity between the latest two inputs
-        C_TestCharacter* entity = m_entityManager.m_characters.atUniqueId(m_entityManager.m_controlledEntityUniqueId);
+        C_Unit* unit = m_entityManager.units.atUniqueId(m_entityManager.m_controlledEntityUniqueId);
 
-        if (entity && !m_inputSnapshots.empty()) {
+        if (unit && !m_inputSnapshots.empty()) {
             m_controlledEntityInterTimer += eTime;
 
             //interpolate using current entity position if there's only one input available
-            Vector2 oldPos = entity->pos;
+            Vector2 oldPos = unit->pos;
             auto oldIt = std::next(m_inputSnapshots.end(), -2);
 
             if (oldIt != m_inputSnapshots.end()) {
                 oldPos = oldIt->endPosition;
             }
 
-            entity->pos = Helper_lerpVec2(oldPos, m_inputSnapshots.back().endPosition, 
-                                          m_controlledEntityInterTimer.asSeconds(), m_inputRate.asSeconds());
+            unit->pos = Helper_lerpVec2(oldPos, m_inputSnapshots.back().endPosition, 
+                                        m_controlledEntityInterTimer.asSeconds(), m_inputRate.asSeconds());
         }
     }
 }
@@ -220,11 +236,11 @@ void GameClient::setupNextInterpolation()
     m_entityManager.copySnapshotData(&m_interSnapshot_it->entityManager);
 
     //we need the end position of controlled entity in the server for this snapshot
-    C_TestCharacter* snapshotEntity =  m_interSnapshot_it->entityManager.m_characters.atUniqueId(m_interSnapshot_it->entityManager.m_controlledEntityUniqueId);
-    C_TestCharacter* controlledEntity = m_entityManager.m_characters.atUniqueId(m_entityManager.m_controlledEntityUniqueId);
+    C_Unit* snapshotUnit =  m_interSnapshot_it->entityManager.units.atUniqueId(m_interSnapshot_it->entityManager.m_controlledEntityUniqueId);
+    C_Unit* controlledUnit = m_entityManager.units.atUniqueId(m_entityManager.m_controlledEntityUniqueId);
 
-    if (snapshotEntity && controlledEntity) {
-        checkServerInput(m_interSnapshot_it->latestAppliedInput, snapshotEntity->pos, controlledEntity->movementSpeed);
+    if (snapshotUnit && controlledUnit) {
+        checkServerInput(m_interSnapshot_it->latestAppliedInput, snapshotUnit->pos, controlledUnit->movementSpeed);
     }
 }
 
@@ -241,23 +257,22 @@ void GameClient::handleInput(const sf::Event& event, bool focused)
 
 void GameClient::saveCurrentInput()
 {
-    C_TestCharacter* entity = m_entityManager.m_characters.atUniqueId(m_entityManager.m_controlledEntityUniqueId);
+    C_Unit* unit = m_entityManager.units.atUniqueId(m_entityManager.m_controlledEntityUniqueId);
 
     //@TODO: Should we send inputs even if there's no entity
     //to ensure players can move the entity as soon as available?
-    if (!entity) return;
+    if (!unit) return;
 
     //we don't want to modify entity position just yet (we want to interpolate it smoothly)
-    Vector2 entityPos = entity->pos;
+    Vector2 unitPos = unit->pos;
 
     //apply input using the previous input position if possible
     if (!m_inputSnapshots.empty()) {
-        entityPos = m_inputSnapshots.back().endPosition;
+        unitPos = m_inputSnapshots.back().endPosition;
     }
 
-    PlayerInput_applyInput(m_currentInput, entityPos, entity->movementSpeed, m_inputRate);
-    
-    //@TODO: Check for collisions
+    //@TODO: Check for collisions (probably have to create a function for C_Unit)
+    PlayerInput_applyInput(m_currentInput, unitPos, unit->movementSpeed, m_inputRate);
 
     //send this input
     {
@@ -269,7 +284,7 @@ void GameClient::saveCurrentInput()
 
     m_inputSnapshots.push_back(InputSnapshot());
     m_inputSnapshots.back().input = m_currentInput;
-    m_inputSnapshots.back().endPosition = entityPos;
+    m_inputSnapshots.back().endPosition = unitPos;
 
     //reset input timer
     m_currentInput.timeApplied = sf::Time::Zero;
