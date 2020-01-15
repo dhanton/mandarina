@@ -113,7 +113,7 @@ void NetPeer::receiveLoop(u32 id)
         // CRCPacket* inPacket = new CRCPacket();
         // inPacket->onReceive(msg->GetData(), msg->GetSize());
 
-        // processPacket(senderId, inPacket);
+        // processPacket(senderId, *inPacket);
 
         CRCPacket inPacket;
         inPacket.onReceive(msg->GetData(), msg->GetSize());

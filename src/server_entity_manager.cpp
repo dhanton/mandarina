@@ -30,6 +30,8 @@ int EntityManager::createEntity(EntityType type, const Vector2& pos)
             return index;
         }
     }
+
+    return -1;
 }
 
 void EntityManager::takeSnapshot(EntityManager* snapshot) const

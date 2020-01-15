@@ -56,7 +56,7 @@ public:
     };
 
 public:
-    GameServer(const Context& context, int partyNumber);
+    GameServer(const Context& context, int playersNeeded);
     ~GameServer();
 
     void mainLoop(bool& running);
@@ -94,8 +94,8 @@ private:
     sf::Time m_maxSnapshotRate;
     sf::Time m_minSnapshotRate;
 
-    //Number of party members (clients) required to start the game
-    int m_partyNumber;
+    //Number of clients required to start the game
+    int m_playersNeeded;
 
     //used to safely shutdown the server with Ctrl+C
     static bool SIGNAL_SHUTDOWN;

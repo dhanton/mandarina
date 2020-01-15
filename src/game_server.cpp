@@ -88,19 +88,19 @@ void GameServerCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
 
 bool GameServer::SIGNAL_SHUTDOWN = false;
 
-GameServer::GameServer(const Context& context, int partyNumber):
+GameServer::GameServer(const Context& context, int playersNeeded):
     m_gameServerCallbacks(this),
     InContext(context),
     NetPeer(&m_gameServerCallbacks, true),
 
     //TODO: Initial size should be the expected value of the amount of clients that will try to connect
-    //This can be hight/low independently of partyNumber 
+    //This can be hight/low independently of playersNeeded 
     //for example if a streamer sets up a server maybe 10k people try to connect (even for a 2-man party)
-    //Still has to always be larger than partyNumber
-    INITIAL_CLIENTS_SIZE(partyNumber * 2 + 10)
+    //Still has to always be larger than playersNeeded
+    INITIAL_CLIENTS_SIZE(playersNeeded * 2 + 10)
 {
     m_gameStarted = false;
-    m_partyNumber = partyNumber;
+    m_playersNeeded = playersNeeded;
     m_lastClientId = 0;
     m_lastSnapshotId = 0;
 
@@ -228,13 +228,13 @@ void GameServer::update(const sf::Time& eTime, bool& running)
             }
         }
 
-        if (playersReady >= m_partyNumber) {
+        if (playersReady >= m_playersNeeded) {
             m_gameStarted = true;
 
             printMessage("Game starting");
 
             //remove valid clients that didn't make it into the party
-            for (int i = m_partyNumber; i < m_clients.firstInvalidIndex(); ++i) {
+            for (int i = m_playersNeeded; i < m_clients.firstInvalidIndex(); ++i) {
                 m_pInterface->CloseConnection(m_clients[i].connectionId, 0, nullptr, false);
                 m_clients.removeElement(m_clients[i].clientId);
             }
@@ -422,7 +422,7 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
 
         case ServerCommand::ChangeSnapshotRate:
         {
-            //@WIP: This doesn't do anything for now
+            //@TODO: Make this command actually do something
             u64 snapshotRate_u64;
             packet >> snapshotRate_u64;
 

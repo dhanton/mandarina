@@ -52,6 +52,13 @@ void C_EntityManager::performInterpolation(const C_EntityManager* prevSnapshot, 
         if (!prevEntity && nextEntity) {
             //This is the first time the entity is being rendered
             //creation callbacks
+
+            //@TODO: Keep track of already sent entities
+            //to see which entities are being sent for the first time
+            //in the entire game
+            //store it as ranges: entities between [1, 130] and [136, 400] were already sent
+            //this is probably the most efficient method in memory (sorted range pairs)
+            //or just a simple hash table
         }
 
         if (prevEntity && !nextEntity) {
@@ -156,10 +163,22 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
 
     //include the rest of the entities in the vector
 
+    //@WIP: Mirror the sprite (x) if the unit is looking in the other direction
+    //@WIP: Render weapons as well
+
     std::sort(spriteNodes.begin(), spriteNodes.end(),
         [] (const Node& lhs, const Node& rhs) {
-            return lhs.first.getPosition().y + lhs.first.getLocalBounds().height - lhs.second < 
-                   rhs.first.getPosition().y + rhs.first.getLocalBounds().height - rhs.second;
+            bool sameHeight = lhs.first.getPosition().y + lhs.first.getLocalBounds().height - lhs.second < 
+                              rhs.first.getPosition().y + rhs.first.getLocalBounds().height - rhs.second;
+
+            //@WIP: Compare uniqueId if both heights are the same
+            //to avoid flickering (use struct instead of pair and include u32 uniqueId)
+
+            // if (sameHeight) {
+                // return lhs.uniqueId < rhs.uniqueId;
+            // }
+
+            return sameHeight;
         });
 
     for (const auto& node : spriteNodes) {

@@ -2,6 +2,47 @@
 
 #include "texture_ids.hpp"
 #include "helper.hpp"
+#include "bit_stream.hpp"
+
+bool UnitStatus_equals(const UnitStatus& lhs, const UnitStatus& rhs)
+{
+    return lhs.stunTime == rhs.stunTime &&
+           lhs.rootTime == rhs.rootTime &&
+           lhs.disarmTime == rhs.disarmTime &&
+           lhs.invisTime == rhs.invisTime &&
+           lhs.solid == rhs.solid &&
+           lhs.illusion == rhs.illusion;
+}
+
+void UnitStatus_packData(const UnitStatus& status, CRCPacket& packet)
+{
+    BitStream stream;
+
+    stream.pushBit(status.stunTime > sf::Time::Zero);
+    stream.pushBit(status.rootTime > sf::Time::Zero);
+    stream.pushBit(status.disarmTime > sf::Time::Zero);
+    stream.pushBit(status.invisTime > sf::Time::Zero);
+    stream.pushBit(status.solid);
+    stream.pushBit(status.illusion);
+
+    packet << stream.popByte();
+}
+
+void C_UnitStatus_loadFromData(C_UnitStatus& status, CRCPacket& packet)
+{
+    BitStream stream;
+
+    u8 byte;
+    packet >> byte;
+    stream.pushByte(byte);
+
+    status.stunned = stream.popBit();
+    status.rooted = stream.popBit();
+    status.disarmed = stream.popBit();
+    status.invisible = stream.popBit();
+    status.solid = stream.popBit();
+    status.illusion = stream.popBit();
+}
 
 void TestCharacter_init(TestCharacter& entity)
 {

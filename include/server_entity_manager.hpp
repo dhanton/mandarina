@@ -4,6 +4,9 @@
 #include "defines.hpp"
 #include "entities.hpp"
 
+//@WIP: Use this?
+#include "static_bucket.hpp"
+
 class EntityManager
 {
 public:
@@ -11,6 +14,8 @@ public:
 
     void update(sf::Time eTime);
 
+    //@WIP: Make different functions for diffent entity types (unit, projectile, hero) (??)
+    //or is it better to pass an enum (??) or two enums (??)
     int createEntity(EntityType type, const Vector2& pos);
 
     void takeSnapshot(EntityManager* snapshot) const;
