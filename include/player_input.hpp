@@ -29,6 +29,8 @@ void PlayerInput_clearKeys(PlayerInput& playerInput);
 
 std::string PlayerInput_toString(const PlayerInput& input);
 
+void PlayerInput_updateAimAngle(PlayerInput& input, const Vector2& unitPos, const Vector2& mousePos);
+
 bool PlayerInput_applyInput(PlayerInput& input, Vector2& pos, float movementSpeed, sf::Time dt);
 
 //repeat the input using dt = timeApplied and without modyfing it

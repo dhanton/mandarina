@@ -65,6 +65,7 @@ int main(int argc, char* argv[])
     if (execMode == ExecMode::Client || execMode == ExecMode::LocalConnection) {
         textures = std::unique_ptr<TextureLoader>(new TextureLoader());
         textures->loadResource(DATA_PATH + "diablo.png", TextureId::RED_DEMON);
+        textures->loadResource(DATA_PATH + "devils_bow.png", WEAPON_DEVILS_BOW);
 
         context.textures = textures.get();
     }
@@ -73,6 +74,8 @@ int main(int argc, char* argv[])
     jsonParser.loadAll(JSON_PATH);
 
     context.jsonParser = &jsonParser;
+
+    initializeWeaponData(&jsonParser);
 
     SteamNetworkingIPAddr serverAddr;
     serverAddr.ParseString("127.0.0.1:7000");

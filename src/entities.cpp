@@ -7,6 +7,40 @@
 #include "json_parser.hpp"
 #include "texture_ids.hpp"
 
+WeaponData g_weaponData[WEAPON_MAX_TYPES];
+
+void _loadWeapon(JsonParser* jsonParser, WeaponData& weaponData, const char* filename)
+{
+    auto* doc = jsonParser->getDocument(filename);
+
+    if (doc->HasMember("scale")) {
+        weaponData.scale = (*doc)["scale"].GetFloat();
+    } else {
+        weaponData.scale = 1.f;
+    }
+
+    if (doc->HasMember("angle_offset")) {
+        weaponData.angleOffset = (*doc)["angle_offset"].GetFloat();
+    } else {
+        weaponData.angleOffset = 0.f;
+    }
+}
+
+void initializeWeaponData(JsonParser* jsonParser)
+{
+    #define LoadWeapon(weapon_name, callback_func, json_filename) \
+        _loadWeapon(jsonParser, g_weaponData[WEAPON_##weapon_name], json_filename); \
+        g_weaponData[WEAPON_##weapon_name].callback = &WeaponCallback_##callback_func;
+    #include "weapons.inc"
+    #undef LoadWeapon
+}
+
+//Placeholder callback
+void WeaponCallback_devilsBow()
+{
+    printf("Devils bow fired!\n");
+}
+
 bool UnitStatus_equals(const UnitStatus& lhs, const UnitStatus& rhs)
 {
     return lhs.stunTime == rhs.stunTime &&
@@ -47,10 +81,10 @@ void C_UnitStatus_loadFromData(C_UnitStatus& status, CRCPacket& packet)
     status.illusion = stream.popBit();
 }
 
-Unit INITIAL_UNIT_DATA[UNIT_MAX_TYPES];
-C_Unit INITIAL_C_UNIT_DATA[UNIT_MAX_TYPES];
+Unit g_initialUnitData[UNIT_MAX_TYPES];
+C_Unit g_initialCUnitData[UNIT_MAX_TYPES];
 
-inline bool _BaseUnit_loadFromJson(JsonParser* jsonParser, UnitType type, const char* filename, _BaseUnitData& unit)
+bool _BaseUnit_loadFromJson(JsonParser* jsonParser, UnitType type, const char* filename, _BaseUnitData& unit, u8 weaponId)
 {
     auto* doc = jsonParser->getDocument(filename);
 
@@ -87,25 +121,25 @@ inline bool _BaseUnit_loadFromJson(JsonParser* jsonParser, UnitType type, const 
     unit.aimAngle = 0.f;
 
     //@TODO: Implement weapons (probably tied to each hero? - no need to send it then)
-    unit.weaponType = 0;
+    unit.weaponId = weaponId;
 
     unit.collisionRadius = (*doc)["collision_radius"].GetInt();
 
     return true;
 }
 
-inline void _Unit_loadFromJson(JsonParser* jsonParser, UnitType type, const char* filename, Unit& unit)
+void _Unit_loadFromJson(JsonParser* jsonParser, UnitType type, const char* filename, Unit& unit, u8 weaponId)
 {
-    bool result = _BaseUnit_loadFromJson(jsonParser, type, filename, unit);
+    bool result = _BaseUnit_loadFromJson(jsonParser, type, filename, unit, weaponId);
 
     if (result) {
         unit.dead = false;
     }
 }
 
-inline void _C_Unit_loadFromJson(JsonParser* jsonParser, UnitType type, const char* filename, C_Unit& unit, u16 textureId)
+void _C_Unit_loadFromJson(JsonParser* jsonParser, UnitType type, const char* filename, C_Unit& unit, u16 textureId, u8 weaponId)
 {
-    bool result = _BaseUnit_loadFromJson(jsonParser, type, filename, unit);
+    bool result = _BaseUnit_loadFromJson(jsonParser, type, filename, unit, weaponId);
 
     if (result) {
         unit.textureId = textureId;
@@ -122,8 +156,8 @@ inline void _C_Unit_loadFromJson(JsonParser* jsonParser, UnitType type, const ch
 
 void loadUnitsFromJson(JsonParser* jsonParser)
 {
-    #define LoadUnit(unit_name, unit_texture_id, unit_json_file) \
-        _Unit_loadFromJson(jsonParser, UNIT_##unit_name, unit_json_file, INITIAL_UNIT_DATA[UNIT_##unit_name]);
+    #define LoadUnit(unit_name, texture_id, json_filename, weapon_id) \
+        _Unit_loadFromJson(jsonParser, UNIT_##unit_name, json_filename, g_initialUnitData[UNIT_##unit_name], weapon_id);
 
     #include "units.inc"
     #undef LoadUnit
@@ -131,8 +165,8 @@ void loadUnitsFromJson(JsonParser* jsonParser)
 
 void C_loadUnitsFromJson(JsonParser* jsonParser)
 {
-    #define LoadUnit(unit_name, unit_texture_id, unit_json_file) \
-        _C_Unit_loadFromJson(jsonParser, UNIT_##unit_name, unit_json_file, INITIAL_C_UNIT_DATA[UNIT_##unit_name], TextureId::unit_texture_id);
+    #define LoadUnit(unit_name, texture_id, json_filename, weapon_id) \
+        _C_Unit_loadFromJson(jsonParser, UNIT_##unit_name, json_filename, g_initialCUnitData[UNIT_##unit_name], TextureId::texture_id, weapon_id);
 
     #include "units.inc"
     #undef LoadUnit
@@ -144,7 +178,7 @@ void Unit_init(Unit& unit, UnitType type)
         return;
     }
 
-    unit = INITIAL_UNIT_DATA[type];
+    unit = g_initialUnitData[type];
 }
 
 void C_Unit_init(C_Unit& unit, UnitType type)
@@ -153,7 +187,7 @@ void C_Unit_init(C_Unit& unit, UnitType type)
         return;
     }
 
-    unit = INITIAL_C_UNIT_DATA[type];
+    unit = g_initialCUnitData[type];
 }
 
 void Unit_packData(const Unit& unit, const Unit* prevUnit, CRCPacket& outPacket)
@@ -322,7 +356,7 @@ void C_Unit_interpolate(C_Unit& unit, const C_Unit* prevUnit, const C_Unit* next
         //only interpolate position and aimAngle for units we're not controlling
         if (!controlled) {
             newPos = Helper_lerpVec2(prevUnit->pos, nextUnit->pos, t, d);
-            newAimAngle = Helper_lerp(prevUnit->aimAngle, nextUnit->aimAngle, t, d);
+            newAimAngle = Helper_lerpAngle(prevUnit->aimAngle, nextUnit->aimAngle, t, d);
         }
 
         //copy all fields
@@ -357,6 +391,7 @@ void Unit_applyInput(Unit& unit, const PlayerInput& input)
     //@TODO: Check flags to see if we can actually move
 
     bool moved = PlayerInput_repeatAppliedInput(input, unit.pos, unit.movementSpeed);
+    unit.aimAngle = input.aimAngle;
 
     if (moved) {
         //@TODO: Check collision using EntityManager's QuadTree

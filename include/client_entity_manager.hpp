@@ -1,12 +1,26 @@
 #pragma once
 
 #include <SFML/Graphics/Drawable.hpp>
+#include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Time.hpp>
 
 #include "bucket.hpp"
 #include "entities.hpp"
 #include "context.hpp"
+
+struct RenderNode {
+    sf::Sprite sprite;
+
+    //all these parameters are used to sort the entities
+    float flyingHeight;
+    u32 uniqueId;
+    int manualFilter;
+
+    RenderNode(float flyingHeight, u32 uniqueId);
+
+    inline bool operator<(const RenderNode& other);
+};
 
 class C_EntityManager : public InContext, public sf::Drawable
 {
@@ -27,7 +41,7 @@ public:
 
 public:
     Bucket<C_Unit> units;
-    u32 m_controlledEntityUniqueId;
+    u32 controlledEntityUniqueId;
 
 private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const;

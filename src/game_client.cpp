@@ -100,6 +100,8 @@ void GameClient::mainLoop(bool& running)
 {
     sf::RenderWindow window{{960, 640}, "Mandarina Prototype", sf::Style::Titlebar | sf::Style::Close};
 
+    m_context.window = &window;
+
     sf::Clock clock;
 
     sf::Time updateTimer;
@@ -212,21 +214,30 @@ void GameClient::renderUpdate(sf::Time eTime)
                                              m_interElapsed.asSeconds(), totalTime.asSeconds());
 
         //interpolate the controlled entity between the latest two inputs
-        C_Unit* unit = m_entityManager.units.atUniqueId(m_entityManager.m_controlledEntityUniqueId);
+        C_Unit* unit = m_entityManager.units.atUniqueId(m_entityManager.controlledEntityUniqueId);
 
-        if (unit && !m_inputSnapshots.empty()) {
-            m_controlledEntityInterTimer += eTime;
+        if (unit) {
+            if (!m_inputSnapshots.empty()) {
+                m_controlledEntityInterTimer += eTime;
 
-            //interpolate using current entity position if there's only one input available
-            Vector2 oldPos = unit->pos;
-            auto oldIt = std::next(m_inputSnapshots.end(), -2);
+                //interpolate using current entity position if there's only one input available
+                Vector2 oldPos = unit->pos;
+                float oldAimAngle = unit->aimAngle;
 
-            if (oldIt != m_inputSnapshots.end()) {
-                oldPos = oldIt->endPosition;
+                auto oldIt = std::next(m_inputSnapshots.end(), -2);
+
+                if (oldIt != m_inputSnapshots.end()) {
+                    oldPos = oldIt->endPosition;
+                    oldAimAngle = oldIt->input.aimAngle;
+                }
+
+                unit->pos = Helper_lerpVec2(oldPos, m_inputSnapshots.back().endPosition, 
+                                            m_controlledEntityInterTimer.asSeconds(), m_inputRate.asSeconds());
             }
 
-            unit->pos = Helper_lerpVec2(oldPos, m_inputSnapshots.back().endPosition, 
-                                        m_controlledEntityInterTimer.asSeconds(), m_inputRate.asSeconds());
+            Vector2 mousePos = static_cast<Vector2>(sf::Mouse::getPosition(*m_context.window));
+            PlayerInput_updateAimAngle(m_currentInput, unit->pos, mousePos);
+            unit->aimAngle = m_currentInput.aimAngle;
         }
     }
 }
@@ -236,8 +247,8 @@ void GameClient::setupNextInterpolation()
     m_entityManager.copySnapshotData(&m_interSnapshot_it->entityManager);
 
     //we need the end position of controlled entity in the server for this snapshot
-    C_Unit* snapshotUnit =  m_interSnapshot_it->entityManager.units.atUniqueId(m_interSnapshot_it->entityManager.m_controlledEntityUniqueId);
-    C_Unit* controlledUnit = m_entityManager.units.atUniqueId(m_entityManager.m_controlledEntityUniqueId);
+    C_Unit* snapshotUnit =  m_interSnapshot_it->entityManager.units.atUniqueId(m_interSnapshot_it->entityManager.controlledEntityUniqueId);
+    C_Unit* controlledUnit = m_entityManager.units.atUniqueId(m_entityManager.controlledEntityUniqueId);
 
     if (snapshotUnit && controlledUnit) {
         checkServerInput(m_interSnapshot_it->latestAppliedInput, snapshotUnit->pos, controlledUnit->movementSpeed);
@@ -257,7 +268,7 @@ void GameClient::handleInput(const sf::Event& event, bool focused)
 
 void GameClient::saveCurrentInput()
 {
-    C_Unit* unit = m_entityManager.units.atUniqueId(m_entityManager.m_controlledEntityUniqueId);
+    C_Unit* unit = m_entityManager.units.atUniqueId(m_entityManager.controlledEntityUniqueId);
 
     //@TODO: Should we send inputs even if there's no entity
     //to ensure players can move the entity as soon as available?
@@ -402,7 +413,7 @@ void GameClient::handleCommand(u8 command, CRCPacket& packet)
             snapshot.entityManager.loadFromData(prevEntityManager, packet);
             snapshot.worldTime = m_worldTime;
             snapshot.latestAppliedInput = appliedPlayerInputId;
-            snapshot.entityManager.m_controlledEntityUniqueId = controlledEntityUniqueId;
+            snapshot.entityManager.controlledEntityUniqueId = controlledEntityUniqueId;
 
             removeOldSnapshots(prevSnapshotId);
 

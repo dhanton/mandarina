@@ -8,6 +8,22 @@ double Helper_lerp(double x0, double x1, double t, double d)
     return (1 - t) * x0 + t * x1;
 }
 
+double Helper_lerpAngle(double x0, double x1, double t, double d)
+{
+    int quadrant0 = Helper_angleQuadrant(x0);
+    int quadrant1 = Helper_angleQuadrant(x1);
+
+    if (quadrant0 == 4 && quadrant1 == 1) {
+        x1 += 360.f;
+    }
+
+    if (quadrant0 == 1 && quadrant1 == 4) {
+        x0 += 360.f;
+    }
+
+    return Helper_lerp(x0, x1, t, d);
+}
+
 Vector2 Helper_lerpVec2(const Vector2& vec0, const Vector2& vec1, double t, double d)
 {
     Vector2 result;
@@ -16,10 +32,43 @@ Vector2 Helper_lerpVec2(const Vector2& vec0, const Vector2& vec1, double t, doub
     return result;
 }
 
+int Helper_angleQuadrant(float angle)
+{
+    angle = std::fmod(angle, 360.f);
+
+    if (angle < 0.f) {
+        angle += 360.f;
+    }
+
+    if (angle >= 0.f && angle < 90.f) {
+        return 1;
+    }
+
+    if (angle >= 90.f && angle < 180.f) {
+        return 2;
+    }
+
+    if (angle >= 180.f && angle < 270.f) {
+        return 3;
+    }
+
+    return 4;
+}
+
+float Helper_degToRad(float angle)
+{
+    return angle/180.0f * PI;
+}
+
+float Helper_radToDeg(float angle)
+{
+    return angle * 180.0f/PI;
+}
+
 //[0, 360] => [0, 0xffff]
 u16 Helper_angleTo16bit(float angle)
 {
-    return std::floor((std::fmod(angle, 360))/360.f) * 0xffff;
+    return std::floor((std::fmod(angle, 360.f))/360.f * 0xffff);
 }
 
 //[0, 0xffff] => [0, 360]

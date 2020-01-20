@@ -5,7 +5,7 @@
 
 struct Context {
     // sf::RenderTarget* renderTarget = nullptr;
-    // sf::Window* window = nullptr; //Not the same as above if we're using a RenderTexture
+    sf::Window* window = nullptr; //Not the same as above if we're using a RenderTexture
     // sf::View* view = nullptr;
 
     bool SERVER = false;

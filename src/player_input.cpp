@@ -97,6 +97,12 @@ std::string PlayerInput_toString(const PlayerInput& input)
     return ss.str();
 }
 
+void PlayerInput_updateAimAngle(PlayerInput& input, const Vector2& unitPos, const Vector2& mousePos)
+{
+    Vector2 dir = mousePos - unitPos;
+    input.aimAngle = Helper_radToDeg(std::atan2(dir.x, dir.y));
+}
+
 bool _applyInput_impl(const PlayerInput& input, Vector2& pos, float movementSpeed, sf::Time dt)
 {
     float xSign = 0;

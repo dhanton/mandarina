@@ -5,17 +5,41 @@
 
 #include "helper.hpp"
 
+RenderNode::RenderNode(float flyingHeight, u32 uniqueId)
+{
+    this->flyingHeight = flyingHeight;
+    this->uniqueId = uniqueId;
+
+    manualFilter = 0;
+}
+
+inline bool RenderNode::operator<(const RenderNode& other) 
+{
+    float height = sprite.getPosition().y + flyingHeight;
+    float otherHeight = other.sprite.getPosition().y + other.flyingHeight;
+
+    if (height == otherHeight) {
+        if (uniqueId == other.uniqueId) {
+            return manualFilter < other.manualFilter;
+        }
+
+        return uniqueId < other.uniqueId;
+    }
+
+    return height < otherHeight;
+}
+
 C_EntityManager::C_EntityManager(const Context& context, sf::Time worldTime):
     InContext(context)
 {
-    m_controlledEntityUniqueId = 0;
+    controlledEntityUniqueId = 0;
 }
 
 C_EntityManager::C_EntityManager():
     //dummy context used if this instance is a snapshot
     InContext(Context())
 {
-    m_controlledEntityUniqueId = 0;    
+    controlledEntityUniqueId = 0;    
 }
 
 void C_EntityManager::update(sf::Time eTime)
@@ -41,7 +65,7 @@ void C_EntityManager::performInterpolation(const C_EntityManager* prevSnapshot, 
         const C_Unit* prevUnit = prevSnapshot->units.atUniqueId(unit.uniqueId);
         const C_Unit* nextUnit = nextSnapshot->units.atUniqueId(unit.uniqueId);
 
-        bool controlled = unit.uniqueId == m_controlledEntityUniqueId;
+        bool controlled = unit.uniqueId == controlledEntityUniqueId;
 
         C_Unit_interpolate(unit, prevUnit, nextUnit, elapsedTime, totalTime, controlled);
     }
@@ -52,9 +76,9 @@ void C_EntityManager::performInterpolation(const C_EntityManager* prevSnapshot, 
 void C_EntityManager::copySnapshotData(const C_EntityManager* snapshot)
 {
     //controlledEntity might change
-    m_controlledEntityUniqueId = snapshot->m_controlledEntityUniqueId;
+    controlledEntityUniqueId = snapshot->controlledEntityUniqueId;
 
-    int index = units.getIndexByUniqueId(m_controlledEntityUniqueId);
+    int index = units.getIndexByUniqueId(controlledEntityUniqueId);
 
     //copy only entities that don't exist locally
     for (int i = 0; i < snapshot->units.firstInvalidIndex(); ++i) {
@@ -75,7 +99,7 @@ void C_EntityManager::copySnapshotData(const C_EntityManager* snapshot)
 void C_EntityManager::loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inPacket)
 {
     if (prevSnapshot) {
-        m_controlledEntityUniqueId = prevSnapshot->m_controlledEntityUniqueId;
+        controlledEntityUniqueId = prevSnapshot->controlledEntityUniqueId;
     }
 
     //number of characters
@@ -127,43 +151,51 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
     //(this has to be done every frame, otherwise the result might not look super good)
     //**vector sorting is faster because of the O(1) access operation**
 
-    //pair of (Sprite, flyingHeight)
-    using Node = std::pair<sf::Sprite, float>;
-
-    std::vector<Node> spriteNodes;
+    std::vector<RenderNode> spriteNodes;
 
     for (int i = 0; i < units.firstInvalidIndex(); ++i) {
-        spriteNodes.emplace_back(sf::Sprite(), static_cast<float>(units[i].flyingHeight));
+        spriteNodes.emplace_back(RenderNode(units[i].flyingHeight, units[i].uniqueId));
 
-        sf::Sprite& sprite = spriteNodes.back().first;
+        sf::Sprite& sprite = spriteNodes.back().sprite;
+
+        int aimQuadrant = Helper_angleQuadrant(units[i].aimAngle);
+        float mirrored = 1.f;
+
+        //flip the sprite depending on aimAngle
+        if (aimQuadrant == 3 || aimQuadrant == 4) {
+            mirrored = -1.f;
+        }
 
         sprite.setTexture(m_context.textures->getResource(units[i].textureId));
-        sprite.setScale(units[i].scale, units[i].scale);
-        // sprite.setRotation(units[i].rotation);
+        sprite.setScale(mirrored * units[i].scale, units[i].scale);
+        sprite.setOrigin(sprite.getLocalBounds().width/2.f, sprite.getLocalBounds().height/2.f);
         sprite.setPosition(units[i].pos);
+
+        //setup the weapon node if equipped
+        if (units[i].weaponId != WEAPON_NONE) {
+            spriteNodes.emplace_back(RenderNode(units[i].flyingHeight, units[i].uniqueId));
+
+            const WeaponData& weaponData = g_weaponData[units[i].weaponId];
+            sf::Sprite& weaponSprite = spriteNodes.back().sprite;
+
+            weaponSprite.setTexture(m_context.textures->getResource(units[i].weaponId));
+            weaponSprite.setScale(weaponData.scale, weaponData.scale);
+            weaponSprite.setOrigin(weaponSprite.getLocalBounds().width/2.f, weaponSprite.getLocalBounds().height/2.f);
+            weaponSprite.setPosition(units[i].pos);
+            weaponSprite.setRotation(-units[i].aimAngle - weaponData.angleOffset);
+
+            //put the weapon behind or in front of the unit depending on the quadrant
+            if (aimQuadrant == 2 || aimQuadrant == 3) {
+                spriteNodes.back().manualFilter = -1;
+            } else {
+                spriteNodes.back().manualFilter = 1;
+            }
+        }
     }
 
-    //include the rest of the entities in the vector
-
-    //@WIP: Mirror the sprite (x) if the unit is looking in the other direction
-    //@WIP: Render weapons as well
-
-    std::sort(spriteNodes.begin(), spriteNodes.end(),
-        [] (const Node& lhs, const Node& rhs) {
-            bool sameHeight = lhs.first.getPosition().y + lhs.first.getLocalBounds().height - lhs.second < 
-                              rhs.first.getPosition().y + rhs.first.getLocalBounds().height - rhs.second;
-
-            //@WIP: Compare uniqueId if both heights are the same
-            //to avoid flickering (use struct instead of pair and include u32 uniqueId)
-
-            // if (sameHeight) {
-                // return lhs.uniqueId < rhs.uniqueId;
-            // }
-
-            return sameHeight;
-        });
+    std::sort(spriteNodes.begin(), spriteNodes.end());
 
     for (const auto& node : spriteNodes) {
-        target.draw(node.first, states);
+        target.draw(node.sprite, states);
     }
 }

@@ -7,16 +7,43 @@
 #include "crcpacket.hpp"
 #include "player_input.hpp"
 
+class JsonParser;
+
 enum UnitType {
     UNIT_NONE,
 
-    #define LoadUnit(unit_name, unit_texture_id, unit_json_file) \
+    #define LoadUnit(unit_name, texture_id, json_filename, weapon_id) \
         UNIT_##unit_name,
     #include "units.inc"
     #undef LoadUnit
 
     UNIT_MAX_TYPES
 };
+
+typedef void (*WeaponCallback)(void);
+
+struct WeaponData {
+    WeaponCallback callback;
+    float scale;
+    float angleOffset;
+};
+
+enum WeaponType {
+    WEAPON_NONE,
+
+    #define LoadWeapon(weapon_name, callback_func, json_filename) \
+        WEAPON_##weapon_name,
+    #include "weapons.inc"
+    #undef LoadWeapon
+
+    WEAPON_MAX_TYPES
+};
+
+extern WeaponData g_weaponData[WEAPON_MAX_TYPES];
+
+void initializeWeaponData(JsonParser* jsonParser);
+
+void WeaponCallback_devilsBow();
 
 #define MAX_UNITS 500
 
@@ -73,8 +100,7 @@ struct _BaseUnitData : _BaseEntityData
     u8 maxAttacksAvailable;
     u8 attacksAvailable;
     float aimAngle;
-    //@TODO: Implement weapons
-    u8 weaponType;
+    u8 weaponId;
     u8 collisionRadius;
 };
 
@@ -94,10 +120,8 @@ struct C_Unit : _BaseUnitData
 
 //these are loaded at the start with json data
 //initializing is just copying from here
-extern Unit INITIAL_UNIT_DATA[UNIT_MAX_TYPES];
-extern C_Unit INITIAL_C_UNIT_DATA[UNIT_MAX_TYPES];
-
-class JsonParser;
+extern Unit g_initialUnitData[UNIT_MAX_TYPES];
+extern C_Unit g_initialCUnitData[UNIT_MAX_TYPES];
 
 void loadUnitsFromJson(JsonParser* jsonParser);
 void C_loadUnitsFromJson(JsonParser* jsonParser);
