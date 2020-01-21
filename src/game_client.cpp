@@ -348,15 +348,37 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
     //we correct for even the tiniest of differences, 
     //to make sure floating point error doesn't escalate
     if (predictedEndPos != endPosition) {
+#ifdef MANDARINA_DEBUG
+        //this message can get a bit annoying because there are a lot of incorrect predictions with small deltas
         printMessage("Incorrect prediction - Delta: %f", Helper_vec2length(predictedEndPos - endPosition));
+#endif
 
         Vector2 newPos = endPosition;
 
+        // bool fastRate = false;
+        // auto otherIt = it;
+
         // recalculate all the positions of all the inputs starting from this one
         while (it != m_inputSnapshots.end()) {
-            PlayerInput_repeatAppliedInput(it->input, newPos, movementSpeed);
-            it->endPosition = newPos;
+            // otherIt = std::next(otherIt);
 
+            PlayerInput_repeatAppliedInput(it->input, newPos, movementSpeed);
+
+            //try to smoothly correct the input one step at a time
+            Vector2 dirVec = newPos - it->endPosition;
+            float length = Helper_vec2length(dirVec);
+            float offset = 1.f;
+
+            //another technique used, which tried to interpolate faster in some occasions
+            //the idea is good, but the implementation turned out to be wors than this
+            // if (!fastRate && otherIt != m_inputSnapshots.end() && otherIt->endPosition == it->endPosition) {
+                // fastRate = true;
+            // }
+            // if (fastRate) {
+                // offset += length * 0.3333333f;
+            // }
+
+            it->endPosition += Helper_vec2unitary(dirVec) * std::min(offset, length);
             it = std::next(it);
         }
     }

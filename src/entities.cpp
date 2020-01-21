@@ -373,8 +373,8 @@ void Unit_moveColliding(Unit& unit, const Vector2& newPos, const ManagersContext
 {
     if (!force && newPos == unit.pos) return;
 
-    //@TODO: Check how this behaves when multiple collision happen at once
-    //maybe we have to update position between iterations?
+    //since the collision we need is very simple, 
+    //we'll only perform it against the closest unit
 
     const Unit* closestUnit = nullptr;
     float closestDistance = 0.f;
@@ -390,7 +390,6 @@ void Unit_moveColliding(Unit& unit, const Vector2& newPos, const ManagersContext
 
             if (collisionUnit) {
                 if (_Unit_canCollide(unit, *collisionUnit)) {
-                    // _pushToHits(hits, collisionUnit, newPos);
                     float distance = Helper_vec2length(collisionUnit->pos - newPos);
 
                     if (!closestUnit || distance < closestDistance) {
@@ -400,9 +399,11 @@ void Unit_moveColliding(Unit& unit, const Vector2& newPos, const ManagersContext
                 }
             }
 
+            //@TODO: Check in case the uniqueId is another type of entity 
+            //that could block the unit (like a scene object that's not part of the tilemap)
+
             query.Next();
         }
-
 
         if (closestUnit) {
             unit.pos = newPos + _moveColliding_impl(unit.collisionRadius, newPos, closestUnit);
@@ -425,8 +426,15 @@ void Unit_update(Unit& unit, sf::Time eTime, const ManagersContext& context)
     //@DELETE
     //we're adding 20 units before we add the player (TESTING)
     //so we move all units but the player randomly
-    if (unit.uniqueId < 21 && unit.vel == Vector2()) {
-        unit.vel = Vector2(rand() % 200 - 100.f, rand() % 200 - 100.f);
+    if (unit.uniqueId < 21) {
+        if (unit.vel == Vector2()) {
+            unit.vel = Vector2(rand() % 200 - 100.f, rand() % 200 - 100.f);
+        }
+
+        if (unit.pos.x < 0) unit.vel.x = -unit.vel.x;
+        if (unit.pos.y < 0) unit.vel.y = -unit.vel.y;
+        if (unit.pos.x > 960) unit.vel.x = -unit.vel.x;
+        if (unit.pos.y > 640) unit.vel.y = -unit.vel.y;
     }
 
     newPos += unit.vel * eTime.asSeconds();
@@ -510,7 +518,6 @@ void _C_Unit_predictMovement(const C_Unit& unit, Vector2& newPos, const C_Manage
             const Circlef otherCircle(otherUnit.pos, otherUnit.collisionRadius);
 
             if (circle.intersects(otherCircle)) {
-                // _pushToHits(hits, &otherUnit, newPos);
                 float distance = Helper_vec2length(otherUnit.pos - newPos);
 
                 if (!closestUnit || distance < closestDistance) {

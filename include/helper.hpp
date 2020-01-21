@@ -3,7 +3,7 @@
 #include "defines.hpp"
 
 double  Helper_lerp(double x0, double x1, double t, double d);
-double Helper_lerpAngle(double x0, double x1, double t, double d);
+double  Helper_lerpAngle(double x0, double x1, double t, double d);
 Vector2 Helper_lerpVec2(const Vector2& vec0, const Vector2& vec1, double t, double d);
 
 //returns quadrant as int (1, 2, 3, 4)
