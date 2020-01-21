@@ -6,6 +6,7 @@
 #include "defines.hpp"
 #include "crcpacket.hpp"
 #include "player_input.hpp"
+#include "managers_context.hpp"
 
 class JsonParser;
 
@@ -132,15 +133,13 @@ void C_Unit_init(C_Unit& unit, UnitType type);
 void Unit_packData(const Unit& unit, const Unit* prevUnit, CRCPacket& outPacket);
 void C_Unit_loadFromData(C_Unit& unit, CRCPacket& inPacket);
 
-//@WIP: Pass context where appropiate (entity manager and quadtree)
-void Unit_update(Unit& unit, sf::Time eTime);
+void Unit_moveColliding(Unit& unit, const Vector2& newPos, const ManagersContext& context, bool force = false);
+
+void Unit_update(Unit& unit, sf::Time eTime, const ManagersContext& context);
 
 void C_Unit_interpolate(C_Unit& unit, const C_Unit* prevUnit, const C_Unit* nextUnit, double t, double d, bool controlled);
 
-//@WIP: Pass context where appropiate (entity manager and quadtree)
-void Unit_applyInput(Unit& unit, const PlayerInput& input);
+void Unit_applyInput(Unit& unit, const PlayerInput& input, const ManagersContext& context);
 
-//We may want to create this function to check for collisions in client
-//Keep in mind that the client doesn't update the position when applying inputs
-//(because it has to interpolate)
-//Vector2 C_Unit_applyInput(const C_Unit& unit, PlayerInput& input, sf::Time dt);
+//unit is not modified, only unitPos (since we want to interpolate)
+void C_Unit_applyInput(const C_Unit& unit, Vector2& unitPos, PlayerInput& input, const C_ManagersContext& context, sf::Time dt);

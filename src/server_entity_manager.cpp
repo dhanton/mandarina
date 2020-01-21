@@ -1,5 +1,7 @@
 #include "server_entity_manager.hpp"
 
+#include "collision_manager.hpp"
+
 EntityManager::EntityManager()
 {
     m_lastUniqueId = 0;
@@ -8,7 +10,7 @@ EntityManager::EntityManager()
 void EntityManager::update(sf::Time eTime)
 {
     for (int i = 0; i < units.firstInvalidIndex(); ++i) {
-        Unit_update(units[i], eTime);
+        Unit_update(units[i], eTime, ManagersContext(this, m_collisionManager));
     }
 }
 
@@ -24,14 +26,19 @@ int EntityManager::createUnit(UnitType type, const Vector2& pos, u8 teamId)
 
     Unit& unit = units[index];
 
-    //init has to go first since we're copying values
+    //init has to go first since it copies values
     Unit_init(unit, type);
 
-    unit.pos = pos;
     unit.teamId = teamId;
     unit.uniqueId = uniqueId;
+    unit.pos = pos;
 
-    return index;
+    m_collisionManager->onInsertUnit(uniqueId, pos, unit.collisionRadius);
+
+    //we move the unit, forcing it to update its position while checking for collisions
+    Unit_moveColliding(unit, pos, ManagersContext(this, m_collisionManager), true);
+
+    return uniqueId;
 }
 
 void EntityManager::takeSnapshot(EntityManager* snapshot) const
@@ -64,6 +71,11 @@ void EntityManager::packData(const EntityManager* snapshot, CRCPacket& outPacket
 void EntityManager::allocateAll()
 {
     units.resize(MAX_UNITS);
+}
+
+void EntityManager::setCollisionManager(CollisionManager* collisionManager)
+{
+    m_collisionManager = collisionManager;
 }
 
 inline u32 EntityManager::_getNewUniqueId()

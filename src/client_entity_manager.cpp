@@ -5,10 +5,11 @@
 
 #include "helper.hpp"
 
-RenderNode::RenderNode(float flyingHeight, u32 uniqueId)
+RenderNode::RenderNode(float flyingHeight, u32 uniqueId, float collisionRadius)
 {
     this->flyingHeight = flyingHeight;
     this->uniqueId = uniqueId;
+    this->collisionRadius = collisionRadius;
 
     manualFilter = 0;
 }
@@ -33,6 +34,7 @@ C_EntityManager::C_EntityManager(const Context& context, sf::Time worldTime):
     InContext(context)
 {
     controlledEntityUniqueId = 0;
+    renderingDebug = false;
 }
 
 C_EntityManager::C_EntityManager():
@@ -154,7 +156,7 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
     std::vector<RenderNode> spriteNodes;
 
     for (int i = 0; i < units.firstInvalidIndex(); ++i) {
-        spriteNodes.emplace_back(RenderNode(units[i].flyingHeight, units[i].uniqueId));
+        spriteNodes.emplace_back(RenderNode(units[i].flyingHeight, units[i].uniqueId, (float) units[i].collisionRadius));
 
         sf::Sprite& sprite = spriteNodes.back().sprite;
 
@@ -173,7 +175,7 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
 
         //setup the weapon node if equipped
         if (units[i].weaponId != WEAPON_NONE) {
-            spriteNodes.emplace_back(RenderNode(units[i].flyingHeight, units[i].uniqueId));
+            spriteNodes.emplace_back(RenderNode(units[i].flyingHeight, units[i].uniqueId, (float) units[i].collisionRadius));
 
             const WeaponData& weaponData = g_weaponData[units[i].weaponId];
             sf::Sprite& weaponSprite = spriteNodes.back().sprite;
@@ -197,5 +199,19 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
 
     for (const auto& node : spriteNodes) {
         target.draw(node.sprite, states);
+
+#ifdef MANDARINA_DEBUG
+        if (renderingDebug) {
+            sf::CircleShape shape;
+            shape.setRadius(node.collisionRadius);
+            shape.setOrigin(shape.getRadius(), shape.getRadius());
+            shape.setFillColor(sf::Color(255, 0, 0, 80));
+            shape.setOutlineColor(sf::Color::Red);
+            shape.setOutlineThickness(1.5f);
+            shape.setPosition(node.sprite.getPosition());
+            target.draw(shape, states);
+        }
+#endif
+
     }
 }

@@ -261,6 +261,10 @@ void GameClient::handleInput(const sf::Event& event, bool focused)
 
     if (focused) {
         PlayerInput_handleKeyboardInput(m_currentInput, event);
+
+        if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F5) {
+            m_entityManager.renderingDebug = !m_entityManager.renderingDebug;
+        }
     } else {
         PlayerInput_clearKeys(m_currentInput);
     }
@@ -282,8 +286,9 @@ void GameClient::saveCurrentInput()
         unitPos = m_inputSnapshots.back().endPosition;
     }
 
-    //@TODO: Check for collisions (probably have to create a function for C_Unit)
-    PlayerInput_applyInput(m_currentInput, unitPos, unit->movementSpeed, m_inputRate);
+    //we dont modify the unit since we intepolate its position
+    //between two inputs (result is stored in unitPos)
+    C_Unit_applyInput(*unit, unitPos, m_currentInput, C_ManagersContext(&m_entityManager), m_inputRate);
 
     //send this input
     {

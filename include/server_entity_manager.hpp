@@ -4,6 +4,8 @@
 #include "defines.hpp"
 #include "entities.hpp"
 
+#include "managers_context.hpp"
+
 //@WIP: Use this?
 #include "static_bucket.hpp"
 
@@ -20,12 +22,16 @@ public:
     void packData(const EntityManager* snapshot, CRCPacket& outPacket) const;
 
     void allocateAll();
-    
+
+    void setCollisionManager(CollisionManager* collisionManager);
+
 public:
     Bucket<Unit> units;
 
 private:
     inline u32 _getNewUniqueId();
+
+    CollisionManager* m_collisionManager;
 
     u32 m_lastUniqueId;
 };

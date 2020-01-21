@@ -126,11 +126,13 @@ GameServer::GameServer(const Context& context, int playersNeeded):
     //(this will still happen if more clients connect)
     m_clients.resize(INITIAL_CLIENTS_SIZE);
 
+    m_entityManager.setCollisionManager(&m_collisionManager);
     m_entityManager.allocateAll();
     
-    m_entityManager.createUnit(UNIT_RedDemon, Vector2(300.f, 150.f), 0);
-    m_entityManager.createUnit(UNIT_RedDemon, Vector2(500.f, 300.f), 0);
-    m_entityManager.createUnit(UNIT_RedDemon, Vector2(600.f, 200.f), 0);
+    //@DELETE (COLLISION TESTING)
+    for (int i = 0; i < 20; ++i) {
+        m_entityManager.createUnit(UNIT_RedDemon, Vector2(rand() % 400 + 200, rand() % 400 + 200.f), 0);
+    }
 
     if (!context.local) {
         m_endpoint.ParseString("127.0.0.1:7000");
@@ -402,7 +404,7 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
 
             //only apply inputs that haven't been applied yet
             if (unit && playerInput.id > m_clients[index].latestInputId) {
-                Unit_applyInput(*unit, playerInput);
+                Unit_applyInput(*unit, playerInput, ManagersContext(&m_entityManager, &m_collisionManager));
 
                 m_clients[index].latestInputId = playerInput.id;
             }
@@ -447,12 +449,10 @@ void GameServer::onConnectionCompleted(HSteamNetConnection connectionId)
         m_clients[index].snapshotRate = m_snapshotRate;
         m_clients[index].inputRate = m_defaultInputRate;
 
-        int entityIndex = m_entityManager.createUnit(UNIT_RedDemon, Vector2(100.f, 100.f), m_clients[index].teamId);
-        Unit* unit = m_entityManager.units.atIndex(entityIndex);
+        int uniqueId = m_entityManager.createUnit(UNIT_RedDemon, Vector2(100.f, 100.f), m_clients[index].teamId);
 
-        //just in case
-        if (unit) {
-            m_clients[index].controlledEntityUniqueId = unit->uniqueId;
+        if (uniqueId != -1) {
+            m_clients[index].controlledEntityUniqueId = uniqueId;
         }
 
         printMessage("Connection completed with client %d", m_clients[index].clientId);

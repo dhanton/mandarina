@@ -51,6 +51,8 @@ int main(int argc, char* argv[])
         }
     }
 
+    srand(time(nullptr));
+
     //can be shared between client and server (in case of local connection)
     bool running = true;
 

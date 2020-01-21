@@ -12,12 +12,15 @@
 struct RenderNode {
     sf::Sprite sprite;
 
+    //used to render debug collision shapes
+    float collisionRadius;
+
     //all these parameters are used to sort the entities
     float flyingHeight;
     u32 uniqueId;
     int manualFilter;
 
-    RenderNode(float flyingHeight, u32 uniqueId);
+    RenderNode(float flyingHeight, u32 uniqueId, float collisionRadius);
 
     inline bool operator<(const RenderNode& other);
 };
@@ -42,6 +45,9 @@ public:
 public:
     Bucket<C_Unit> units;
     u32 controlledEntityUniqueId;
+    
+    //true if rendering collision shapes and other debug stuff
+    bool renderingDebug;
 
 private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const;

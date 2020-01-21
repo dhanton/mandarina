@@ -1,2 +1,4 @@
-build/
+build_debug/
+build_release/
+tests/build/
 .vscode/

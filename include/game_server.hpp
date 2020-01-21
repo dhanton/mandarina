@@ -9,6 +9,7 @@
 #include "net_peer.hpp"
 
 #include "server_entity_manager.hpp"
+#include "collision_manager.hpp"
 
 class GameServer;
 
@@ -106,6 +107,8 @@ private:
     std::unordered_map<u32, Snapshot> m_snapshots;
     EntityManager m_entityManager;
     u32 m_lastSnapshotId;
+
+    CollisionManager m_collisionManager;
 
     sf::Time m_worldTime;
 

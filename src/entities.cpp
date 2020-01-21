@@ -7,6 +7,11 @@
 #include "json_parser.hpp"
 #include "texture_ids.hpp"
 
+#include "collision_manager.hpp"
+#include "server_entity_manager.hpp"
+#include "client_entity_manager.hpp"
+#include "quadtree.hpp"
+
 WeaponData g_weaponData[WEAPON_MAX_TYPES];
 
 void _loadWeapon(JsonParser* jsonParser, WeaponData& weaponData, const char* filename)
@@ -119,10 +124,7 @@ bool _BaseUnit_loadFromJson(JsonParser* jsonParser, UnitType type, const char* f
     }
 
     unit.aimAngle = 0.f;
-
-    //@TODO: Implement weapons (probably tied to each hero? - no need to send it then)
     unit.weaponId = weaponId;
-
     unit.collisionRadius = (*doc)["collision_radius"].GetInt();
 
     return true;
@@ -342,9 +344,100 @@ void C_Unit_loadFromData(C_Unit& unit, CRCPacket& inPacket)
     }
 }
 
-void Unit_update(Unit& unit, sf::Time eTime)
+//used by client and server
+Vector2 _moveColliding_impl(float collisionRadius, const Vector2& newPos, const _BaseUnitData* collisionUnit)
 {
-    unit.pos += unit.vel * eTime.asSeconds();
+    float distance = Helper_vec2length(collisionUnit->pos - newPos);
+    float targetDistance = std::abs(collisionUnit->collisionRadius + collisionRadius - distance);
+
+    //push the unit far away if it's too close
+    if (distance == 0) {
+        // printf("%f\n", distance);
+        return Helper_vec2unitary(Vector2(1.f, 1.f)) * targetDistance;
+    }
+
+    return Helper_vec2unitary(newPos - collisionUnit->pos) * targetDistance;
+}
+
+//has to work for both Unit and C_Unit (kind of ugly, but we need to access status.solid for both unit types)
+template<typename UnitType>
+//checks two units can collide (not the same unit, both solid, same flying height, etc)
+bool _Unit_canCollide(const UnitType& unit1, const UnitType& unit2)
+{
+    //@TODO: Check flyingHeight is correct
+    return unit1.uniqueId != unit2.uniqueId && unit1.status.solid && unit2.status.solid;
+}
+
+//move while checking collision
+void Unit_moveColliding(Unit& unit, const Vector2& newPos, const ManagersContext& context, bool force)
+{
+    if (!force && newPos == unit.pos) return;
+
+    //@TODO: Check how this behaves when multiple collision happen at once
+    //maybe we have to update position between iterations?
+
+    const Unit* closestUnit = nullptr;
+    float closestDistance = 0.f;
+
+    if (unit.status.solid) {      
+        const Circlef circle(newPos, unit.collisionRadius);
+
+        auto query = context.collisionManager->getQuadtree()->QueryIntersectsRegion(BoundingBody<float>(circle));
+
+        while (!query.EndOfQuery()) {
+            u32 collisionUniqueId = query.GetCurrent()->uniqueId;
+            const Unit* collisionUnit = context.entityManager->units.atUniqueId(collisionUniqueId);
+
+            if (collisionUnit) {
+                if (_Unit_canCollide(unit, *collisionUnit)) {
+                    // _pushToHits(hits, collisionUnit, newPos);
+                    float distance = Helper_vec2length(collisionUnit->pos - newPos);
+
+                    if (!closestUnit || distance < closestDistance) {
+                        closestUnit = collisionUnit;
+                        closestDistance = distance;
+                    }
+                }
+            }
+
+            query.Next();
+        }
+
+
+        if (closestUnit) {
+            unit.pos = newPos + _moveColliding_impl(unit.collisionRadius, newPos, closestUnit);
+
+        } else {
+            unit.pos = newPos;
+        }
+
+    } else {
+        unit.pos = newPos;
+    }
+
+    context.collisionManager->onUpdateUnit(unit.uniqueId, unit.pos, unit.collisionRadius);
+}
+
+void Unit_update(Unit& unit, sf::Time eTime, const ManagersContext& context)
+{
+    Vector2 newPos = unit.pos;
+
+    //@DELETE
+    //we're adding 20 units before we add the player (TESTING)
+    //so we move all units but the player randomly
+    if (unit.uniqueId < 21 && unit.vel == Vector2()) {
+        unit.vel = Vector2(rand() % 200 - 100.f, rand() % 200 - 100.f);
+    }
+
+    newPos += unit.vel * eTime.asSeconds();
+    //other required movement (like dragged movement, forces and friction, etc)
+
+    if (newPos != unit.pos) {
+        Unit_moveColliding(unit, newPos, context);
+    }
+
+    //@DELETE
+    unit.aimAngle += 100 * eTime.asSeconds();
 }
 
 void C_Unit_interpolate(C_Unit& unit, const C_Unit* prevUnit, const C_Unit* nextUnit, double t, double d, bool controlled)
@@ -386,14 +479,60 @@ void C_Unit_interpolate(C_Unit& unit, const C_Unit* prevUnit, const C_Unit* next
     }
 }
 
-void Unit_applyInput(Unit& unit, const PlayerInput& input)
+void Unit_applyInput(Unit& unit, const PlayerInput& input, const ManagersContext& context)
 {
-    //@TODO: Check flags to see if we can actually move
+    //@TODO: Check flags to see if we can actually move (stunned, rooted, etc)
 
-    bool moved = PlayerInput_repeatAppliedInput(input, unit.pos, unit.movementSpeed);
+    Vector2 newPos = unit.pos;
+
+    bool moved = PlayerInput_repeatAppliedInput(input, newPos, unit.movementSpeed);
     unit.aimAngle = input.aimAngle;
 
     if (moved) {
-        //@TODO: Check collision using EntityManager's QuadTree
+        Unit_moveColliding(unit, newPos, context);
+    }
+}
+
+//we don't need to use this function outside this file for now
+void _C_Unit_predictMovement(const C_Unit& unit, Vector2& newPos, const C_ManagersContext& context)
+{
+    //we don't update the circle to mimic how it works in the server
+    //where we only use one Query
+    const Circlef circle(newPos, unit.collisionRadius);
+
+    const C_Unit* closestUnit = nullptr;
+    float closestDistance = 0.f;
+
+    for (int i = 0; i < context.entityManager->units.firstInvalidIndex(); ++i) {
+        const C_Unit& otherUnit = context.entityManager->units[i];
+
+        if (_Unit_canCollide(unit, otherUnit)) {
+            const Circlef otherCircle(otherUnit.pos, otherUnit.collisionRadius);
+
+            if (circle.intersects(otherCircle)) {
+                // _pushToHits(hits, &otherUnit, newPos);
+                float distance = Helper_vec2length(otherUnit.pos - newPos);
+
+                if (!closestUnit || distance < closestDistance) {
+                    closestUnit = &otherUnit;
+                    closestDistance = distance;
+                }
+            }
+        }
+    }
+
+    if (closestUnit) {
+        newPos = newPos + _moveColliding_impl(unit.collisionRadius, newPos, closestUnit);
+    }
+}
+
+void C_Unit_applyInput(const C_Unit& unit, Vector2& unitPos, PlayerInput& input, const C_ManagersContext& context, sf::Time dt)
+{
+    //@TODO: Check flags to see if we can actually move (stunned, rooted, etc)
+
+    bool moved = PlayerInput_applyInput(input, unitPos, unit.movementSpeed, dt);
+
+    if (moved) {
+        _C_Unit_predictMovement(unit, unitPos, context);
     }
 }

@@ -20,6 +20,13 @@ template<typename T>
 float Helper_vec2length(const sf::Vector2<T>& vec);
 
 template<typename T>
+sf::Vector2<T> Helper_vec2unitary(const sf::Vector2<T>& vec);
+
+template<typename T>
 T Helper_clamp(T value, T upper, T lower);
+
+//angle in degrees
+template <typename T> 
+void Helper_rotatePoint(sf::Vector2<T>& point, T angle, const sf::Vector2<T>& center = {(T) 0, (T) 0});
 
 #include "helper.inl"
