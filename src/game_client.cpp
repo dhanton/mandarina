@@ -370,12 +370,17 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
             //(this weird method is the one that gets the best results apparently)
             Vector2 dirVec = newPos - it->endPosition;
             float distance = Helper_vec2length(dirVec);
-            
-            //@TODO: These values (0.5, 10, 200) have to be tinkered to make it look as smooth as possible
-            //The method used could also change if this one's not good enough
-            float offset = std::max(0.5, Helper_lerp(0.0, 10.0, distance, 200.0));
 
-            it->endPosition += Helper_vec2unitary(dirVec) * std::min(offset, distance);
+            //@TODO: These values (0.5, 10, 250) have to be tinkered to make it look as smooth as possible
+            //The method used could also change if this one's not good enough
+            if (distance < 250.f) {
+                float offset = std::max(0.5, Helper_lerp(0.0, 10.0, distance, 250.0));
+                it->endPosition += Helper_vec2unitary(dirVec) * std::min(offset, distance);
+
+            } else {
+                it->endPosition = newPos;
+            }
+
             it = std::next(it);
         }
     }
