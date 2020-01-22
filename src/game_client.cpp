@@ -286,9 +286,16 @@ void GameClient::saveCurrentInput()
         unitPos = m_inputSnapshots.back().endPosition;
     }
 
+    C_EntityManager* manager = &m_entityManager;
+
+    //use the most recent EntityManager available
+    if (!m_snapshots.empty()) {
+        manager = &m_snapshots.back().entityManager;
+    }
+
     //we dont modify the unit since we intepolate its position
     //between two inputs (result is stored in unitPos)
-    C_Unit_applyInput(*unit, unitPos, m_currentInput, C_ManagersContext(&m_entityManager), m_inputRate);
+    C_Unit_applyInput(*unit, unitPos, m_currentInput, C_ManagersContext(manager), m_inputRate);
 
     //send this input
     {
@@ -345,40 +352,30 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
         it = m_inputSnapshots.erase(it);
     }
 
-    //we correct for even the tiniest of differences, 
-    //to make sure floating point error doesn't escalate
+    //correct wrong predictions
     if (predictedEndPos != endPosition) {
-#ifdef MANDARINA_DEBUG
-        //this message can get a bit annoying because there are a lot of incorrect predictions with small deltas
+
+#if 0 && defined MANDARINA_DEBUG
+        //this message can get annoying because there are a lot of minor prediction errors
         printMessage("Incorrect prediction - Delta: %f", Helper_vec2length(predictedEndPos - endPosition));
 #endif
 
         Vector2 newPos = endPosition;
 
-        // bool fastRate = false;
-        // auto otherIt = it;
-
         // recalculate all the positions of all the inputs starting from this one
         while (it != m_inputSnapshots.end()) {
-            // otherIt = std::next(otherIt);
-
             PlayerInput_repeatAppliedInput(it->input, newPos, movementSpeed);
 
             //try to smoothly correct the input one step at a time
+            //(this weird method is the one that gets the best results apparently)
             Vector2 dirVec = newPos - it->endPosition;
-            float length = Helper_vec2length(dirVec);
-            float offset = 1.f;
+            float distance = Helper_vec2length(dirVec);
+            
+            //@TODO: These values (0.5, 10, 200) have to be tinkered to make it look as smooth as possible
+            //The method used could also change if this one's not good enough
+            float offset = std::max(0.5, Helper_lerp(0.0, 10.0, distance, 200.0));
 
-            //another technique used, which tried to interpolate faster in some occasions
-            //the idea is good, but the implementation turned out to be wors than this
-            // if (!fastRate && otherIt != m_inputSnapshots.end() && otherIt->endPosition == it->endPosition) {
-                // fastRate = true;
-            // }
-            // if (fastRate) {
-                // offset += length * 0.3333333f;
-            // }
-
-            it->endPosition += Helper_vec2unitary(dirVec) * std::min(offset, length);
+            it->endPosition += Helper_vec2unitary(dirVec) * std::min(offset, distance);
             it = std::next(it);
         }
     }

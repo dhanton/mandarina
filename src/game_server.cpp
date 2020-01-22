@@ -130,7 +130,8 @@ GameServer::GameServer(const Context& context, int playersNeeded):
     m_entityManager.allocateAll();
     
     //@DELETE (COLLISION TESTING)
-    for (int i = 0; i < 20; ++i) {
+    m_entityManager.createUnit(UNIT_RedDemon, Vector2(100.f, 300.f), 0);
+    for (int i = 0; i < 19; ++i) {
         m_entityManager.createUnit(UNIT_RedDemon, Vector2(rand() % 400 + 200, rand() % 400 + 200.f), 0);
     }
 

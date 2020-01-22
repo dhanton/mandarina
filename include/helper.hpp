@@ -23,6 +23,9 @@ template<typename T>
 sf::Vector2<T> Helper_vec2unitary(const sf::Vector2<T>& vec);
 
 template<typename T>
+bool Helper_pointsCollinear(const sf::Vector2<T>& a, const sf::Vector2<T>& b, const sf::Vector2<T>& c);
+
+template<typename T>
 T Helper_clamp(T value, T upper, T lower);
 
 //angle in degrees

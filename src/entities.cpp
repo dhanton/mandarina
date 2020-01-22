@@ -345,18 +345,30 @@ void C_Unit_loadFromData(C_Unit& unit, CRCPacket& inPacket)
 }
 
 //used by client and server
-Vector2 _moveColliding_impl(float collisionRadius, const Vector2& newPos, const _BaseUnitData* collisionUnit)
+Vector2 _moveColliding_impl(const Vector2& oldPos, const Vector2& newPos, float collisionRadius, const _BaseUnitData* collisionUnit)
 {
-    float distance = Helper_vec2length(collisionUnit->pos - newPos);
-    float targetDistance = std::abs(collisionUnit->collisionRadius + collisionRadius - distance);
+    //these values are copied to avoid constatly traversing the pointer
+    const Vector2 collisionPos = collisionUnit->pos;
+    const float collisionUnitRadius = collisionUnit->collisionRadius;
 
-    //push the unit far away if it's too close
+    const Vector2 fixVector = newPos - collisionPos;
+    const Vector2 fixDir = Helper_vec2unitary(fixVector);
+    
+    //should we force the unit to slide if it's moving exactly towards the other center?
+    // if (Helper_pointsCollinear(oldPos, newPos, collisionPos)) {
+    //     fixVector += Vector2(-fixDir.y, fixDir.x) * 1.f;
+    //     fixDir = Helper_vec2unitary(fixVector);
+    // }
+
+    const float distance = Helper_vec2length(fixVector);
+    const float targetDistance = std::abs(collisionUnitRadius + collisionRadius - distance);
+
+    //push the unit in a random direction if it's too close
     if (distance == 0) {
-        // printf("%f\n", distance);
         return Helper_vec2unitary(Vector2(1.f, 1.f)) * targetDistance;
     }
 
-    return Helper_vec2unitary(newPos - collisionUnit->pos) * targetDistance;
+    return fixDir * targetDistance;
 }
 
 //has to work for both Unit and C_Unit (kind of ugly, but we need to access status.solid for both unit types)
@@ -406,7 +418,7 @@ void Unit_moveColliding(Unit& unit, const Vector2& newPos, const ManagersContext
         }
 
         if (closestUnit) {
-            unit.pos = newPos + _moveColliding_impl(unit.collisionRadius, newPos, closestUnit);
+            unit.pos = newPos + _moveColliding_impl(unit.pos, newPos, unit.collisionRadius, closestUnit);
 
         } else {
             unit.pos = newPos;
@@ -529,7 +541,7 @@ void _C_Unit_predictMovement(const C_Unit& unit, Vector2& newPos, const C_Manage
     }
 
     if (closestUnit) {
-        newPos = newPos + _moveColliding_impl(unit.collisionRadius, newPos, closestUnit);
+        newPos = newPos + _moveColliding_impl(unit.pos, newPos, unit.collisionRadius, closestUnit);
     }
 }
 
