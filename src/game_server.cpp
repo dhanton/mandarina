@@ -456,11 +456,13 @@ void GameServer::onConnectionCompleted(HSteamNetConnection connectionId)
         outPacket << (u8) ClientCommand::InitialConditions << m_tileMapFilename;
 
         //@TODO: Create unit based on game mode settings (position, teamId) and hero selection (class type)
-        int uniqueId = m_entityManager.createUnit(UNIT_RedDemon, Vector2(100.f, 100.f), m_clients[index].teamId);
+        Vector2 pos = {1500.f, 1500.f};
+        int uniqueId = m_entityManager.createUnit(UNIT_RedDemon, pos, m_clients[index].teamId);
 
         if (uniqueId != -1) {
             m_clients[index].controlledEntityUniqueId = uniqueId;
             outPacket << m_clients[index].controlledEntityUniqueId;
+            outPacket << pos.x << pos.y;
         } else {
             outPacket << (u32) 0;
         }

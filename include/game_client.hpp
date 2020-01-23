@@ -11,6 +11,7 @@
 #include "client_entity_manager.hpp"
 #include "player_input.hpp"
 #include "tilemap_renderer.hpp"
+#include "camera.hpp"
 
 class GameClient;
 
@@ -105,9 +106,9 @@ private:
     TileMapRenderer m_tileMapRenderer;
     TileMap m_tileMap;
 
-    bool m_freeView;
-    float m_currentZoom;
-    float m_initialZoom;
-    PlayerInput m_cameraInput;
-    Vector2 m_latestControlledPos;
+    Camera m_camera;
+
+    //the unit can move freely within this radius without the camera moving
+    float m_smoothUnitRadius;
+    Vector2 m_smoothUnitPos;
 };

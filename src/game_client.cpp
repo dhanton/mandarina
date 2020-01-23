@@ -71,9 +71,7 @@ GameClient::GameClient(const Context& context, const SteamNetworkingIPAddr& endp
     m_requiredSnapshotsToRender = 3;
 
     m_currentInput.id = 1;
-    m_freeView = false;
-    m_initialZoom = 0.8f;
-    m_currentZoom = m_initialZoom;
+    m_smoothUnitRadius = 20.f;
 
     ////////////////////// THIINGS TO LOAD FROM JSON FILE ////////////////////////
     m_updateRate = sf::seconds(1.f/30.f);
@@ -105,15 +103,22 @@ GameClient::~GameClient()
 
 void GameClient::mainLoop(bool& running)
 {
-    sf::RenderWindow window{{960, 640}, "Mandarina Prototype", sf::Style::Fullscreen};
-    // sf::RenderWindow window{{960, 640}, "Mandarina Prototype", sf::Style::Titlebar | sf::Style::Close};
+    // sf::RenderWindow window{{960, 640}, "Mandarina Prototype", sf::Style::Fullscreen};
+    sf::RenderWindow window{{960, 640}, "Mandarina Prototype", sf::Style::Titlebar | sf::Style::Close};
+    
     sf::View view = window.getDefaultView();
-    view.zoom(m_initialZoom);
+    view.zoom(m_camera.getZoom());
+    m_smoothUnitPos = view.getCenter();
 
     m_context.window = &window;
     m_context.view = &view;
 
+    m_camera.setView(&view);
+
     sf::Clock clock;
+    
+    //eTime shouldn't be 0 the first frame (weird glitches)
+    sf::Time eTime = sf::milliseconds(5);
 
     sf::Time updateTimer;
     sf::Time inputTimer;
@@ -121,8 +126,6 @@ void GameClient::mainLoop(bool& running)
     bool focused = true;
 
     while (running) {
-        sf::Time eTime = clock.restart();
-        
         m_worldTime += eTime;
 
         updateTimer += eTime;
@@ -183,6 +186,8 @@ void GameClient::mainLoop(bool& running)
         }
 
         window.display();
+
+        eTime = clock.restart();
     }
 }
 
@@ -220,39 +225,6 @@ void GameClient::update(sf::Time eTime)
 void GameClient::renderUpdate(sf::Time eTime)
 {
     C_Unit* unit = m_entityManager.units.atUniqueId(m_entityManager.controlledEntityUniqueId);
-
-#ifdef MANDARINA_DEBUG
-    if (m_freeView) {
-        Vector2 cameraPos = m_context.view->getCenter();
-        PlayerInput_applyInput(m_cameraInput, cameraPos, 500.f, eTime);
-        m_context.view->setCenter(cameraPos);
-
-    } else {
-#endif
-    
-    Vector2 pos;
-    if (unit) {
-        pos = unit->pos;
-    } else {
-        pos = m_latestControlledPos;
-    }
-
-    //@WIP: Center camera around controlled character (or last position where it was)
-    //Don't move the camera outside of the map
-    //Do it smoothly (like nuclear throne does)
-    //interpolate camera between old positions
-
-    Vector2 viewSize = m_context.view->getSize();
-
-    //don't let the camera move outside the map
-    pos.x = Helper_clamp(pos.x, viewSize.x/2.f, (float) m_tileMapRenderer.getTotalSize().x - viewSize.x/2.f);
-    pos.y = Helper_clamp(pos.y, viewSize.y/2.f, (float) m_tileMapRenderer.getTotalSize().y - viewSize.y/2.f);
-
-    m_context.view->setCenter(pos);
-
-#ifdef MANDARINA_DEBUG
-    }
-#endif
 
     if (std::next(m_interSnapshot_it, m_requiredSnapshotsToRender) != m_snapshots.end()) {
         m_interElapsed += eTime;
@@ -292,23 +264,29 @@ void GameClient::renderUpdate(sf::Time eTime)
                 }
 
                 unit->pos = Helper_lerpVec2(oldPos, m_inputSnapshots.back().endPosition, 
-                                            m_controlledEntityInterTimer.asSeconds(), m_inputRate.asSeconds());
-
-                m_latestControlledPos = unit->pos;                                            
+                                            m_controlledEntityInterTimer.asSeconds(), m_inputRate.asSeconds());                      
             }
 
-            Vector2 mousePos = static_cast<Vector2>(sf::Mouse::getPosition(*m_context.window));
-            Vector2 viewPos = m_context.view->getCenter() - m_context.view->getSize()/2.f;
-
-            //transform the mouse position to world coordinates
-            //(this calculation transform window coordinates to world coordinates)
-            mousePos *= m_currentZoom;
-            mousePos += viewPos;
+            Vector2i mousePixel = sf::Mouse::getPosition(*m_context.window);
+            Vector2 mousePos = m_camera.mapPixelToCoords(mousePixel);
 
             PlayerInput_updateAimAngle(m_currentInput, unit->pos, mousePos);
             unit->aimAngle = m_currentInput.aimAngle;
         }
     }
+
+    //follow the unit with the camera
+    if (unit) {
+        Vector2 pos = unit->pos;
+
+        float speed = (float) unit->movementSpeed;
+        if (Helper_vec2length(m_smoothUnitPos - pos) > m_smoothUnitRadius) {
+            m_smoothUnitPos = pos;
+            m_camera.snapSmooth(pos, sf::seconds(m_smoothUnitRadius/speed));
+        }
+    }
+
+    m_camera.renderUpdate(eTime);
 }
 
 void GameClient::setupNextInterpolation()
@@ -335,37 +313,26 @@ void GameClient::handleInput(const sf::Event& event, bool focused)
             m_entityManager.renderingDebug = !m_entityManager.renderingDebug;
         }
 
-        //free view
+        //check camera free view
         if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F2) {
-            m_freeView = !m_freeView;
+            m_camera.changeState();
 
-            //clear the previously used input
-            if (m_freeView) {
+            if (m_camera.isFreeView()) {
                 PlayerInput_clearKeys(m_currentInput);
-            } else {
-                PlayerInput_clearKeys(m_cameraInput);
-
-                //reset the zoom
-                m_context.view->zoom(m_initialZoom/m_currentZoom);
-                m_currentZoom = m_initialZoom;
             }
         }
 
-        if (m_freeView) {
-            //zoom
-            if (event.type == sf::Event::MouseWheelScrolled) {
-                float zoom = event.mouseWheelScroll.delta == -1.f ? 2.f : 1/2.f;
-                m_currentZoom *= zoom;
-                m_context.view->zoom(zoom);
-            }      
-        }
+        if (m_camera.isFreeView()) {
+            m_camera.handleInput(event);
+
+        } else {
 #endif
 
-        if (m_freeView) {
-            PlayerInput_handleKeyboardInput(m_cameraInput, event);
-        } else {
-            PlayerInput_handleKeyboardInput(m_currentInput, event);
+        PlayerInput_handleKeyboardInput(m_currentInput, event);
+
+#ifdef MANDARINA_DEBUG
         }
+#endif
 
     } else {
         PlayerInput_clearKeys(m_currentInput);
@@ -570,11 +537,25 @@ void GameClient::handleCommand(u8 command, CRCPacket& packet)
 
             m_tileMap.loadFromFile(MAPS_PATH + filename + "." + MAP_FILENAME_EXT);
             m_tileMapRenderer.generateLayers();
+            Vector2u totalSize = m_tileMapRenderer.getTotalSize();
 
-            m_canvas.create(m_tileMapRenderer.getTotalSize().x, m_tileMapRenderer.getTotalSize().y);
+            m_canvas.create(totalSize.x, totalSize.y);
             m_canvasCreated = true;
 
+            m_camera.setMapSize(totalSize);
+
+            //initially the camera will be looking at the center of the map
+            m_camera.snapInstant((Vector2) totalSize/2.f);
+
             packet >> m_entityManager.controlledEntityUniqueId;
+
+            if (m_entityManager.controlledEntityUniqueId != 0) {
+                Vector2 initialPos;
+                packet >> initialPos.x >> initialPos.y;
+                
+                //then we move the camera smoothly towards the controlled unit
+                m_camera.snapSmooth(initialPos, sf::seconds(1.5f), true);
+            }
 
             break;
         }

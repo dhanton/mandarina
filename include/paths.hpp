@@ -9,8 +9,11 @@ const std::string TEXTURES_PATH = DATA_PATH + "textures/";
 const std::string JSON_PATH = DATA_PATH + "json/";
 const std::string MAPS_PATH = DATA_PATH + "maps/";
 
-#ifdef MANDARINA_DEBUG
+// #ifdef MANDARINA_DEBUG
+
     const std::string MAP_FILENAME_EXT =  "png";
-#else
-    const std::string MAP_FILENAME_EXT =  "map";
-#endif
+
+// #else
+//Is it possible to load png with a different extension name in SFML?
+//     const std::string MAP_FILENAME_EXT =  "map";
+// #endif
