@@ -5,6 +5,8 @@
 #include <SFML/System/Vector2.hpp>
 
 using Vector2 = sf::Vector2f;
+using Vector2i = sf::Vector2i;
+using Vector2u = sf::Vector2u;
 
 using u8 = uint8_t;
 using s8 = int8_t;

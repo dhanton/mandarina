@@ -120,6 +120,8 @@ GameServer::GameServer(const Context& context, int playersNeeded):
     m_maxSnapshotRate = m_updateRate;
     m_minSnapshotRate = sf::seconds(1.f/10.f);
 
+    m_tileMapFilename = "test_small";
+
     /////////////////////////////////////////////////////////////////////////////////////////////
 
     //Resize this vector to avoid dynamically adding elements
@@ -128,11 +130,13 @@ GameServer::GameServer(const Context& context, int playersNeeded):
 
     m_entityManager.setCollisionManager(&m_collisionManager);
     m_entityManager.allocateAll();
+
+    m_tileMap.loadFromFile(MAPS_PATH + m_tileMapFilename + "." + MAP_FILENAME_EXT);
     
     //@DELETE (COLLISION TESTING)
     m_entityManager.createUnit(UNIT_RedDemon, Vector2(100.f, 300.f), 0);
-    for (int i = 0; i < 19; ++i) {
-        m_entityManager.createUnit(UNIT_RedDemon, Vector2(rand() % 400 + 200, rand() % 400 + 200.f), 0);
+    for (int i = 0; i < 219; ++i) {
+        m_entityManager.createUnit(UNIT_RedDemon, Vector2(rand() % 1900 + 200, rand() % 1900 + 200.f), 0);
     }
 
     if (!context.local) {
@@ -445,17 +449,23 @@ void GameServer::onConnectionCompleted(HSteamNetConnection connectionId)
     int index = getIndexByConnectionId(connectionId);
 
     if (index != -1) {
-        //@TODO: Create based on game mode settings (position, teamId) and hero selection (class type)
-
         m_clients[index].snapshotRate = m_snapshotRate;
         m_clients[index].inputRate = m_defaultInputRate;
 
+        CRCPacket outPacket;
+        outPacket << (u8) ClientCommand::InitialConditions << m_tileMapFilename;
+
+        //@TODO: Create unit based on game mode settings (position, teamId) and hero selection (class type)
         int uniqueId = m_entityManager.createUnit(UNIT_RedDemon, Vector2(100.f, 100.f), m_clients[index].teamId);
 
         if (uniqueId != -1) {
             m_clients[index].controlledEntityUniqueId = uniqueId;
+            outPacket << m_clients[index].controlledEntityUniqueId;
+        } else {
+            outPacket << (u32) 0;
         }
 
+        sendPacket(outPacket, connectionId, true);
         printMessage("Connection completed with client %d", m_clients[index].clientId);
     }
 }

@@ -8,6 +8,18 @@
 namespace TextureId 
 {
     enum _TextureId {
-        RED_DEMON
+        TEST_TILESET,
+
+        //textures used by units
+        #define LoadUnit(unit_name, texture_id, json_filename, weapon_id) \
+            texture_id,
+        #include "units.inc"
+        #undef LoadUnit
+
+        //textures used by weapons
+        #define LoadWeapon(weapon_name, callback_name, json_file) \
+            weapon_name,
+        #include "weapons.inc"
+        #undef LoadWeapon
     };
 }

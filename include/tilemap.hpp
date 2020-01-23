@@ -1,41 +1,36 @@
 #pragma once
 
-//WORK IN PROGRESS
+#include <SFML/Graphics/Image.hpp>
+#include <vector>
+#include "defines.hpp"
 
 enum TileType {
-    NONE,
-    BLOCK,
-    DESTRUCTABLE_BLOCK,
-    BUSH,
+    TILE_NONE,
+    TILE_BLOCK,
+    TILE_DESTRUCTABLE_BLOCK,
+    TILE_BUSH,
 
     TILE_MAX_TYPES
 };
 
-enum LayerType {
-    GROUND,
-    WALL,
-    SIDES,
-    CEILING,
+#define DEFAULT_TILE_SIZE 16
 
-    LAYER_NUM
-};
-
-class TileMap 
+class TileMap
 {
 public:
-    TileMap();
+    TileMap(size_t tileSize = DEFAULT_TILE_SIZE);
+
+    void loadFromFile(const std::string& file);
+
+    TileType getTile(size_t i, size_t j) const;
+
+    Vector2u getSize() const;
+    size_t getTileSize() const;
 
 private:
+    Vector2u m_size;
+    size_t m_tileSize;
 
-    //array of layer_num
-    //each element contains and array of u16 indicating position in texture
-
-    //also array of tiletype
-
-    //loadMapFromFile => loads from png file
-    //generateLayers  => generates layers from that png file
-    //renderLayer(layerType) => renders specific layer (called from client)
-    //at(i, j) => returns TileType in that position
-    //getSize() => returns total size of map
-    //getTileSize() => returns size of each tile
+    //we use u8 to keep it tight in memory
+    std::vector<std::vector<u8>> m_tiles;
 };

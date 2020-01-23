@@ -2,12 +2,15 @@
 
 #include <steam/steamnetworkingsockets.h>
 #include <SFML/System/Time.hpp>
+#include <SFML/Graphics/RenderTexture.hpp>
 #include <list>
 
+#include "paths.hpp"
 #include "net_peer.hpp"
 #include "context.hpp"
 #include "client_entity_manager.hpp"
 #include "player_input.hpp"
+#include "tilemap_renderer.hpp"
 
 class GameClient;
 
@@ -47,6 +50,7 @@ public:
 
     void receiveLoop();
     void update(sf::Time eTime);
+
     void renderUpdate(sf::Time eTime);
 
     void setupNextInterpolation();
@@ -74,6 +78,9 @@ private:
     bool m_connected;
     sf::Time m_infoTimer;
 
+    sf::RenderTexture m_canvas;
+    bool m_canvasCreated;
+
     sf::Time m_updateRate;
     sf::Time m_inputRate;
 
@@ -94,4 +101,13 @@ private:
 
     //timer for the interpolation of controlled entity
     sf::Time m_controlledEntityInterTimer;
+
+    TileMapRenderer m_tileMapRenderer;
+    TileMap m_tileMap;
+
+    bool m_freeView;
+    float m_currentZoom;
+    float m_initialZoom;
+    PlayerInput m_cameraInput;
+    Vector2 m_latestControlledPos;
 };

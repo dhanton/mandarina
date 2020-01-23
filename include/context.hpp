@@ -1,12 +1,14 @@
 #pragma once
 
+#include <SFML/Graphics/View.hpp>
+#include <SFML/Graphics/RenderTarget.hpp>
 #include "res_loader.hpp"
 #include "json_parser.hpp"
 
 struct Context {
-    // sf::RenderTarget* renderTarget = nullptr;
-    sf::Window* window = nullptr; //Not the same as above if we're using a RenderTexture
-    // sf::View* view = nullptr;
+    sf::RenderTarget* renderTarget = nullptr;
+    sf::Window* window = nullptr;
+    sf::View* view = nullptr;
 
     bool SERVER = false;
     bool CLIENT = false;

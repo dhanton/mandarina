@@ -58,15 +58,22 @@ GameClient::GameClient(const Context& context, const SteamNetworkingIPAddr& endp
     m_gameClientCallbacks(this),
     InContext(context),
     NetPeer(&m_gameClientCallbacks, false),
-    m_entityManager(context)
+    m_entityManager(context),
+    m_tileMapRenderer(context, &m_tileMap)
 {
     C_loadUnitsFromJson(context.jsonParser);
+
+    m_context.renderTarget = &m_canvas;
+    m_canvasCreated = false;
 
     m_entityManager.allocateAll();
     m_interSnapshot_it = m_snapshots.begin();
     m_requiredSnapshotsToRender = 3;
 
     m_currentInput.id = 1;
+    m_freeView = false;
+    m_initialZoom = 0.8f;
+    m_currentZoom = m_initialZoom;
 
     ////////////////////// THIINGS TO LOAD FROM JSON FILE ////////////////////////
     m_updateRate = sf::seconds(1.f/30.f);
@@ -98,9 +105,13 @@ GameClient::~GameClient()
 
 void GameClient::mainLoop(bool& running)
 {
-    sf::RenderWindow window{{960, 640}, "Mandarina Prototype", sf::Style::Titlebar | sf::Style::Close};
+    sf::RenderWindow window{{960, 640}, "Mandarina Prototype", sf::Style::Fullscreen};
+    // sf::RenderWindow window{{960, 640}, "Mandarina Prototype", sf::Style::Titlebar | sf::Style::Close};
+    sf::View view = window.getDefaultView();
+    view.zoom(m_initialZoom);
 
     m_context.window = &window;
+    m_context.view = &view;
 
     sf::Clock clock;
 
@@ -154,7 +165,23 @@ void GameClient::mainLoop(bool& running)
         renderUpdate(eTime);
 
         window.clear();
-        window.draw(m_entityManager);
+        window.setView(view);
+
+        if (m_canvasCreated) {
+            //draw everything to the canvas
+            m_canvas.clear();
+
+            m_tileMapRenderer.renderBeforeEntities(m_canvas);
+            m_canvas.draw(m_entityManager);
+            m_tileMapRenderer.renderAfterEntities(m_canvas);
+
+            m_canvas.display();
+
+            //draw the canvas to the window
+            sf::Sprite sprite(m_canvas.getTexture());
+            window.draw(sprite);
+        }
+
         window.display();
     }
 }
@@ -192,6 +219,41 @@ void GameClient::update(sf::Time eTime)
 
 void GameClient::renderUpdate(sf::Time eTime)
 {
+    C_Unit* unit = m_entityManager.units.atUniqueId(m_entityManager.controlledEntityUniqueId);
+
+#ifdef MANDARINA_DEBUG
+    if (m_freeView) {
+        Vector2 cameraPos = m_context.view->getCenter();
+        PlayerInput_applyInput(m_cameraInput, cameraPos, 500.f, eTime);
+        m_context.view->setCenter(cameraPos);
+
+    } else {
+#endif
+    
+    Vector2 pos;
+    if (unit) {
+        pos = unit->pos;
+    } else {
+        pos = m_latestControlledPos;
+    }
+
+    //@WIP: Center camera around controlled character (or last position where it was)
+    //Don't move the camera outside of the map
+    //Do it smoothly (like nuclear throne does)
+    //interpolate camera between old positions
+
+    Vector2 viewSize = m_context.view->getSize();
+
+    //don't let the camera move outside the map
+    pos.x = Helper_clamp(pos.x, viewSize.x/2.f, (float) m_tileMapRenderer.getTotalSize().x - viewSize.x/2.f);
+    pos.y = Helper_clamp(pos.y, viewSize.y/2.f, (float) m_tileMapRenderer.getTotalSize().y - viewSize.y/2.f);
+
+    m_context.view->setCenter(pos);
+
+#ifdef MANDARINA_DEBUG
+    }
+#endif
+
     if (std::next(m_interSnapshot_it, m_requiredSnapshotsToRender) != m_snapshots.end()) {
         m_interElapsed += eTime;
 
@@ -214,8 +276,6 @@ void GameClient::renderUpdate(sf::Time eTime)
                                              m_interElapsed.asSeconds(), totalTime.asSeconds());
 
         //interpolate the controlled entity between the latest two inputs
-        C_Unit* unit = m_entityManager.units.atUniqueId(m_entityManager.controlledEntityUniqueId);
-
         if (unit) {
             if (!m_inputSnapshots.empty()) {
                 m_controlledEntityInterTimer += eTime;
@@ -233,9 +293,18 @@ void GameClient::renderUpdate(sf::Time eTime)
 
                 unit->pos = Helper_lerpVec2(oldPos, m_inputSnapshots.back().endPosition, 
                                             m_controlledEntityInterTimer.asSeconds(), m_inputRate.asSeconds());
+
+                m_latestControlledPos = unit->pos;                                            
             }
 
             Vector2 mousePos = static_cast<Vector2>(sf::Mouse::getPosition(*m_context.window));
+            Vector2 viewPos = m_context.view->getCenter() - m_context.view->getSize()/2.f;
+
+            //transform the mouse position to world coordinates
+            //(this calculation transform window coordinates to world coordinates)
+            mousePos *= m_currentZoom;
+            mousePos += viewPos;
+
             PlayerInput_updateAimAngle(m_currentInput, unit->pos, mousePos);
             unit->aimAngle = m_currentInput.aimAngle;
         }
@@ -260,11 +329,44 @@ void GameClient::handleInput(const sf::Event& event, bool focused)
     if (!m_connected) return;
 
     if (focused) {
-        PlayerInput_handleKeyboardInput(m_currentInput, event);
-
-        if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F5) {
+#ifdef MANDARINA_DEBUG
+        //render collision shapes
+        if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F1) {
             m_entityManager.renderingDebug = !m_entityManager.renderingDebug;
         }
+
+        //free view
+        if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F2) {
+            m_freeView = !m_freeView;
+
+            //clear the previously used input
+            if (m_freeView) {
+                PlayerInput_clearKeys(m_currentInput);
+            } else {
+                PlayerInput_clearKeys(m_cameraInput);
+
+                //reset the zoom
+                m_context.view->zoom(m_initialZoom/m_currentZoom);
+                m_currentZoom = m_initialZoom;
+            }
+        }
+
+        if (m_freeView) {
+            //zoom
+            if (event.type == sf::Event::MouseWheelScrolled) {
+                float zoom = event.mouseWheelScroll.delta == -1.f ? 2.f : 1/2.f;
+                m_currentZoom *= zoom;
+                m_context.view->zoom(zoom);
+            }      
+        }
+#endif
+
+        if (m_freeView) {
+            PlayerInput_handleKeyboardInput(m_cameraInput, event);
+        } else {
+            PlayerInput_handleKeyboardInput(m_currentInput, event);
+        }
+
     } else {
         PlayerInput_clearKeys(m_currentInput);
     }
@@ -460,6 +562,22 @@ void GameClient::handleCommand(u8 command, CRCPacket& packet)
 
             break;
         }
+
+        case ClientCommand::InitialConditions:
+        {
+            std::string filename;
+            packet >> filename;
+
+            m_tileMap.loadFromFile(MAPS_PATH + filename + "." + MAP_FILENAME_EXT);
+            m_tileMapRenderer.generateLayers();
+
+            m_canvas.create(m_tileMapRenderer.getTotalSize().x, m_tileMapRenderer.getTotalSize().y);
+            m_canvasCreated = true;
+
+            packet >> m_entityManager.controlledEntityUniqueId;
+
+            break;
+        }
     }
 }
 
@@ -493,3 +611,4 @@ void GameClient::writeLatestSnapshotId(CRCPacket& packet)
     packet << (u8) ServerCommand::LatestSnapshotId;
     packet << m_snapshots.back().id;
 }
+

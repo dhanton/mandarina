@@ -180,7 +180,7 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
             const WeaponData& weaponData = g_weaponData[units[i].weaponId];
             sf::Sprite& weaponSprite = spriteNodes.back().sprite;
 
-            weaponSprite.setTexture(m_context.textures->getResource(units[i].weaponId));
+            weaponSprite.setTexture(m_context.textures->getResource(weaponData.textureId));
             weaponSprite.setScale(weaponData.scale, weaponData.scale);
             weaponSprite.setOrigin(weaponSprite.getLocalBounds().width/2.f, weaponSprite.getLocalBounds().height/2.f);
             weaponSprite.setPosition(units[i].pos);

@@ -3,6 +3,7 @@
 
 #include <SFML/Graphics.hpp>
 
+#include "paths.hpp"
 #include "game_server.hpp"
 #include "game_client.hpp"
 #include "res_loader.hpp"
@@ -15,9 +16,6 @@ enum class ExecMode {
     Server,
     LocalConnection 
 };
-
-const std::string DATA_PATH = "../../data/";
-const std::string JSON_PATH = "../json/";
 
 int main(int argc, char* argv[])
 {
@@ -34,7 +32,7 @@ int main(int argc, char* argv[])
     HSteamNetConnection localCon2 = k_HSteamNetConnection_Invalid;
 
     //NETWORK CONDITIONS TESTING
-    // SteamNetworkingUtils()->SetGlobalConfigValueInt32(k_ESteamNetworkingConfig_FakePacketLag_Recv, 30);
+    SteamNetworkingUtils()->SetGlobalConfigValueInt32(k_ESteamNetworkingConfig_FakePacketLag_Recv, 40);
     // SteamNetworkingUtils()->SetGlobalConfigValueInt32(k_ESteamNetworkingConfig_FakePacketLoss_Recv, 10);
     // SteamNetworkingUtils()->SetGlobalConfigValueInt32(k_ESteamNetworkingConfig_FakePacketReorder_Recv, 10);
 
@@ -66,8 +64,10 @@ int main(int argc, char* argv[])
     //only load textures in client
     if (execMode == ExecMode::Client || execMode == ExecMode::LocalConnection) {
         textures = std::unique_ptr<TextureLoader>(new TextureLoader());
-        textures->loadResource(DATA_PATH + "diablo.png", TextureId::RED_DEMON);
-        textures->loadResource(DATA_PATH + "devils_bow.png", WEAPON_DEVILS_BOW);
+        
+        textures->loadResource(TEXTURES_PATH + "test_tileset.png", TextureId::TEST_TILESET);
+        textures->loadResource(TEXTURES_PATH + "diablo.png", TextureId::RED_DEMON);
+        textures->loadResource(TEXTURES_PATH + "devils_bow.png", TextureId::DEVILS_BOW);
 
         context.textures = textures.get();
     }

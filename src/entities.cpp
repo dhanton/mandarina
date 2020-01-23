@@ -14,9 +14,11 @@
 
 WeaponData g_weaponData[WEAPON_MAX_TYPES];
 
-void _loadWeapon(JsonParser* jsonParser, WeaponData& weaponData, const char* filename)
+void _loadWeapon(JsonParser* jsonParser, WeaponData& weaponData, const char* filename, u16 textureId)
 {
     auto* doc = jsonParser->getDocument(filename);
+
+    weaponData.textureId = textureId;
 
     if (doc->HasMember("scale")) {
         weaponData.scale = (*doc)["scale"].GetFloat();
@@ -34,7 +36,7 @@ void _loadWeapon(JsonParser* jsonParser, WeaponData& weaponData, const char* fil
 void initializeWeaponData(JsonParser* jsonParser)
 {
     #define LoadWeapon(weapon_name, callback_func, json_filename) \
-        _loadWeapon(jsonParser, g_weaponData[WEAPON_##weapon_name], json_filename); \
+        _loadWeapon(jsonParser, g_weaponData[WEAPON_##weapon_name], json_filename, TextureId::weapon_name); \
         g_weaponData[WEAPON_##weapon_name].callback = &WeaponCallback_##callback_func;
     #include "weapons.inc"
     #undef LoadWeapon
@@ -438,15 +440,15 @@ void Unit_update(Unit& unit, sf::Time eTime, const ManagersContext& context)
     //@DELETE
     //we're adding 20 units before we add the player (TESTING)
     //so we move all units but the player randomly
-    if (unit.uniqueId < 21) {
+    if (unit.uniqueId < 210) {
         if (unit.vel == Vector2()) {
             unit.vel = Vector2(rand() % 200 - 100.f, rand() % 200 - 100.f);
         }
 
         if (unit.pos.x < 0) unit.vel.x = -unit.vel.x;
         if (unit.pos.y < 0) unit.vel.y = -unit.vel.y;
-        if (unit.pos.x > 960) unit.vel.x = -unit.vel.x;
-        if (unit.pos.y > 640) unit.vel.y = -unit.vel.y;
+        if (unit.pos.x > 1900) unit.vel.x = -unit.vel.x;
+        if (unit.pos.y > 1900) unit.vel.y = -unit.vel.y;
     }
 
     newPos += unit.vel * eTime.asSeconds();

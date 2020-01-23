@@ -27,6 +27,7 @@ struct WeaponData {
     WeaponCallback callback;
     float scale;
     float angleOffset;
+    u16 textureId;
 };
 
 enum WeaponType {

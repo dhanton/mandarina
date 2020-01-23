@@ -4,12 +4,15 @@
 #include <SFML/System/Time.hpp>
 #include <unordered_map>
 
+#include "paths.hpp"
 #include "context.hpp"
 #include "bucket.hpp"
 #include "net_peer.hpp"
 
 #include "server_entity_manager.hpp"
 #include "collision_manager.hpp"
+
+#include "tilemap.hpp"
 
 class GameServer;
 
@@ -109,6 +112,9 @@ private:
     u32 m_lastSnapshotId;
 
     CollisionManager m_collisionManager;
+
+    std::string m_tileMapFilename;
+    TileMap m_tileMap;
 
     sf::Time m_worldTime;
 

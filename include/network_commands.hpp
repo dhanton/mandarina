@@ -1,7 +1,8 @@
 //Commands that can be received by the client
 enum class ClientCommand {
     Null,
-    Snapshot
+    Snapshot,
+    InitialConditions
 };
 
 //Commands that can be received by the server
