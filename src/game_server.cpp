@@ -129,6 +129,7 @@ GameServer::GameServer(const Context& context, int playersNeeded):
     m_clients.resize(INITIAL_CLIENTS_SIZE);
 
     m_entityManager.setCollisionManager(&m_collisionManager);
+    m_entityManager.setTileMap(&m_tileMap);
     m_entityManager.allocateAll();
 
     m_tileMap.loadFromFile(MAPS_PATH + m_tileMapFilename + "." + MAP_FILENAME_EXT);
@@ -136,7 +137,7 @@ GameServer::GameServer(const Context& context, int playersNeeded):
     //@DELETE (COLLISION TESTING)
     m_entityManager.createUnit(UNIT_RedDemon, Vector2(100.f, 300.f), 0);
     for (int i = 0; i < 219; ++i) {
-        m_entityManager.createUnit(UNIT_RedDemon, Vector2(rand() % 1900 + 200, rand() % 1900 + 200.f), 0);
+        m_entityManager.createUnit(UNIT_RedDemon, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 0);
     }
 
     if (!context.local) {
@@ -409,7 +410,7 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
 
             //only apply inputs that haven't been applied yet
             if (unit && playerInput.id > m_clients[index].latestInputId) {
-                Unit_applyInput(*unit, playerInput, ManagersContext(&m_entityManager, &m_collisionManager));
+                Unit_applyInput(*unit, playerInput, ManagersContext(&m_entityManager, &m_collisionManager, &m_tileMap));
 
                 m_clients[index].latestInputId = playerInput.id;
             }

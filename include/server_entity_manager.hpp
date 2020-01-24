@@ -24,6 +24,7 @@ public:
     void allocateAll();
 
     void setCollisionManager(CollisionManager* collisionManager);
+    void setTileMap(TileMap* tileMap);
 
 public:
     Bucket<Unit> units;
@@ -32,6 +33,7 @@ private:
     inline u32 _getNewUniqueId();
 
     CollisionManager* m_collisionManager;
+    TileMap* m_tileMap;
 
     u32 m_lastUniqueId;
 };

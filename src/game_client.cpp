@@ -282,7 +282,9 @@ void GameClient::renderUpdate(sf::Time eTime)
         float speed = (float) unit->movementSpeed;
         if (Helper_vec2length(m_smoothUnitPos - pos) > m_smoothUnitRadius) {
             m_smoothUnitPos = pos;
-            m_camera.snapSmooth(pos, sf::seconds(m_smoothUnitRadius/speed));
+
+            //anything <= smoothRadius/speed causes jittering
+            m_camera.snapSmooth(pos, sf::seconds(m_smoothUnitRadius/speed * 1.5f));
         }
     }
 
@@ -364,7 +366,7 @@ void GameClient::saveCurrentInput()
 
     //we dont modify the unit since we intepolate its position
     //between two inputs (result is stored in unitPos)
-    C_Unit_applyInput(*unit, unitPos, m_currentInput, C_ManagersContext(manager), m_inputRate);
+    C_Unit_applyInput(*unit, unitPos, m_currentInput, C_ManagersContext(manager, &m_tileMap), m_inputRate);
 
     //send this input
     {
@@ -440,10 +442,10 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
             Vector2 dirVec = newPos - it->endPosition;
             float distance = Helper_vec2length(dirVec);
 
-            //@TODO: These values (0.5, 10, 250) have to be tinkered to make it look as smooth as possible
+            //@TODO: These values (0.5, 10, 200) have to be tinkered to make it look as smooth as possible
             //The method used could also change if this one's not good enough
-            if (distance < 250.f) {
-                float offset = std::max(0.5, Helper_lerp(0.0, 10.0, distance, 250.0));
+            if (distance < 200.f) {
+                float offset = std::max(0.5, Helper_lerp(0.0, 10.0, distance, 200.0));
                 it->endPosition += Helper_vec2unitary(dirVec) * std::min(offset, distance);
 
             } else {
@@ -537,7 +539,8 @@ void GameClient::handleCommand(u8 command, CRCPacket& packet)
 
             m_tileMap.loadFromFile(MAPS_PATH + filename + "." + MAP_FILENAME_EXT);
             m_tileMapRenderer.generateLayers();
-            Vector2u totalSize = m_tileMapRenderer.getTotalSize();
+
+            Vector2u totalSize = m_tileMap.getWorldSize();
 
             m_canvas.create(totalSize.x, totalSize.y);
             m_canvasCreated = true;

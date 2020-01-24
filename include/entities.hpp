@@ -134,7 +134,7 @@ void C_Unit_init(C_Unit& unit, UnitType type);
 void Unit_packData(const Unit& unit, const Unit* prevUnit, CRCPacket& outPacket);
 void C_Unit_loadFromData(C_Unit& unit, CRCPacket& inPacket);
 
-void Unit_moveColliding(Unit& unit, const Vector2& newPos, const ManagersContext& context, bool force = false);
+void Unit_moveColliding(Unit& unit, Vector2 newPos, const ManagersContext& context, bool force = false);
 
 void Unit_update(Unit& unit, sf::Time eTime, const ManagersContext& context);
 

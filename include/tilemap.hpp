@@ -3,34 +3,50 @@
 #include <SFML/Graphics/Image.hpp>
 #include <vector>
 #include "defines.hpp"
+#include "bounding_body.hpp"
 
 enum TileType {
-    TILE_NONE,
-    TILE_BLOCK,
-    TILE_DESTRUCTABLE_BLOCK,
-    TILE_BUSH,
+    TILE_NONE  = 0b0001,
+    TILE_BLOCK = 0b0010,
+    TILE_WALL  = 0b0100,
+    TILE_BUSH  = 0b1000,
 
     TILE_MAX_TYPES
 };
 
 #define DEFAULT_TILE_SIZE 16
+#define TILE_SCALE 4
 
 class TileMap
 {
 public:
-    TileMap(size_t tileSize = DEFAULT_TILE_SIZE);
+    TileMap(u16 tileSize = DEFAULT_TILE_SIZE, u16 tileScale = TILE_SCALE);
 
     void loadFromFile(const std::string& file);
 
-    TileType getTile(size_t i, size_t j) const;
+    bool isColliding(u16 tileFlags, const Circlef& circle) const;
+
+    //@WIP
+    bool isContained(u16 tileFlags, const Circlef& circle) const;
+
+    bool getCollidingTile(u16 tileFlags, const Circlef& circle, sf::FloatRect& tileRect) const;
+
+    TileType getTile(u16 i, u16 j) const;
 
     Vector2u getSize() const;
-    size_t getTileSize() const;
+    u16 getTileSize() const;
+    u16 getTileScale() const;
+
+    //total size of the map in pixels
+    Vector2u getWorldSize() const;
 
 private:
-    Vector2u m_size;
-    size_t m_tileSize;
+    bool _colliding_impl(u16 tileFlags, const Circlef& circle, bool getTile, sf::FloatRect* rect) const;
 
-    //we use u8 to keep it tight in memory
-    std::vector<std::vector<u8>> m_tiles;
+    Vector2u m_size;
+    u16 m_tileSize;
+    u16 m_tileScale;
+
+    //we use u16 to keep it tight in memory
+    std::vector<std::vector<u16>> m_tiles;
 };

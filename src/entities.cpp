@@ -12,6 +12,8 @@
 #include "client_entity_manager.hpp"
 #include "quadtree.hpp"
 
+#include "tilemap.hpp"
+
 WeaponData g_weaponData[WEAPON_MAX_TYPES];
 
 void _loadWeapon(JsonParser* jsonParser, WeaponData& weaponData, const char* filename, u16 textureId)
@@ -373,6 +375,36 @@ Vector2 _moveColliding_impl(const Vector2& oldPos, const Vector2& newPos, float 
     return fixDir * targetDistance;
 }
 
+Vector2 _moveCollidingMap_impl(const Vector2& oldPos, Vector2 newPos, float collisionRadius, TileMap* map)
+{
+    const Vector2 posMovingX = {newPos.x, oldPos.y};
+    const Vector2 posMovingY = {oldPos.x, newPos.y};
+
+    sf::FloatRect collidingTile;
+
+    if (map->getCollidingTile(TILE_BLOCK | TILE_WALL, Circlef(posMovingX, collisionRadius), collidingTile)) {
+        //we assume if there's collision there was movement 
+
+        if (oldPos.x > newPos.x) {
+            newPos.x = collidingTile.left + collidingTile.width + collisionRadius;
+
+        } else if (oldPos.x < newPos.x) {
+            newPos.x = collidingTile.left - collisionRadius;
+        }
+    }
+
+    if (map->getCollidingTile(TILE_BLOCK | TILE_WALL, Circlef(posMovingY, collisionRadius), collidingTile)) {
+        if (oldPos.y > newPos.y) {
+            newPos.y = collidingTile.top + collidingTile.height + collisionRadius;
+
+        } else if (oldPos.y < newPos.y) {
+            newPos.y = collidingTile.top - collisionRadius;
+        }
+    }
+
+    return newPos;
+}
+
 //has to work for both Unit and C_Unit (kind of ugly, but we need to access status.solid for both unit types)
 template<typename UnitType>
 //checks two units can collide (not the same unit, both solid, same flying height, etc)
@@ -383,13 +415,12 @@ bool _Unit_canCollide(const UnitType& unit1, const UnitType& unit2)
 }
 
 //move while checking collision
-void Unit_moveColliding(Unit& unit, const Vector2& newPos, const ManagersContext& context, bool force)
+void Unit_moveColliding(Unit& unit, Vector2 newPos, const ManagersContext& context, bool force)
 {
     if (!force && newPos == unit.pos) return;
-
+    
     //since the collision we need is very simple, 
     //we'll only perform it against the closest unit
-
     const Unit* closestUnit = nullptr;
     float closestDistance = 0.f;
 
@@ -420,15 +451,11 @@ void Unit_moveColliding(Unit& unit, const Vector2& newPos, const ManagersContext
         }
 
         if (closestUnit) {
-            unit.pos = newPos + _moveColliding_impl(unit.pos, newPos, unit.collisionRadius, closestUnit);
-
-        } else {
-            unit.pos = newPos;
+            newPos += _moveColliding_impl(unit.pos, newPos, unit.collisionRadius, closestUnit);
         }
-
-    } else {
-        unit.pos = newPos;
     }
+
+    unit.pos = _moveCollidingMap_impl(unit.pos, newPos, unit.collisionRadius, context.tileMap);
 
     context.collisionManager->onUpdateUnit(unit.uniqueId, unit.pos, unit.collisionRadius);
 }
@@ -516,12 +543,12 @@ void Unit_applyInput(Unit& unit, const PlayerInput& input, const ManagersContext
 }
 
 //we don't need to use this function outside this file for now
-void _C_Unit_predictMovement(const C_Unit& unit, Vector2& newPos, const C_ManagersContext& context)
+void _C_Unit_predictMovement(const C_Unit& unit, const Vector2& oldPos, Vector2& newPos, const C_ManagersContext& context)
 {
     //we don't update the circle to mimic how it works in the server
     //where we only use one Query
     const Circlef circle(newPos, unit.collisionRadius);
-
+ 
     const C_Unit* closestUnit = nullptr;
     float closestDistance = 0.f;
 
@@ -543,17 +570,20 @@ void _C_Unit_predictMovement(const C_Unit& unit, Vector2& newPos, const C_Manage
     }
 
     if (closestUnit) {
-        newPos = newPos + _moveColliding_impl(unit.pos, newPos, unit.collisionRadius, closestUnit);
+        newPos += _moveColliding_impl(oldPos, newPos, unit.collisionRadius, closestUnit);
     }
+
+    newPos = _moveCollidingMap_impl(oldPos, newPos, unit.collisionRadius, context.tileMap);
 }
 
 void C_Unit_applyInput(const C_Unit& unit, Vector2& unitPos, PlayerInput& input, const C_ManagersContext& context, sf::Time dt)
 {
     //@TODO: Check flags to see if we can actually move (stunned, rooted, etc)
 
+    Vector2 oldPos = unitPos;
     bool moved = PlayerInput_applyInput(input, unitPos, unit.movementSpeed, dt);
 
     if (moved) {
-        _C_Unit_predictMovement(unit, unitPos, context);
+        _C_Unit_predictMovement(unit, oldPos, unitPos, context);
     }
 }

@@ -1,6 +1,7 @@
 #include "server_entity_manager.hpp"
 
 #include "collision_manager.hpp"
+#include "tilemap.hpp"
 
 EntityManager::EntityManager()
 {
@@ -10,7 +11,7 @@ EntityManager::EntityManager()
 void EntityManager::update(sf::Time eTime)
 {
     for (int i = 0; i < units.firstInvalidIndex(); ++i) {
-        Unit_update(units[i], eTime, ManagersContext(this, m_collisionManager));
+        Unit_update(units[i], eTime, ManagersContext(this, m_collisionManager, m_tileMap));
     }
 }
 
@@ -36,7 +37,7 @@ int EntityManager::createUnit(UnitType type, const Vector2& pos, u8 teamId)
     m_collisionManager->onInsertUnit(uniqueId, pos, unit.collisionRadius);
 
     //we move the unit, forcing it to update its position while checking for collisions
-    Unit_moveColliding(unit, pos, ManagersContext(this, m_collisionManager), true);
+    Unit_moveColliding(unit, pos, ManagersContext(this, m_collisionManager, m_tileMap), true);
 
     return uniqueId;
 }
@@ -76,6 +77,11 @@ void EntityManager::allocateAll()
 void EntityManager::setCollisionManager(CollisionManager* collisionManager)
 {
     m_collisionManager = collisionManager;
+}
+
+void EntityManager::setTileMap(TileMap* tileMap)
+{
+    m_tileMap = tileMap;
 }
 
 inline u32 EntityManager::_getNewUniqueId()

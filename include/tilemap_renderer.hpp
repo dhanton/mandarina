@@ -15,10 +15,10 @@ enum LayerType {
     LAYER_SIDES_LEFT,
     LAYER_SIDES_RIGHT,
 
+    LAYER_CEILING,
+
     MAX_LAYERS
 };
-
-#define TILE_SCALE 4
 
 class TileMapRenderer : public InContext
 {
@@ -31,13 +31,13 @@ public:
     void renderBeforeEntities(sf::RenderTexture& window);
     void renderAfterEntities(sf::RenderTexture& window);
 
-    //size in pixels
-    Vector2u getTotalSize() const;
-
 private:
     Vector2u _getTextureCoords(TileType tile);
-    void _setTileTextureCoords(size_t i, size_t j, LayerType layer, const Vector2u& textCoords);
-    void _setTileAlpha(size_t i, size_t j, LayerType layer, float alpha);
+    void _setTileCoords(u16 i, u16 j, LayerType layer);
+    void _setTileCoordsDivided(u16 i, u16 j, LayerType layer1, LayerType layer2);
+    void _setTileTextureCoords(u16 i, u16 j, LayerType layer, const Vector2u& texCoords);
+    void _setTileTextureCoordsDivided(u16 i, u16 j, LayerType layer1, LayerType layer2, const Vector2u& texCoords);
+    void _setTileAlpha(u16 i, u16 j, LayerType layer, float alpha);
 
     TileMap* m_tileMap;
 
