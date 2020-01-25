@@ -19,7 +19,7 @@ public:
     int createUnit(UnitType type, const Vector2& pos, u8 teamId);
 
     void takeSnapshot(EntityManager* snapshot) const;
-    void packData(const EntityManager* snapshot, CRCPacket& outPacket) const;
+    void packData(const EntityManager* snapshot, u8 teamId, CRCPacket& outPacket) const;
 
     void allocateAll();
 

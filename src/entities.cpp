@@ -60,7 +60,7 @@ bool UnitStatus_equals(const UnitStatus& lhs, const UnitStatus& rhs)
            lhs.illusion == rhs.illusion;
 }
 
-void UnitStatus_packData(const UnitStatus& status, CRCPacket& packet)
+void UnitStatus_packData(const UnitStatus& status, u8 teamId, CRCPacket& packet)
 {
     BitStream stream;
 
@@ -131,6 +131,12 @@ bool _BaseUnit_loadFromJson(JsonParser* jsonParser, UnitType type, const char* f
     unit.weaponId = weaponId;
     unit.collisionRadius = (*doc)["collision_radius"].GetInt();
 
+    if (doc->HasMember("true_sight_radius")) {
+        unit.trueSightRadius = (*doc)["true_sight_radius"].GetInt();
+    } else {
+        unit.trueSightRadius = 170;
+    }
+
     return true;
 }
 
@@ -196,9 +202,9 @@ void C_Unit_init(C_Unit& unit, UnitType type)
     unit = g_initialCUnitData[type];
 }
 
-void Unit_packData(const Unit& unit, const Unit* prevUnit, CRCPacket& outPacket)
+void Unit_packData(const Unit& unit, const Unit* prevUnit, u8 teamId, CRCPacket& outPacket)
 {
-    UnitStatus_packData(unit.status, outPacket);
+    UnitStatus_packData(unit.status, teamId, outPacket);
 
     BitStream mainBits;
     
@@ -231,6 +237,8 @@ void Unit_packData(const Unit& unit, const Unit* prevUnit, CRCPacket& outPacket)
 
     bool collisionRadiusChanged = !prevUnit || unit.collisionRadius != prevUnit->collisionRadius;
     mainBits.pushBit(collisionRadiusChanged);
+
+    mainBits.pushBit(Unit_isForcedRevealedForteam(unit, teamId));
 
     //send the flags
     u8 byte1 = mainBits.popByte();
@@ -304,6 +312,7 @@ void C_Unit_loadFromData(C_Unit& unit, CRCPacket& inPacket)
     bool attacksAvailableChanged = mainBits.popBit();
     bool aimAngleChanged = mainBits.popBit();
     bool collisionRadiusChanged = mainBits.popBit();
+    unit.status.forceRevealed = mainBits.popBit();
 
     if (posXChanged) {
         inPacket >> unit.pos.x;
@@ -469,13 +478,8 @@ void Unit_update(Unit& unit, sf::Time eTime, const ManagersContext& context)
     //so we move all units but the player randomly
     if (unit.uniqueId < 210) {
         if (unit.vel == Vector2()) {
-            unit.vel = Vector2(rand() % 200 - 100.f, rand() % 200 - 100.f);
+            // unit.vel = Vector2(rand() % 200 - 100.f, rand() % 200 - 100.f);
         }
-
-        if (unit.pos.x < 0) unit.vel.x = -unit.vel.x;
-        if (unit.pos.y < 0) unit.vel.y = -unit.vel.y;
-        if (unit.pos.x > 1900) unit.vel.x = -unit.vel.x;
-        if (unit.pos.y > 1900) unit.vel.y = -unit.vel.y;
     }
 
     newPos += unit.vel * eTime.asSeconds();
@@ -485,8 +489,61 @@ void Unit_update(Unit& unit, sf::Time eTime, const ManagersContext& context)
         Unit_moveColliding(unit, newPos, context);
     }
 
+    //reveal of all units inside true sight radius
+    //we reveal units slightly farther away so it looks smooth on the client
+    Circlef trueSightCircle(unit.pos, (float) unit.trueSightRadius + 100.f);
+    auto query = context.collisionManager->getQuadtree()->QueryIntersectsRegion(BoundingBody<float>(trueSightCircle));
+
+    while (!query.EndOfQuery()) {
+        Unit* revealedUnit = context.entityManager->units.atUniqueId(query.GetCurrent()->uniqueId);
+
+        if (revealedUnit) {
+            Unit_revealUnit(*revealedUnit, unit.teamId, false);
+        }
+
+        query.Next();
+    }
+
     //@DELETE
     unit.aimAngle += 100 * eTime.asSeconds();
+}
+
+void Unit_preUpdate(Unit& unit, sf::Time eTime, const ManagersContext& context)
+{
+    unit.visionFlags = 0;
+    unit.forcedVisionFlags = 0;
+}
+
+void Unit_revealUnit(Unit& unit, u8 teamId, bool force)
+{
+    unit.visionFlags |= (1 << teamId);
+
+    //the client will hide revealed units that are not close enough
+    //to make the reveal go smoothly
+    //with this flag we can force the client to reveal the unit
+    //even if it's not close enough
+    if (force) {
+        unit.forcedVisionFlags |= (1 << teamId);
+    }
+}
+
+bool Unit_isRevealedForTeam(const Unit& unit, u8 teamId)
+{
+    return (unit.visionFlags & (1 << teamId));
+}
+
+bool Unit_isForcedRevealedForteam(const Unit& unit, u8 teamId)
+{
+    return (unit.forcedVisionFlags & (1 << teamId));
+}
+
+bool Unit_isVisibleForTeam(const Unit& unit, u8 teamId)
+{
+    if (unit.teamId == teamId || unit.status.invisTime == sf::Time::Zero) {
+        return true;
+    } else {
+        return Unit_isRevealedForTeam(unit, teamId);
+    }
 }
 
 void C_Unit_interpolate(C_Unit& unit, const C_Unit* prevUnit, const C_Unit* nextUnit, double t, double d, bool controlled)
@@ -494,6 +551,7 @@ void C_Unit_interpolate(C_Unit& unit, const C_Unit* prevUnit, const C_Unit* next
     if (prevUnit && nextUnit) {
         Vector2 newPos = unit.pos;
         float newAimAngle = unit.aimAngle;
+        bool locallyHidden = unit.status.locallyHidden; 
 
         //only interpolate position and aimAngle for units we're not controlling
         if (!controlled) {
@@ -508,6 +566,7 @@ void C_Unit_interpolate(C_Unit& unit, const C_Unit* prevUnit, const C_Unit* next
         //apply interpolation (or no copying at all) to special fields
         unit.pos = newPos;
         unit.aimAngle = newAimAngle;
+        unit.status.locallyHidden = locallyHidden;
     }
 
     if (!prevUnit && nextUnit) {

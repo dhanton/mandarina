@@ -49,6 +49,8 @@ public:
     //true if rendering collision shapes and other debug stuff
     bool renderingDebug;
 
+    bool renderingLocallyHidden;
+
 private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const;
 };

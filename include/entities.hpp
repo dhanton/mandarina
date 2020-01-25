@@ -76,6 +76,9 @@ struct C_UnitStatus
     bool rooted = false;
     bool disarmed = false;
     bool invisible = false;
+    bool locallyHidden = true;
+    //@WIP
+    bool forceRevealed = false;
     bool solid = true;
     bool illusion = false;
 };
@@ -83,7 +86,7 @@ struct C_UnitStatus
 //neded for delta encoding
 bool UnitStatus_equal(const UnitStatus& lhs, const UnitStatus& rhs);
 
-void UnitStatus_packData(const UnitStatus& status, CRCPacket& packet);
+void UnitStatus_packData(const UnitStatus& status, u8 teamId, CRCPacket& packet);
 void C_UnitStatus_loadFromData(C_UnitStatus& status, CRCPacket& packet);
 
 struct _BaseEntityData {
@@ -104,6 +107,7 @@ struct _BaseUnitData : _BaseEntityData
     float aimAngle;
     u8 weaponId;
     u8 collisionRadius;
+    u8 trueSightRadius;
 };
 
 struct Unit : _BaseUnitData
@@ -111,6 +115,12 @@ struct Unit : _BaseUnitData
     UnitStatus status;
     Vector2 vel;
     bool dead;
+
+    //stores if the unit is visible for each team (max 64 teams)
+    u64 visionFlags;
+
+    //if the unit is forced to be revealed for a certain team
+    u64 forcedVisionFlags;
 };
 
 struct C_Unit : _BaseUnitData
@@ -131,12 +141,19 @@ void C_loadUnitsFromJson(JsonParser* jsonParser);
 void Unit_init(Unit& unit, UnitType type);
 void C_Unit_init(C_Unit& unit, UnitType type);
 
-void Unit_packData(const Unit& unit, const Unit* prevUnit, CRCPacket& outPacket);
+void Unit_packData(const Unit& unit, const Unit* prevUnit, u8 teamId, CRCPacket& outPacket);
 void C_Unit_loadFromData(C_Unit& unit, CRCPacket& inPacket);
 
 void Unit_moveColliding(Unit& unit, Vector2 newPos, const ManagersContext& context, bool force = false);
 
 void Unit_update(Unit& unit, sf::Time eTime, const ManagersContext& context);
+void Unit_preUpdate(Unit& unit, sf::Time eTime, const ManagersContext& context);
+
+//revals the unit for team specified
+void Unit_revealUnit(Unit& unit, u8 teamId, bool force);
+bool Unit_isRevealedForTeam(const Unit& unit, u8 teamId);
+bool Unit_isForcedRevealedForteam(const Unit& unit, u8 teamId);
+bool Unit_isVisibleForTeam(const Unit& unit, u8 teamId);
 
 void C_Unit_interpolate(C_Unit& unit, const C_Unit* prevUnit, const C_Unit* nextUnit, double t, double d, bool controlled);
 

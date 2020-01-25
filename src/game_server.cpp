@@ -23,7 +23,7 @@ void GameServerCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
             int index = parent->getIndexByConnectionId(info->m_hConn);
 
             if (index != -1) {
-                u32 clientId = parent->m_clients[index].clientId;
+                u32 clientId = parent->m_clients[index].uniqueId;
 
                 if (info->m_info.m_eState == k_ESteamNetworkingConnectionState_ClosedByPeer) {
                     parent->printMessage("Connection with client %d closed by peer", clientId);
@@ -55,7 +55,7 @@ void GameServerCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
             if (index != -1) {
                 parent->m_clients[index].connectionId = info->m_hConn;
 
-                u32 clientId = parent->m_clients[index].clientId;
+                u32 clientId = parent->m_clients[index].uniqueId;
 
                 //Set the rest of the parameters (displayName, character, team, etc)
 
@@ -137,7 +137,8 @@ GameServer::GameServer(const Context& context, int playersNeeded):
     //@DELETE (COLLISION TESTING)
     m_entityManager.createUnit(UNIT_RedDemon, Vector2(100.f, 300.f), 0);
     for (int i = 0; i < 219; ++i) {
-        m_entityManager.createUnit(UNIT_RedDemon, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 0);
+        int uniqueId = m_entityManager.createUnit(UNIT_RedDemon, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 1);
+        m_entityManager.units.atUniqueId(uniqueId)->status.invisTime = sf::seconds(100.f);
     }
 
     if (!context.local) {
@@ -244,9 +245,9 @@ void GameServer::update(const sf::Time& eTime, bool& running)
             printMessage("Game starting");
 
             //remove valid clients that didn't make it into the party
-            for (int i = m_playersNeeded; i < m_clients.firstInvalidIndex(); ++i) {
-                m_pInterface->CloseConnection(m_clients[i].connectionId, 0, nullptr, false);
-                m_clients.removeElement(m_clients[i].clientId);
+            while (m_clients.firstInvalidIndex() > m_playersNeeded) {
+                m_pInterface->CloseConnection(m_clients[m_playersNeeded].connectionId, 0, nullptr, false);
+                m_clients.removeElement(m_clients[m_playersNeeded].uniqueId);
             }
 
             //to save space, since no new clients are gonna be added
@@ -314,7 +315,7 @@ void GameServer::sendSnapshots()
             snapshotManager = &it->second.entityManager;
         }
 
-        m_entityManager.packData(snapshotManager, outPacket);
+        m_entityManager.packData(snapshotManager, m_clients[i].teamId, outPacket);
 
         sendPacket(outPacket, m_clients[i].connectionId, false);
     }
@@ -362,7 +363,7 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
     {
         case ServerCommand::Null:
         {
-            printMessage("handleCommand error - NULL command (client %d)", m_clients[index].clientId);
+            printMessage("handleCommand error - NULL command (client %d)", m_clients[index].uniqueId);
 
             //receiving null command invalidates the rest of the packet
             packet.clear();
@@ -469,7 +470,7 @@ void GameServer::onConnectionCompleted(HSteamNetConnection connectionId)
         }
 
         sendPacket(outPacket, connectionId, true);
-        printMessage("Connection completed with client %d", m_clients[index].clientId);
+        printMessage("Connection completed with client %d", m_clients[index].uniqueId);
     }
 }
 
@@ -478,7 +479,7 @@ int GameServer::addClient()
     u32 clientId = ++m_lastClientId;
     int index = m_clients.addElement(clientId);
 
-    m_clients[index].clientId = clientId;
+    m_clients[index].uniqueId = clientId;
 
     return index;
 }

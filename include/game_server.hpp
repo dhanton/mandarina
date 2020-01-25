@@ -32,7 +32,7 @@ public:
     friend struct GameServerCallbacks;
 
     struct ClientInfo {
-        u32 clientId = 0;
+        u32 uniqueId = 0;
         HSteamNetConnection connectionId = k_HSteamNetConnection_Invalid;
         bool isReady = false;
 

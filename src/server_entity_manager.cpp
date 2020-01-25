@@ -11,6 +11,10 @@ EntityManager::EntityManager()
 void EntityManager::update(sf::Time eTime)
 {
     for (int i = 0; i < units.firstInvalidIndex(); ++i) {
+        Unit_preUpdate(units[i], eTime, ManagersContext(this, m_collisionManager, m_tileMap));
+    }
+
+    for (int i = 0; i < units.firstInvalidIndex(); ++i) {
         Unit_update(units[i], eTime, ManagersContext(this, m_collisionManager, m_tileMap));
     }
 }
@@ -47,12 +51,24 @@ void EntityManager::takeSnapshot(EntityManager* snapshot) const
     units.copyValidDataTo(snapshot->units);
 }
 
-void EntityManager::packData(const EntityManager* snapshot, CRCPacket& outPacket) const
+void EntityManager::packData(const EntityManager* snapshot, u8 teamId, CRCPacket& outPacket) const
 {
-    outPacket << (u16) units.firstInvalidIndex();
+    u16 unitsVisible = 0;
+
+    for (int i = 0; i < units.firstInvalidIndex(); ++i) {
+        if (Unit_isVisibleForTeam(units[i], teamId)) {
+            unitsVisible++;
+        }
+    }
+
+    outPacket << unitsVisible;
 
     for (int i = 0; i < units.firstInvalidIndex(); ++i) {
         const Unit& unit = units[i];
+
+        //don't send units that player cannot see
+        if (!Unit_isVisibleForTeam(unit, teamId)) continue;
+
         const Unit* prevUnit = nullptr;
 
         if (snapshot) {
@@ -61,11 +77,15 @@ void EntityManager::packData(const EntityManager* snapshot, CRCPacket& outPacket
 
         outPacket << unit.uniqueId;
 
-        if (!prevUnit) {
+        //if the unit didn't exist or it wasn't visible
+        if (!prevUnit || !Unit_isVisibleForTeam(*prevUnit, teamId)) {
             outPacket << unit.type;
+            
+            //we pack all the data again
+            prevUnit = nullptr;
         }
 
-        Unit_packData(unit, prevUnit, outPacket);
+        Unit_packData(unit, prevUnit, teamId, outPacket);
     }
 }
 

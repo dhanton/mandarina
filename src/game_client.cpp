@@ -315,6 +315,10 @@ void GameClient::handleInput(const sf::Event& event, bool focused)
             m_entityManager.renderingDebug = !m_entityManager.renderingDebug;
         }
 
+        if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F3) {
+            m_entityManager.renderingLocallyHidden = !m_entityManager.renderingLocallyHidden;
+        }
+
         //check camera free view
         if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F2) {
             m_camera.changeState();
@@ -499,7 +503,6 @@ void GameClient::handleCommand(u8 command, CRCPacket& packet)
                     printMessage("Snapshot error - Previous snapshot doesn't exist");
                     packet.clear();
                     break;
-
                 }
 
             } else {

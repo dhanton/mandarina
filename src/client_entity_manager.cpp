@@ -35,6 +35,7 @@ C_EntityManager::C_EntityManager(const Context& context, sf::Time worldTime):
 {
     controlledEntityUniqueId = 0;
     renderingDebug = false;
+    renderingLocallyHidden = false;
 }
 
 C_EntityManager::C_EntityManager():
@@ -80,7 +81,7 @@ void C_EntityManager::copySnapshotData(const C_EntityManager* snapshot)
     //controlledEntity might change
     controlledEntityUniqueId = snapshot->controlledEntityUniqueId;
 
-    int index = units.getIndexByUniqueId(controlledEntityUniqueId);
+    const C_Unit* controlledUnit = snapshot->units.atUniqueId(controlledEntityUniqueId);
 
     //copy only entities that don't exist locally
     for (int i = 0; i < snapshot->units.firstInvalidIndex(); ++i) {
@@ -91,6 +92,38 @@ void C_EntityManager::copySnapshotData(const C_EntityManager* snapshot)
         if (index == -1) {
             int thisIndex = units.addElement(snapshotUnit.uniqueId);
             units[thisIndex] = snapshotUnit;
+        }
+    }
+
+    int i = 0;
+
+    //remove units not in the snapshot and reset hidden flags on the others
+    while (i < units.firstInvalidIndex()) {
+        const C_Unit* snapshotUnit = snapshot->units.atUniqueId(units[i].uniqueId);
+
+        if (!snapshotUnit) {
+            units.removeElement(units[i].uniqueId);
+        } else {
+            units[i].status.locallyHidden = true;
+            i++;
+        }
+    }
+
+    //TODO: Maybe a quadtree is needed for this?
+    //this operation is O(n*m) with n and m being units and alive players in your team
+    //since teams are usually small (<4 players), this method should be fine
+
+    //see which units are locally hidden
+    for (int i = 0; i < units.firstInvalidIndex(); ++i) {
+        const C_Unit* controlledUnit = units.atUniqueId(controlledEntityUniqueId);
+
+        //units in the same team are never hidden
+        if (controlledUnit && units[i].teamId == controlledUnit->teamId) {
+            for (int j = 0; j < units.firstInvalidIndex(); ++j) {
+                if (Helper_vec2length(units[j].pos - units[i].pos) <= (float) units[i].trueSightRadius) {
+                    units[j].status.locallyHidden = false;
+                } 
+            }
         }
     }
 }
@@ -104,7 +137,7 @@ void C_EntityManager::loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inP
         controlledEntityUniqueId = prevSnapshot->controlledEntityUniqueId;
     }
 
-    //number of characters
+    //number of units
     u16 unitNumber;
     inPacket >> unitNumber;
 
@@ -138,7 +171,7 @@ void C_EntityManager::loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inP
         }
 
         //in both cases it has to be loaded from packet
-        C_Unit_loadFromData(units[index], inPacket);     
+        C_Unit_loadFromData(units[index], inPacket);
     }
 }
 
@@ -156,6 +189,12 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
     std::vector<RenderNode> spriteNodes;
 
     for (int i = 0; i < units.firstInvalidIndex(); ++i) {
+#ifdef MANDARINA_DEBUG
+        if (!renderingLocallyHidden && units[i].status.locallyHidden && !units[i].status.forceRevealed) continue;
+#else
+        if (units[i].status.locallyHidden && !units[i].status.forceRevealed) continue;
+#endif
+
         spriteNodes.emplace_back(RenderNode(units[i].flyingHeight, units[i].uniqueId, (float) units[i].collisionRadius));
 
         sf::Sprite& sprite = spriteNodes.back().sprite;
@@ -172,6 +211,17 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
         sprite.setScale(mirrored * units[i].scale, units[i].scale);
         sprite.setOrigin(sprite.getLocalBounds().width/2.f, sprite.getLocalBounds().height/2.f);
         sprite.setPosition(units[i].pos);
+
+        if (units[i].status.invisible) {
+            sf::Color color = sprite.getColor();
+            color.a = 150.f;
+
+            if (units[i].status.locallyHidden && renderingLocallyHidden) {
+                color.r += 100.f;    
+            }
+
+            sprite.setColor(color);
+        }
 
         //setup the weapon node if equipped
         if (units[i].weaponId != WEAPON_NONE) {
@@ -212,6 +262,5 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
             target.draw(shape, states);
         }
 #endif
-
     }
 }
