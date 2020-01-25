@@ -171,7 +171,7 @@ bool Unit_isMarkedToSendForTeam(const Unit& unit, u8 teamId);
 bool Unit_shouldBeHiddenFrom(const Unit& unit, const Unit& otherUnit);
 bool C_Unit_shouldBeHiddenFrom(const C_Unit& unit, const C_Unit& otherUnit);
 
-void C_Unit_interpolate(C_Unit& unit, const C_Unit* prevUnit, const C_Unit* nextUnit, double t, double d, bool controlled);
+void C_Unit_interpolate(C_Unit& unit, const C_ManagersContext& context, const C_Unit* prevUnit, const C_Unit* nextUnit, double t, double d);
 
 void Unit_applyInput(Unit& unit, const PlayerInput& input, const ManagersContext& context);
 

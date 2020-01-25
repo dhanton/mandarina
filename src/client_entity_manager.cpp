@@ -64,15 +64,15 @@ void C_EntityManager::performInterpolation(const C_EntityManager* prevSnapshot, 
         return;
     }
 
+    C_ManagersContext context(this, m_tileMap);
+
     for (int i = 0; i < units.firstInvalidIndex(); ++i) {
         C_Unit& unit = units[i];
 
         const C_Unit* prevUnit = prevSnapshot->units.atUniqueId(unit.uniqueId);
         const C_Unit* nextUnit = nextSnapshot->units.atUniqueId(unit.uniqueId);
 
-        bool controlled = unit.uniqueId == controlledEntityUniqueId;
-
-        C_Unit_interpolate(unit, prevUnit, nextUnit, elapsedTime, totalTime, controlled);
+        C_Unit_interpolate(unit, context, prevUnit, nextUnit, elapsedTime, totalTime);
     }
 
     //rest of the interpolations
@@ -99,7 +99,7 @@ void C_EntityManager::copySnapshotData(const C_EntityManager* snapshot)
 
     int i = 0;
 
-    //remove units not in the snapshot and reset hidden flags on the others
+    //remove units not in the snapshot
     while (i < units.firstInvalidIndex()) {
         const C_Unit* snapshotUnit = snapshot->units.atUniqueId(units[i].uniqueId);
 
@@ -121,12 +121,7 @@ void C_EntityManager::updateRevealedUnits()
 
     for (int i = 0; i < units.firstInvalidIndex(); ++i) {
         units[i].status.inBush = m_tileMap->isColliding(TILE_BUSH, Circlef(units[i].pos, units[i].collisionRadius));
-
-        if (C_Unit_isInvisible(units[i])) {
-            units[i].status.locallyHidden = true;
-        } else {
-            units[i].status.locallyHidden = false;
-        }
+        units[i].status.locallyHidden = C_Unit_isInvisible(units[i]);
     }
 
     //see which units are locally hidden

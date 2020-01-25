@@ -588,15 +588,15 @@ bool C_Unit_shouldBeHiddenFrom(const C_Unit& unit, const C_Unit& otherUnit)
                                     unit.status.inBush, otherUnit.status.inBush);
 }
 
-void C_Unit_interpolate(C_Unit& unit, const C_Unit* prevUnit, const C_Unit* nextUnit, double t, double d, bool controlled)
+void C_Unit_interpolate(C_Unit& unit, const C_ManagersContext& context, const C_Unit* prevUnit, const C_Unit* nextUnit, double t, double d)
 {
     if (prevUnit && nextUnit) {
         Vector2 newPos = unit.pos;
         float newAimAngle = unit.aimAngle;
-        bool locallyHidden = unit.status.locallyHidden; 
+        bool locallyHidden = unit.status.locallyHidden;
 
         //only interpolate position and aimAngle for units we're not controlling
-        if (!controlled) {
+        if (unit.uniqueId != context.entityManager->controlledEntityTeamId) {
             newPos = Helper_lerpVec2(prevUnit->pos, nextUnit->pos, t, d);
             newAimAngle = Helper_lerpAngle(prevUnit->aimAngle, nextUnit->aimAngle, t, d);
         }
