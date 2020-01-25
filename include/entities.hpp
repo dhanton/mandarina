@@ -77,7 +77,7 @@ struct C_UnitStatus
     bool disarmed = false;
     bool invisible = false;
     bool locallyHidden = false;
-    bool visible = false;
+    bool forceSent = false;
     bool solid = true;
     bool illusion = false;
 };
@@ -118,7 +118,9 @@ struct Unit : _BaseUnitData
     //stores if the unit is visible for each team (max 64 teams)
     u64 visionFlags;
 
-    //store if the units has to be sent for each team
+    //all units close enough to a team will be forced to be sent
+    //(even if they're hidden for that team)
+    //this is to make reveals smooth in client
     u64 teamSentFlags;
 };
 
@@ -158,6 +160,9 @@ void Unit_markToSend(Unit& unit, u8 teamId);
 bool Unit_isRevealedForTeam(const Unit& unit, u8 teamId);
 bool Unit_isVisibleForTeam(const Unit& unit, u8 teamId);
 bool Unit_isMarkedToSendForTeam(const Unit& unit, u8 teamId);
+
+bool Unit_shouldBeHiddenFrom(const Unit& unit, const Unit& otherUnit);
+bool C_Unit_shouldBeHiddenFrom(const C_Unit& unit, const C_Unit& otherUnit);
 
 void C_Unit_interpolate(C_Unit& unit, const C_Unit* prevUnit, const C_Unit* nextUnit, double t, double d, bool controlled);
 

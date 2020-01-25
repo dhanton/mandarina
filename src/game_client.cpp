@@ -289,6 +289,9 @@ void GameClient::renderUpdate(sf::Time eTime)
     }
 
     m_camera.renderUpdate(eTime);
+
+    //calling this from here might be a performance hit
+    m_entityManager.updateRevealedUnits();
 }
 
 void GameClient::setupNextInterpolation()

@@ -37,6 +37,7 @@ public:
 
     void performInterpolation(const C_EntityManager* prevSnapshot, const C_EntityManager* nextSnapshot, double elapsedTime, double totalTime);
     void copySnapshotData(const C_EntityManager* snapshot);
+    void updateRevealedUnits();
 
     void loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inPacket);
 

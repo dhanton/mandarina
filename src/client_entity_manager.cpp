@@ -104,14 +104,22 @@ void C_EntityManager::copySnapshotData(const C_EntityManager* snapshot)
         if (!snapshotUnit) {
             units.removeElement(units[i].uniqueId);
         } else {
-            units[i].status.locallyHidden = true;
             i++;
         }
     }
+}
 
+void C_EntityManager::updateRevealedUnits()
+{
     //TODO: Maybe a quadtree is needed for this?
     //this operation is O(n*m) with n and m being units and alive players in your team
     //since teams are usually small (<4 players), this method should be fine
+
+    //O(n + m*n) where n is units and m is units on the same team
+
+    for (int i = 0; i < units.firstInvalidIndex(); ++i) {
+        units[i].status.locallyHidden = true;
+    }
 
     //see which units are locally hidden
     for (int i = 0; i < units.firstInvalidIndex(); ++i) {
@@ -120,7 +128,7 @@ void C_EntityManager::copySnapshotData(const C_EntityManager* snapshot)
         //units in the same team are never hidden
         if (controlledUnit && units[i].teamId == controlledUnit->teamId) {
             for (int j = 0; j < units.firstInvalidIndex(); ++j) {
-                if (Helper_vec2length(units[j].pos - units[i].pos) <= (float) units[i].trueSightRadius) {
+                if (!C_Unit_shouldBeHiddenFrom(units[i], units[j])) {
                     units[j].status.locallyHidden = false;
                 } 
             }
@@ -190,9 +198,9 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
 
     for (int i = 0; i < units.firstInvalidIndex(); ++i) {
 #ifdef MANDARINA_DEBUG
-        if (!renderingLocallyHidden && units[i].status.locallyHidden && !units[i].status.visible) continue;
+        if (!renderingLocallyHidden && units[i].status.locallyHidden && units[i].status.forceSent) continue;
 #else
-        if (units[i].status.locallyHidden && !units[i].status.visible) continue;
+        if (units[i].status.locallyHidden && units[i].status.forceSent) continue;
 #endif
 
         spriteNodes.emplace_back(RenderNode(units[i].flyingHeight, units[i].uniqueId, (float) units[i].collisionRadius));

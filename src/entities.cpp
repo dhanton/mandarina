@@ -238,7 +238,8 @@ void Unit_packData(const Unit& unit, const Unit* prevUnit, u8 teamId, CRCPacket&
     bool collisionRadiusChanged = !prevUnit || unit.collisionRadius != prevUnit->collisionRadius;
     mainBits.pushBit(collisionRadiusChanged);
 
-    mainBits.pushBit(Unit_isVisibleForTeam(unit, teamId));
+    //units mark to send are never visible
+    mainBits.pushBit(Unit_isMarkedToSendForTeam(unit, teamId));
 
     //send the flags
     u8 byte1 = mainBits.popByte();
@@ -312,7 +313,7 @@ void C_Unit_loadFromData(C_Unit& unit, CRCPacket& inPacket)
     bool attacksAvailableChanged = mainBits.popBit();
     bool aimAngleChanged = mainBits.popBit();
     bool collisionRadiusChanged = mainBits.popBit();
-    unit.status.visible = mainBits.popBit();
+    unit.status.forceSent = mainBits.popBit();
 
     if (posXChanged) {
         inPacket >> unit.pos.x;
@@ -498,13 +499,13 @@ void Unit_update(Unit& unit, sf::Time eTime, const ManagersContext& context)
         Unit* revealedUnit = context.entityManager->units.atUniqueId(query.GetCurrent()->uniqueId);
 
         if (revealedUnit) {
-            if (Helper_vec2length(unit.pos - revealedUnit->pos) <= (float) unit.trueSightRadius) {
+            if (!Unit_shouldBeHiddenFrom(unit, *revealedUnit)) {
                 //if the unit is inside true sight radius, reveal it
                 Unit_revealUnit(*revealedUnit, unit.teamId);
-            } else {
-                //otherwise just send it (but hidden)
-                Unit_markToSend(*revealedUnit, unit.teamId);
             }
+
+            //we mark it to send since it's inside the bigger circle
+            Unit_markToSend(*revealedUnit, unit.teamId);
         }
 
         query.Next();
@@ -548,6 +549,25 @@ bool Unit_isVisibleForTeam(const Unit& unit, u8 teamId)
 bool Unit_isMarkedToSendForTeam(const Unit& unit, u8 teamId)
 {
     return (unit.teamSentFlags & (1 << teamId));
+}
+
+bool _shouldBeHiddenFrom_impl(const Vector2& unitPos, const Vector2& otherPos, float trueSightRadius, bool unitInBush, bool otherInBush)
+{
+    //@WIP: Check bush status is the same
+    return Helper_vec2length(otherPos - unitPos) >= trueSightRadius;
+}
+
+bool Unit_shouldBeHiddenFrom(const Unit& unit, const Unit& otherUnit)
+{
+    return _shouldBeHiddenFrom_impl(unit.pos, otherUnit.pos, unit.trueSightRadius, false, false);
+}
+
+bool C_Unit_shouldBeHiddenFrom(const C_Unit& unit, const C_Unit& otherUnit)
+{
+    if (unit.uniqueId == 210) {
+        std::cout << Helper_vec2length(unit.pos - otherUnit.pos) << std::endl;
+    }
+    return _shouldBeHiddenFrom_impl(unit.pos, otherUnit.pos, unit.trueSightRadius, false, false);
 }
 
 void C_Unit_interpolate(C_Unit& unit, const C_Unit* prevUnit, const C_Unit* nextUnit, double t, double d, bool controlled)
