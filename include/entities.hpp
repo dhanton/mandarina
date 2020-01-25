@@ -66,8 +66,10 @@ struct UnitStatus
     sf::Time rootTime;
     sf::Time disarmTime;
     sf::Time invisTime;
+
     bool solid = true;
     bool illusion = false;
+    bool inBush = false;
 };
 
 struct C_UnitStatus
@@ -78,8 +80,10 @@ struct C_UnitStatus
     bool invisible = false;
     bool locallyHidden = false;
     bool forceSent = false;
+
     bool solid = true;
     bool illusion = false;
+    bool inBush = false;
 };
 
 //neded for delta encoding
@@ -156,6 +160,9 @@ void Unit_revealUnit(Unit& unit, u8 teamId);
 //tells the server that the unit has to be sent
 //to that specific team (even if hidden)
 void Unit_markToSend(Unit& unit, u8 teamId);
+
+bool Unit_isInvisible(const Unit& unit);
+bool C_Unit_isInvisible(const C_Unit& unit);
 
 bool Unit_isRevealedForTeam(const Unit& unit, u8 teamId);
 bool Unit_isVisibleForTeam(const Unit& unit, u8 teamId);

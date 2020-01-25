@@ -479,7 +479,7 @@ void Unit_update(Unit& unit, sf::Time eTime, const ManagersContext& context)
     //so we move all units but the player randomly
     if (unit.uniqueId < 210) {
         if (unit.vel == Vector2()) {
-            // unit.vel = Vector2(rand() % 200 - 100.f, rand() % 200 - 100.f);
+            unit.vel = Vector2(rand() % 200 - 100.f, rand() % 200 - 100.f);
         }
     }
 
@@ -489,6 +489,8 @@ void Unit_update(Unit& unit, sf::Time eTime, const ManagersContext& context)
     if (newPos != unit.pos) {
         Unit_moveColliding(unit, newPos, context);
     }
+
+    unit.status.inBush = context.tileMap->isColliding(TILE_BUSH, Circlef(unit.pos, unit.collisionRadius));
 
     //reveal of all units inside true sight radius
     //we also send units slightly farther away so revealing them looks smooth on the client
@@ -532,6 +534,16 @@ void Unit_markToSend(Unit& unit, u8 teamId)
     unit.teamSentFlags |= (1 << teamId);
 }
 
+bool Unit_isInvisible(const Unit& unit)
+{
+    return unit.status.invisTime > sf::Time::Zero || unit.status.inBush;
+}
+
+bool C_Unit_isInvisible(const C_Unit& unit)
+{
+    return unit.status.invisible || unit.status.inBush;
+}
+
 bool Unit_isRevealedForTeam(const Unit& unit, u8 teamId)
 {
     return (unit.visionFlags & (1 << teamId));
@@ -539,7 +551,7 @@ bool Unit_isRevealedForTeam(const Unit& unit, u8 teamId)
 
 bool Unit_isVisibleForTeam(const Unit& unit, u8 teamId)
 {
-    if (unit.teamId == teamId || unit.status.invisTime == sf::Time::Zero) {
+    if (unit.teamId == teamId || !Unit_isInvisible(unit)) {
         return true;
     } else {
         return Unit_isRevealedForTeam(unit, teamId);
@@ -553,21 +565,27 @@ bool Unit_isMarkedToSendForTeam(const Unit& unit, u8 teamId)
 
 bool _shouldBeHiddenFrom_impl(const Vector2& unitPos, const Vector2& otherPos, float trueSightRadius, bool unitInBush, bool otherInBush)
 {
-    //@WIP: Check bush status is the same
-    return Helper_vec2length(otherPos - unitPos) >= trueSightRadius;
+    if (Helper_vec2length(otherPos - unitPos) >= trueSightRadius) {
+        return true;
+    } else {
+        if (otherInBush) {
+            return !unitInBush;
+        } else {
+            return false;
+        }
+    }
 }
 
 bool Unit_shouldBeHiddenFrom(const Unit& unit, const Unit& otherUnit)
 {
-    return _shouldBeHiddenFrom_impl(unit.pos, otherUnit.pos, unit.trueSightRadius, false, false);
+    return _shouldBeHiddenFrom_impl(unit.pos, otherUnit.pos, unit.trueSightRadius,
+                                    unit.status.inBush, otherUnit.status.inBush);
 }
 
 bool C_Unit_shouldBeHiddenFrom(const C_Unit& unit, const C_Unit& otherUnit)
 {
-    if (unit.uniqueId == 210) {
-        std::cout << Helper_vec2length(unit.pos - otherUnit.pos) << std::endl;
-    }
-    return _shouldBeHiddenFrom_impl(unit.pos, otherUnit.pos, unit.trueSightRadius, false, false);
+    return _shouldBeHiddenFrom_impl(unit.pos, otherUnit.pos, unit.trueSightRadius,
+                                    unit.status.inBush, otherUnit.status.inBush);
 }
 
 void C_Unit_interpolate(C_Unit& unit, const C_Unit* prevUnit, const C_Unit* nextUnit, double t, double d, bool controlled)

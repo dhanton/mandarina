@@ -138,7 +138,6 @@ GameServer::GameServer(const Context& context, int playersNeeded):
     m_entityManager.createUnit(UNIT_RedDemon, Vector2(100.f, 300.f), 0);
     for (int i = 0; i < 219; ++i) {
         int uniqueId = m_entityManager.createUnit(UNIT_RedDemon, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 1);
-        m_entityManager.units.atUniqueId(uniqueId)->status.invisTime = sf::seconds(100.f);
     }
 
     if (!context.local) {
@@ -464,6 +463,7 @@ void GameServer::onConnectionCompleted(HSteamNetConnection connectionId)
         if (uniqueId != -1) {
             m_clients[index].controlledEntityUniqueId = uniqueId;
             outPacket << m_clients[index].controlledEntityUniqueId;
+            outPacket << m_clients[index].teamId;
             outPacket << pos.x << pos.y;
         } else {
             outPacket << (u32) 0;

@@ -43,10 +43,14 @@ public:
 
     void allocateAll();
 
+    void setTileMap(TileMap* tileMap);
 public:
     Bucket<C_Unit> units;
     u32 controlledEntityUniqueId;
+    u8 controlledEntityTeamId;
     
+    TileMap* m_tileMap;
+
     //true if rendering collision shapes and other debug stuff
     bool renderingDebug;
 

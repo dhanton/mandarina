@@ -67,6 +67,8 @@ GameClient::GameClient(const Context& context, const SteamNetworkingIPAddr& endp
     m_canvasCreated = false;
 
     m_entityManager.allocateAll();
+    m_entityManager.setTileMap(&m_tileMap);
+    
     m_interSnapshot_it = m_snapshots.begin();
     m_requiredSnapshotsToRender = 3;
 
@@ -560,6 +562,7 @@ void GameClient::handleCommand(u8 command, CRCPacket& packet)
 
             if (m_entityManager.controlledEntityUniqueId != 0) {
                 Vector2 initialPos;
+                packet >> m_entityManager.controlledEntityTeamId;
                 packet >> initialPos.x >> initialPos.y;
                 
                 //then we move the camera smoothly towards the controlled unit

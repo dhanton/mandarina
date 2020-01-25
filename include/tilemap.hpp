@@ -25,8 +25,6 @@ public:
     void loadFromFile(const std::string& file);
 
     bool isColliding(u16 tileFlags, const Circlef& circle) const;
-
-    //@WIP
     bool isContained(u16 tileFlags, const Circlef& circle) const;
 
     bool getCollidingTile(u16 tileFlags, const Circlef& circle, sf::FloatRect& tileRect) const;
@@ -41,7 +39,7 @@ public:
     Vector2u getWorldSize() const;
 
 private:
-    bool _colliding_impl(u16 tileFlags, const Circlef& circle, bool getTile, sf::FloatRect* rect) const;
+    bool _collidingContained_impl(bool contained, u16 tileFlags, const Circlef& circle, sf::FloatRect* rect) const;
 
     Vector2u m_size;
     u16 m_tileSize;

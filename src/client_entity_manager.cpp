@@ -4,6 +4,7 @@
 #include <SFML/Graphics.hpp>
 
 #include "helper.hpp"
+#include "tilemap.hpp"
 
 RenderNode::RenderNode(float flyingHeight, u32 uniqueId, float collisionRadius)
 {
@@ -34,6 +35,7 @@ C_EntityManager::C_EntityManager(const Context& context, sf::Time worldTime):
     InContext(context)
 {
     controlledEntityUniqueId = 0;
+    controlledEntityTeamId = 0;
     renderingDebug = false;
     renderingLocallyHidden = false;
 }
@@ -118,15 +120,19 @@ void C_EntityManager::updateRevealedUnits()
     //O(n + m*n) where n is units and m is units on the same team
 
     for (int i = 0; i < units.firstInvalidIndex(); ++i) {
-        units[i].status.locallyHidden = true;
+        units[i].status.inBush = m_tileMap->isColliding(TILE_BUSH, Circlef(units[i].pos, units[i].collisionRadius));
+
+        if (C_Unit_isInvisible(units[i])) {
+            units[i].status.locallyHidden = true;
+        } else {
+            units[i].status.locallyHidden = false;
+        }
     }
 
     //see which units are locally hidden
     for (int i = 0; i < units.firstInvalidIndex(); ++i) {
-        const C_Unit* controlledUnit = units.atUniqueId(controlledEntityUniqueId);
-
-        //units in the same team are never hidden
-        if (controlledUnit && units[i].teamId == controlledUnit->teamId) {
+        if (units[i].teamId == controlledEntityTeamId) {
+            //check all units inside true sight range for everyone on the team
             for (int j = 0; j < units.firstInvalidIndex(); ++j) {
                 if (!C_Unit_shouldBeHiddenFrom(units[i], units[j])) {
                     units[j].status.locallyHidden = false;
@@ -188,6 +194,11 @@ void C_EntityManager::allocateAll()
     units.resize(MAX_UNITS);
 }
 
+void C_EntityManager::setTileMap(TileMap* tileMap)
+{
+    m_tileMap = tileMap;
+}
+
 void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     //We have to sort all objects together by their height (accounting for flying objects)
@@ -220,7 +231,7 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
         sprite.setOrigin(sprite.getLocalBounds().width/2.f, sprite.getLocalBounds().height/2.f);
         sprite.setPosition(units[i].pos);
 
-        if (units[i].status.invisible) {
+        if (C_Unit_isInvisible(units[i])) {
             sf::Color color = sprite.getColor();
             color.a = 150.f;
 

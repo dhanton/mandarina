@@ -45,17 +45,17 @@ void TileMap::loadFromFile(const std::string& file)
 
 bool TileMap::isColliding(u16 tileFlags, const Circlef& circle) const
 {
-    return _colliding_impl(tileFlags, circle, false, nullptr);
+    return _collidingContained_impl(false, tileFlags, circle, nullptr);
 }
 
 bool TileMap::isContained(u16 tileFlags, const Circlef& circle) const
 {
-    //@WIP
+    return _collidingContained_impl(true, tileFlags, circle, nullptr);
 }
 
 bool TileMap::getCollidingTile(u16 tileFlags, const Circlef& circle, sf::FloatRect& tileRect) const
 {
-    return _colliding_impl(tileFlags, circle, true, &tileRect);
+    return _collidingContained_impl(false, tileFlags, circle, &tileRect);
 }
 
 TileType TileMap::getTile(u16 i, u16 j) const
@@ -83,7 +83,7 @@ u16 TileMap::getTileScale() const
     return m_tileScale;
 }
 
-bool TileMap::_colliding_impl(u16 tileFlags, const Circlef& circle, bool getTile, sf::FloatRect* tileRect) const
+bool TileMap::_collidingContained_impl(bool contained, u16 tileFlags, const Circlef& circle, sf::FloatRect* tileRect) const
 {
     size_t tileSize = m_tileSize * m_tileScale;
 
@@ -105,13 +105,21 @@ bool TileMap::_colliding_impl(u16 tileFlags, const Circlef& circle, bool getTile
         for (size_t j = min.y; j <= max.y; ++j) {
             u16 tile = m_tiles[i][j];
 
-            if ((tile & tileFlags) == 0) continue;
-
             rect.left = i * tileSize;
             rect.top = j * tileSize;
 
-            if (circle.intersects(rect)) {
-                if (getTile) {
+            if ((tile & tileFlags) == 0) {
+                //for a circle to be contained it has to intersect only
+                //tiles of that type
+                if (contained && circle.intersects(rect)) {
+                    return false;
+                } else {
+                    continue;
+                }
+            }
+
+            if (!contained && circle.intersects(rect)) {
+                if (tileRect) {
                     tileRect->left = rect.left;
                     tileRect->top = rect.top;
                     tileRect->width = rect.width;
@@ -123,5 +131,5 @@ bool TileMap::_colliding_impl(u16 tileFlags, const Circlef& circle, bool getTile
         }
     }
 
-    return false;
+    return contained;
 }
