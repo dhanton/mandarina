@@ -161,7 +161,7 @@ void C_EntityManager::loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inP
         } else {
             u8 unitType;
             inPacket >> unitType;
-
+            
             //otherwise initialize it
             C_Unit_init(units[index], (UnitType) unitType);
             units[index].uniqueId = uniqueId;
@@ -190,9 +190,9 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
 
     for (int i = 0; i < units.firstInvalidIndex(); ++i) {
 #ifdef MANDARINA_DEBUG
-        if (!renderingLocallyHidden && units[i].status.locallyHidden && !units[i].status.forceRevealed) continue;
+        if (!renderingLocallyHidden && units[i].status.locallyHidden && !units[i].status.visible) continue;
 #else
-        if (units[i].status.locallyHidden && !units[i].status.forceRevealed) continue;
+        if (units[i].status.locallyHidden && !units[i].status.visible) continue;
 #endif
 
         spriteNodes.emplace_back(RenderNode(units[i].flyingHeight, units[i].uniqueId, (float) units[i].collisionRadius));

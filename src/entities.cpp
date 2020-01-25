@@ -238,7 +238,7 @@ void Unit_packData(const Unit& unit, const Unit* prevUnit, u8 teamId, CRCPacket&
     bool collisionRadiusChanged = !prevUnit || unit.collisionRadius != prevUnit->collisionRadius;
     mainBits.pushBit(collisionRadiusChanged);
 
-    mainBits.pushBit(Unit_isForcedRevealedForteam(unit, teamId));
+    mainBits.pushBit(Unit_isVisibleForTeam(unit, teamId));
 
     //send the flags
     u8 byte1 = mainBits.popByte();
@@ -312,7 +312,7 @@ void C_Unit_loadFromData(C_Unit& unit, CRCPacket& inPacket)
     bool attacksAvailableChanged = mainBits.popBit();
     bool aimAngleChanged = mainBits.popBit();
     bool collisionRadiusChanged = mainBits.popBit();
-    unit.status.forceRevealed = mainBits.popBit();
+    unit.status.visible = mainBits.popBit();
 
     if (posXChanged) {
         inPacket >> unit.pos.x;
@@ -490,7 +490,7 @@ void Unit_update(Unit& unit, sf::Time eTime, const ManagersContext& context)
     }
 
     //reveal of all units inside true sight radius
-    //we reveal units slightly farther away so it looks smooth on the client
+    //we also send units slightly farther away so revealing them looks smooth on the client
     Circlef trueSightCircle(unit.pos, (float) unit.trueSightRadius + 100.f);
     auto query = context.collisionManager->getQuadtree()->QueryIntersectsRegion(BoundingBody<float>(trueSightCircle));
 
@@ -498,7 +498,13 @@ void Unit_update(Unit& unit, sf::Time eTime, const ManagersContext& context)
         Unit* revealedUnit = context.entityManager->units.atUniqueId(query.GetCurrent()->uniqueId);
 
         if (revealedUnit) {
-            Unit_revealUnit(*revealedUnit, unit.teamId, false);
+            if (Helper_vec2length(unit.pos - revealedUnit->pos) <= (float) unit.trueSightRadius) {
+                //if the unit is inside true sight radius, reveal it
+                Unit_revealUnit(*revealedUnit, unit.teamId);
+            } else {
+                //otherwise just send it (but hidden)
+                Unit_markToSend(*revealedUnit, unit.teamId);
+            }
         }
 
         query.Next();
@@ -511,30 +517,23 @@ void Unit_update(Unit& unit, sf::Time eTime, const ManagersContext& context)
 void Unit_preUpdate(Unit& unit, sf::Time eTime, const ManagersContext& context)
 {
     unit.visionFlags = 0;
-    unit.forcedVisionFlags = 0;
+    unit.teamSentFlags = 0;
 }
 
-void Unit_revealUnit(Unit& unit, u8 teamId, bool force)
+void Unit_revealUnit(Unit& unit, u8 teamId)
 {
     unit.visionFlags |= (1 << teamId);
 
-    //the client will hide revealed units that are not close enough
-    //to make the reveal go smoothly
-    //with this flag we can force the client to reveal the unit
-    //even if it's not close enough
-    if (force) {
-        unit.forcedVisionFlags |= (1 << teamId);
-    }
+}
+
+void Unit_markToSend(Unit& unit, u8 teamId)
+{
+    unit.teamSentFlags |= (1 << teamId);
 }
 
 bool Unit_isRevealedForTeam(const Unit& unit, u8 teamId)
 {
     return (unit.visionFlags & (1 << teamId));
-}
-
-bool Unit_isForcedRevealedForteam(const Unit& unit, u8 teamId)
-{
-    return (unit.forcedVisionFlags & (1 << teamId));
 }
 
 bool Unit_isVisibleForTeam(const Unit& unit, u8 teamId)
@@ -544,6 +543,11 @@ bool Unit_isVisibleForTeam(const Unit& unit, u8 teamId)
     } else {
         return Unit_isRevealedForTeam(unit, teamId);
     }
+}
+
+bool Unit_isMarkedToSendForTeam(const Unit& unit, u8 teamId)
+{
+    return (unit.teamSentFlags & (1 << teamId));
 }
 
 void C_Unit_interpolate(C_Unit& unit, const C_Unit* prevUnit, const C_Unit* nextUnit, double t, double d, bool controlled)

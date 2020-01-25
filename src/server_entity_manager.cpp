@@ -53,21 +53,21 @@ void EntityManager::takeSnapshot(EntityManager* snapshot) const
 
 void EntityManager::packData(const EntityManager* snapshot, u8 teamId, CRCPacket& outPacket) const
 {
-    u16 unitsVisible = 0;
+    u16 unitsToSend = 0;
 
     for (int i = 0; i < units.firstInvalidIndex(); ++i) {
-        if (Unit_isVisibleForTeam(units[i], teamId)) {
-            unitsVisible++;
+        if (Unit_isVisibleForTeam(units[i], teamId) || Unit_isMarkedToSendForTeam(units[i], teamId)) {
+            unitsToSend++;
         }
     }
 
-    outPacket << unitsVisible;
+    outPacket << unitsToSend;
 
     for (int i = 0; i < units.firstInvalidIndex(); ++i) {
         const Unit& unit = units[i];
 
         //don't send units that player cannot see
-        if (!Unit_isVisibleForTeam(unit, teamId)) continue;
+        if (!Unit_isVisibleForTeam(unit, teamId) && !Unit_isMarkedToSendForTeam(unit, teamId)) continue;
 
         const Unit* prevUnit = nullptr;
 
@@ -77,8 +77,8 @@ void EntityManager::packData(const EntityManager* snapshot, u8 teamId, CRCPacket
 
         outPacket << unit.uniqueId;
 
-        //if the unit didn't exist or it wasn't visible
-        if (!prevUnit || !Unit_isVisibleForTeam(*prevUnit, teamId)) {
+        //if the unit didn't exist or it wasn't visible or sent
+        if (!prevUnit || (!Unit_isVisibleForTeam(*prevUnit, teamId) && !Unit_isMarkedToSendForTeam(*prevUnit, teamId))) {
             outPacket << unit.type;
             
             //we pack all the data again

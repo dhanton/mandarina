@@ -76,9 +76,8 @@ struct C_UnitStatus
     bool rooted = false;
     bool disarmed = false;
     bool invisible = false;
-    bool locallyHidden = true;
-    //@WIP
-    bool forceRevealed = false;
+    bool locallyHidden = false;
+    bool visible = false;
     bool solid = true;
     bool illusion = false;
 };
@@ -119,8 +118,8 @@ struct Unit : _BaseUnitData
     //stores if the unit is visible for each team (max 64 teams)
     u64 visionFlags;
 
-    //if the unit is forced to be revealed for a certain team
-    u64 forcedVisionFlags;
+    //store if the units has to be sent for each team
+    u64 teamSentFlags;
 };
 
 struct C_Unit : _BaseUnitData
@@ -150,10 +149,15 @@ void Unit_update(Unit& unit, sf::Time eTime, const ManagersContext& context);
 void Unit_preUpdate(Unit& unit, sf::Time eTime, const ManagersContext& context);
 
 //revals the unit for team specified
-void Unit_revealUnit(Unit& unit, u8 teamId, bool force);
+void Unit_revealUnit(Unit& unit, u8 teamId);
+
+//tells the server that the unit has to be sent
+//to that specific team (even if hidden)
+void Unit_markToSend(Unit& unit, u8 teamId);
+
 bool Unit_isRevealedForTeam(const Unit& unit, u8 teamId);
-bool Unit_isForcedRevealedForteam(const Unit& unit, u8 teamId);
 bool Unit_isVisibleForTeam(const Unit& unit, u8 teamId);
+bool Unit_isMarkedToSendForTeam(const Unit& unit, u8 teamId);
 
 void C_Unit_interpolate(C_Unit& unit, const C_Unit* prevUnit, const C_Unit* nextUnit, double t, double d, bool controlled);
 
