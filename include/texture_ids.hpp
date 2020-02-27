@@ -21,5 +21,11 @@ namespace TextureId
             weapon_name,
         #include "weapons.inc"
         #undef LoadWeapon
+
+        //textures used by projectiles
+        #define LoadProjectile(projectile_name, texture_id, json_file) \
+            texture_id,
+        #include "projectiles.inc"
+        #undef LoadProjectile
     };
 }

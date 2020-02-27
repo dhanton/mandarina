@@ -2,7 +2,8 @@
 
 #include "bucket.hpp"
 #include "defines.hpp"
-#include "entities.hpp"
+#include "units.hpp"
+#include "projectiles.hpp"
 
 #include "managers_context.hpp"
 
@@ -18,6 +19,8 @@ public:
 
     int createUnit(UnitType type, const Vector2& pos, u8 teamId);
 
+    int createProjectile(ProjectileType type, const Vector2& pos, float aimAngle, u8 teamId);
+
     void takeSnapshot(EntityManager* snapshot) const;
     void packData(const EntityManager* snapshot, u8 teamId, CRCPacket& outPacket) const;
 
@@ -28,6 +31,7 @@ public:
 
 public:
     Bucket<Unit> units;
+    Bucket<Projectile> projectiles;
 
 private:
     inline u32 _getNewUniqueId();

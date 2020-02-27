@@ -10,18 +10,39 @@ EntityManager::EntityManager()
 
 void EntityManager::update(sf::Time eTime)
 {
-    for (int i = 0; i < units.firstInvalidIndex(); ++i) {
-        Unit_preUpdate(units[i], eTime, ManagersContext(this, m_collisionManager, m_tileMap));
+    ManagersContext context(this, m_collisionManager, m_tileMap);
+
+    int i;
+
+    for (i = 0; i < units.firstInvalidIndex(); ++i) {
+        Unit_preUpdate(units[i], eTime, context);
     }
 
-    for (int i = 0; i < units.firstInvalidIndex(); ++i) {
-        Unit_update(units[i], eTime, ManagersContext(this, m_collisionManager, m_tileMap));
+    for (i = 0; i < units.firstInvalidIndex(); ++i) {
+        Unit_update(units[i], eTime, context);
     }
+
+    for (i = 0; i < projectiles.firstInvalidIndex(); ++i) {
+        Projectile_update(projectiles[i], eTime, context);
+    }
+
+    //remove dead projectiles
+    i = 0;
+    
+    while (i < projectiles.firstInvalidIndex()) {
+        if (projectiles[i].dead) {
+            projectiles.removeElement(projectiles[i].uniqueId);
+        } else {
+            ++i;
+        }
+    }
+
+    //don't remove units since they might respawn depending on the game mode
 }
 
 int EntityManager::createUnit(UnitType type, const Vector2& pos, u8 teamId)
 {
-    if (type <= UNIT_NONE || type >= UNIT_MAX_TYPES) {
+    if (type < 0 || type >= UNIT_MAX_TYPES) {
         std::cout << "EntityManager::createUnit error - Invalid type" << std::endl;
         return -1;
     }
@@ -46,9 +67,30 @@ int EntityManager::createUnit(UnitType type, const Vector2& pos, u8 teamId)
     return uniqueId;
 }
 
+int EntityManager::createProjectile(ProjectileType type, const Vector2& pos, float aimAngle, u8 teamId)
+{
+    if (type < 0 || type >= PROJECTILE_MAX_TYPES) {
+        std::cout << "EntityManager::createProjectile error - Invalid type" << std::endl;
+        return -1;
+    }
+
+    u32 uniqueId = _getNewUniqueId();
+    int index = projectiles.addElement(uniqueId);
+
+    Projectile& projectile = projectiles[index];
+
+    Projectile_init(projectile, type, pos, aimAngle);
+
+    projectile.uniqueId = uniqueId;
+    projectile.teamId = teamId;
+
+    return uniqueId;
+}
+
 void EntityManager::takeSnapshot(EntityManager* snapshot) const
 {
     units.copyValidDataTo(snapshot->units);
+    projectiles.copyValidDataTo(snapshot->projectiles);
 }
 
 void EntityManager::packData(const EntityManager* snapshot, u8 teamId, CRCPacket& outPacket) const
@@ -87,11 +129,32 @@ void EntityManager::packData(const EntityManager* snapshot, u8 teamId, CRCPacket
 
         Unit_packData(unit, prevUnit, teamId, outPacket);
     }
+
+    //We're assuming here all projectiles are visible (which is true?)
+    outPacket << (u16) projectiles.firstInvalidIndex();
+
+    for (int i = 0; i < projectiles.firstInvalidIndex(); ++i) {
+        const Projectile& projectile = projectiles[i];
+        const Projectile* prevProj = nullptr;
+
+        if (snapshot) {
+            prevProj = snapshot->projectiles.atUniqueId(projectile.uniqueId);
+        }
+
+        outPacket << projectile.uniqueId;
+
+        if (!prevProj) {
+            outPacket << projectile.type;
+        }
+
+        Projectile_packData(projectile, prevProj, teamId, outPacket);
+    }
 }
 
 void EntityManager::allocateAll()
 {
     units.resize(MAX_UNITS);
+    projectiles.resize(MAX_PROJECTILES);
 }
 
 void EntityManager::setCollisionManager(CollisionManager* collisionManager)

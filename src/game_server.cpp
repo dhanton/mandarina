@@ -100,6 +100,7 @@ GameServer::GameServer(const Context& context, int playersNeeded):
     INITIAL_CLIENTS_SIZE(playersNeeded * 2 + 10)
 {
     loadUnitsFromJson(context.jsonParser);
+    loadProjectilesFromJson(context.jsonParser);
 
     m_gameStarted = false;
     m_playersNeeded = playersNeeded;
@@ -134,10 +135,11 @@ GameServer::GameServer(const Context& context, int playersNeeded):
 
     m_tileMap.loadFromFile(MAPS_PATH + m_tileMapFilename + "." + MAP_FILENAME_EXT);
     
-    //@DELETE (COLLISION TESTING)
+    //@DELETE (TESTING)
     m_entityManager.createUnit(UNIT_RedDemon, Vector2(100.f, 300.f), 0);
-    for (int i = 0; i < 219; ++i) {
-        int uniqueId = m_entityManager.createUnit(UNIT_RedDemon, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 1);
+    for (int i = 0; i < 100; ++i) {
+        // int uniqueId = m_entityManager.createUnit(UNIT_RedDemon, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 1);
+        int uniqueId = m_entityManager.createProjectile(PROJECTILE_HellsBubble, Vector2(rand() % 100 + 1300, rand() % 100 + 1200.f), rand()%360, 1);
     }
 
     if (!context.local) {

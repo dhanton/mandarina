@@ -75,7 +75,14 @@ void C_EntityManager::performInterpolation(const C_EntityManager* prevSnapshot, 
         C_Unit_interpolate(unit, context, prevUnit, nextUnit, elapsedTime, totalTime);
     }
 
-    //rest of the interpolations
+    for (int i = 0; i < projectiles.firstInvalidIndex(); ++i) {
+        C_Projectile& projectile = projectiles[i];
+
+        const C_Projectile* prevProj = prevSnapshot->projectiles.atUniqueId(projectile.uniqueId);
+        const C_Projectile* nextProj = nextSnapshot->projectiles.atUniqueId(projectile.uniqueId);
+
+        C_Projectile_interpolate(projectile, prevProj, nextProj, elapsedTime, totalTime);
+    }
 }
 
 void C_EntityManager::copySnapshotData(const C_EntityManager* snapshot)
@@ -97,6 +104,17 @@ void C_EntityManager::copySnapshotData(const C_EntityManager* snapshot)
         }
     }
 
+    for (int i = 0; i < snapshot->projectiles.firstInvalidIndex(); ++i) {
+        const C_Projectile& snapshotProj = snapshot->projectiles[i];
+
+        int index = projectiles.getIndexByUniqueId(snapshotProj.uniqueId);
+
+        if (index == -1) {
+            int thisIndex = projectiles.addElement(snapshotProj.uniqueId);
+            projectiles[thisIndex] = snapshotProj;
+        }
+    }
+
     int i = 0;
 
     //remove units not in the snapshot
@@ -105,6 +123,18 @@ void C_EntityManager::copySnapshotData(const C_EntityManager* snapshot)
 
         if (!snapshotUnit) {
             units.removeElement(units[i].uniqueId);
+        } else {
+            i++;
+        }
+    }
+
+    i = 0;
+
+    while (i < projectiles.firstInvalidIndex()) {
+        const C_Projectile* snapshotProj = snapshot->projectiles.atUniqueId(projectiles[i].uniqueId);
+
+        if (!snapshotProj) {
+            projectiles.removeElement(projectiles[i].uniqueId);
         } else {
             i++;
         }
@@ -182,11 +212,41 @@ void C_EntityManager::loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inP
         //in both cases it has to be loaded from packet
         C_Unit_loadFromData(units[index], inPacket);
     }
+
+    u16 projectileNumber;
+    inPacket >> projectileNumber;
+
+    for (int i = 0; i < projectileNumber; ++i) {
+        u32 uniqueId;
+        inPacket >> uniqueId;
+
+        C_Projectile* prevProj = nullptr;
+
+        if (prevSnapshot) {
+            prevProj = prevSnapshot->projectiles.atUniqueId(uniqueId);
+        }
+
+        int index = projectiles.addElement(uniqueId);
+
+        if (prevProj) {
+            projectiles[index] = *prevProj;
+
+        } else {
+            u8 type;
+            inPacket >> type;
+
+            C_Projectile_init(projectiles[index], (ProjectileType) type);
+            projectiles[index].uniqueId = uniqueId;
+        }
+
+        C_Projectile_loadFromData(projectiles[index], inPacket);
+    }
 }
 
 void C_EntityManager::allocateAll()
 {
     units.resize(MAX_UNITS);
+    projectiles.resize(MAX_PROJECTILES);
 }
 
 void C_EntityManager::setTileMap(TileMap* tileMap)
@@ -257,6 +317,18 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
                 spriteNodes.back().manualFilter = 1;
             }
         }
+    }
+
+    for (int i = 0; i < projectiles.firstInvalidIndex(); ++i) {
+        //@WIP: flyingHeight = shooter.height + shooter.flyingHeight
+        spriteNodes.emplace_back(RenderNode(100, projectiles[i].uniqueId, (float) projectiles[i].collisionRadius));
+
+        sf::Sprite& sprite = spriteNodes.back().sprite;
+
+        sprite.setTexture(m_context.textures->getResource(projectiles[i].textureId));
+        sprite.setScale(projectiles[i].scale, projectiles[i].scale);
+        sprite.setOrigin(sprite.getLocalBounds().width/2.f, sprite.getLocalBounds().height/2.f);
+        sprite.setPosition(projectiles[i].pos);
     }
 
     std::sort(spriteNodes.begin(), spriteNodes.end());

@@ -62,6 +62,7 @@ GameClient::GameClient(const Context& context, const SteamNetworkingIPAddr& endp
     m_tileMapRenderer(context, &m_tileMap)
 {
     C_loadUnitsFromJson(context.jsonParser);
+    C_loadProjectilesFromJson(context.jsonParser);
 
     m_context.renderTarget = &m_canvas;
     m_canvasCreated = false;

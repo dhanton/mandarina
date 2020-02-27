@@ -27,7 +27,9 @@ public:
     bool isColliding(u16 tileFlags, const Circlef& circle) const;
     bool isContained(u16 tileFlags, const Circlef& circle) const;
 
-    bool getCollidingTile(u16 tileFlags, const Circlef& circle, sf::FloatRect& tileRect) const;
+    u16 getCollidingTile(const Circlef& circle) const;
+
+    bool getCollidingTileRect(u16 tileFlags, const Circlef& circle, sf::FloatRect& tileRect) const;
 
     TileType getTile(u16 i, u16 j) const;
 
@@ -39,7 +41,7 @@ public:
     Vector2u getWorldSize() const;
 
 private:
-    bool _collidingContained_impl(bool contained, u16 tileFlags, const Circlef& circle, sf::FloatRect* rect) const;
+    bool _collidingContained_impl(bool contained, u16 tileFlags, const Circlef& circle, sf::FloatRect* rect, u16* getTiles) const;
 
     Vector2u m_size;
     u16 m_tileSize;

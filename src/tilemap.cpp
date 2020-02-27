@@ -45,17 +45,24 @@ void TileMap::loadFromFile(const std::string& file)
 
 bool TileMap::isColliding(u16 tileFlags, const Circlef& circle) const
 {
-    return _collidingContained_impl(false, tileFlags, circle, nullptr);
+    return _collidingContained_impl(false, tileFlags, circle, nullptr, nullptr);
 }
 
 bool TileMap::isContained(u16 tileFlags, const Circlef& circle) const
 {
-    return _collidingContained_impl(true, tileFlags, circle, nullptr);
+    return _collidingContained_impl(true, tileFlags, circle, nullptr, nullptr);
 }
 
-bool TileMap::getCollidingTile(u16 tileFlags, const Circlef& circle, sf::FloatRect& tileRect) const
+u16 TileMap::getCollidingTile(const Circlef& circle) const
 {
-    return _collidingContained_impl(false, tileFlags, circle, &tileRect);
+    u16 tile = 0;
+    _collidingContained_impl(false, -1, circle, nullptr, &tile);
+    return tile;
+}
+
+bool TileMap::getCollidingTileRect(u16 tileFlags, const Circlef& circle, sf::FloatRect& tileRect) const
+{
+    return _collidingContained_impl(false, tileFlags, circle, &tileRect, nullptr);
 }
 
 TileType TileMap::getTile(u16 i, u16 j) const
@@ -83,7 +90,7 @@ u16 TileMap::getTileScale() const
     return m_tileScale;
 }
 
-bool TileMap::_collidingContained_impl(bool contained, u16 tileFlags, const Circlef& circle, sf::FloatRect* tileRect) const
+bool TileMap::_collidingContained_impl(bool contained, u16 tileFlags, const Circlef& circle, sf::FloatRect* tileRect, u16* getTiles) const
 {
     size_t tileSize = m_tileSize * m_tileScale;
 
@@ -126,7 +133,12 @@ bool TileMap::_collidingContained_impl(bool contained, u16 tileFlags, const Circ
                     tileRect->height = rect.height;
                 }
 
-                return true;
+                if (getTiles) {
+                    //get all tiles colliding
+                    *getTiles |= tile;
+                } else {
+                    return true;
+                }
             }
         }
     }

@@ -6,8 +6,9 @@
 #include <SFML/System/Time.hpp>
 
 #include "bucket.hpp"
-#include "entities.hpp"
 #include "context.hpp"
+#include "units.hpp"
+#include "projectiles.hpp"
 
 struct RenderNode {
     sf::Sprite sprite;
@@ -46,6 +47,8 @@ public:
     void setTileMap(TileMap* tileMap);
 public:
     Bucket<C_Unit> units;
+    Bucket<C_Projectile> projectiles;
+
     u32 controlledEntityUniqueId;
     u8 controlledEntityTeamId;
     

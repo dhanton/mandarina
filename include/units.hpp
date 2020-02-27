@@ -7,19 +7,11 @@
 #include "crcpacket.hpp"
 #include "player_input.hpp"
 #include "managers_context.hpp"
+#include "json_parser.hpp"
 
-class JsonParser;
-
-enum UnitType {
-    UNIT_NONE,
-
-    #define LoadUnit(unit_name, texture_id, json_filename, weapon_id) \
-        UNIT_##unit_name,
-    #include "units.inc"
-    #undef LoadUnit
-
-    UNIT_MAX_TYPES
-};
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////// WEAPONS //////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 typedef void (*WeaponCallback)(void);
 
@@ -33,7 +25,7 @@ struct WeaponData {
 enum WeaponType {
     WEAPON_NONE,
 
-    #define LoadWeapon(weapon_name, callback_func, json_filename) \
+    #define LoadWeapon(weapon_name, callback_func, json_id) \
         WEAPON_##weapon_name,
     #include "weapons.inc"
     #undef LoadWeapon
@@ -47,19 +39,22 @@ void initializeWeaponData(JsonParser* jsonParser);
 
 void WeaponCallback_devilsBow();
 
-#define MAX_UNITS 500
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////// UNITS ////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-enum ProjectileType {
-    //@WIP: #include from projectiles.inc
-    MAX_PROJECTILE_TYPES
+enum UnitType {
+    #define LoadUnit(unit_name, texture_id, json_id, weapon_id) \
+        UNIT_##unit_name,
+    #include "units.inc"
+    #undef LoadUnit
+
+    UNIT_MAX_TYPES
 };
 
-//projectiles are collisionObject, movement pattern, speed, rendering
-//damage is provided by their respective units
-//other things can be provided by their units as well (overwriting the defaults)
-#define MAX_PROJECTILES 2000
+#define MAX_UNITS 500
 
-//counts are packed as booleans (true if time > 0)
+//times are packed as booleans (true if time > 0)
 struct UnitStatus
 {
     sf::Time stunTime;
@@ -92,14 +87,11 @@ bool UnitStatus_equal(const UnitStatus& lhs, const UnitStatus& rhs);
 void UnitStatus_packData(const UnitStatus& status, u8 teamId, CRCPacket& packet);
 void C_UnitStatus_loadFromData(C_UnitStatus& status, CRCPacket& packet);
 
-struct _BaseEntityData {
+struct _BaseUnitData
+{
     u32 uniqueId;
     Vector2 pos;
     u8 teamId;
-};
-
-struct _BaseUnitData : _BaseEntityData
-{
     u8 type;
     u8 flyingHeight;
     u16 maxHealth;

@@ -1,10 +1,9 @@
-#include "entities.hpp"
+#include "units.hpp"
 
 #include "texture_ids.hpp"
 #include "helper.hpp"
 #include "bit_stream.hpp"
 
-#include "json_parser.hpp"
 #include "texture_ids.hpp"
 
 #include "collision_manager.hpp"
@@ -186,7 +185,7 @@ void C_loadUnitsFromJson(JsonParser* jsonParser)
 
 void Unit_init(Unit& unit, UnitType type)
 {
-    if (type <= UNIT_NONE || type >= UNIT_MAX_TYPES) {
+    if (type < 0 || type >= UNIT_MAX_TYPES) {
         return;
     }
 
@@ -195,7 +194,7 @@ void Unit_init(Unit& unit, UnitType type)
 
 void C_Unit_init(C_Unit& unit, UnitType type)
 {
-    if (type <= UNIT_NONE || type >= UNIT_MAX_TYPES) {
+    if (type < 0 || type >= UNIT_MAX_TYPES) {
         return;
     }
 
@@ -392,7 +391,7 @@ Vector2 _moveCollidingMap_impl(const Vector2& oldPos, Vector2 newPos, float coll
 
     sf::FloatRect collidingTile;
 
-    if (map->getCollidingTile(TILE_BLOCK | TILE_WALL, Circlef(posMovingX, collisionRadius), collidingTile)) {
+    if (map->getCollidingTileRect(TILE_BLOCK | TILE_WALL, Circlef(posMovingX, collisionRadius), collidingTile)) {
         //we assume if there's collision there was movement 
 
         if (oldPos.x > newPos.x) {
@@ -403,7 +402,7 @@ Vector2 _moveCollidingMap_impl(const Vector2& oldPos, Vector2 newPos, float coll
         }
     }
 
-    if (map->getCollidingTile(TILE_BLOCK | TILE_WALL, Circlef(posMovingY, collisionRadius), collidingTile)) {
+    if (map->getCollidingTileRect(TILE_BLOCK | TILE_WALL, Circlef(posMovingY, collisionRadius), collidingTile)) {
         if (oldPos.y > newPos.y) {
             newPos.y = collidingTile.top + collidingTile.height + collisionRadius;
 
@@ -477,11 +476,11 @@ void Unit_update(Unit& unit, sf::Time eTime, const ManagersContext& context)
     //@DELETE
     //we're adding 20 units before we add the player (TESTING)
     //so we move all units but the player randomly
-    if (unit.uniqueId < 210) {
-        if (unit.vel == Vector2()) {
-            unit.vel = Vector2(rand() % 200 - 100.f, rand() % 200 - 100.f);
-        }
-    }
+    // if (unit.uniqueId < 210) {
+    //     if (unit.vel == Vector2()) {
+    //         unit.vel = Vector2(rand() % 200 - 100.f, rand() % 200 - 100.f);
+    //     }
+    // }
 
     newPos += unit.vel * eTime.asSeconds();
     //other required movement (like dragged movement, forces and friction, etc)
