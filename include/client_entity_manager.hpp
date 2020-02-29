@@ -35,23 +35,30 @@ public:
     C_EntityManager();
     
     void update(sf::Time eTime);
+    void renderUpdate(sf::Time eTime);
 
     void performInterpolation(const C_EntityManager* prevSnapshot, const C_EntityManager* nextSnapshot, double elapsedTime, double totalTime);
-    void copySnapshotData(const C_EntityManager* snapshot);
+    void copySnapshotData(const C_EntityManager* snapshot, u32 latestAppliedInputId);
     void updateRevealedUnits();
+
+    int createProjectile(ProjectileType type, const Vector2& pos, float aimAngle, u8 teamId);
 
     void loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inPacket);
 
     void allocateAll();
 
     void setTileMap(TileMap* tileMap);
+
 public:
     Bucket<C_Unit> units;
     Bucket<C_Projectile> projectiles;
 
+    Bucket<C_Projectile> localProjectiles;
+    u32 localLastUniqueId;
+
     u32 controlledEntityUniqueId;
     u8 controlledEntityTeamId;
-    
+
     TileMap* m_tileMap;
 
     //true if rendering collision shapes and other debug stuff

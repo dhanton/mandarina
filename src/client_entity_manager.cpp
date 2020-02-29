@@ -34,6 +34,7 @@ inline bool RenderNode::operator<(const RenderNode& other)
 C_EntityManager::C_EntityManager(const Context& context, sf::Time worldTime):
     InContext(context)
 {
+    localLastUniqueId = 0;
     controlledEntityUniqueId = 0;
     controlledEntityTeamId = 0;
     renderingDebug = false;
@@ -48,8 +49,28 @@ C_EntityManager::C_EntityManager():
 }
 
 void C_EntityManager::update(sf::Time eTime)
-{    
+{
+    C_ManagersContext context(this, m_tileMap);
+    int i = 0;
 
+    while (i < localProjectiles.firstInvalidIndex()) {
+        C_Projectile_checkCollisions(localProjectiles[i], context);
+
+        if (localProjectiles[i].dead) {
+            localProjectiles.removeElement(localProjectiles[i].uniqueId);
+        } else {
+            i++;
+        }
+    }
+}
+
+void C_EntityManager::renderUpdate(sf::Time eTime)
+{
+    C_ManagersContext context(this, m_tileMap);
+
+    for (int i = 0; i < localProjectiles.firstInvalidIndex(); ++i) {
+        C_Projectile_localUpdate(localProjectiles[i], eTime, context);
+    }
 }
 
 void C_EntityManager::performInterpolation(const C_EntityManager* prevSnapshot, const C_EntityManager* nextSnapshot, double elapsedTime, double totalTime)
@@ -66,6 +87,7 @@ void C_EntityManager::performInterpolation(const C_EntityManager* prevSnapshot, 
 
     C_ManagersContext context(this, m_tileMap);
 
+    //interpolate units
     for (int i = 0; i < units.firstInvalidIndex(); ++i) {
         C_Unit& unit = units[i];
 
@@ -75,6 +97,7 @@ void C_EntityManager::performInterpolation(const C_EntityManager* prevSnapshot, 
         C_Unit_interpolate(unit, context, prevUnit, nextUnit, elapsedTime, totalTime);
     }
 
+    //interpolate projectiles
     for (int i = 0; i < projectiles.firstInvalidIndex(); ++i) {
         C_Projectile& projectile = projectiles[i];
 
@@ -85,7 +108,7 @@ void C_EntityManager::performInterpolation(const C_EntityManager* prevSnapshot, 
     }
 }
 
-void C_EntityManager::copySnapshotData(const C_EntityManager* snapshot)
+void C_EntityManager::copySnapshotData(const C_EntityManager* snapshot, u32 latestAppliedInputId)
 {
     //controlledEntity might change
     controlledEntityUniqueId = snapshot->controlledEntityUniqueId;
@@ -139,6 +162,19 @@ void C_EntityManager::copySnapshotData(const C_EntityManager* snapshot)
             i++;
         }
     }
+
+    i = 0;
+
+    //@TODO: Smoothly interpolate to the received position instead of 
+    //instantly deleting them (?)
+    while (i < localProjectiles.firstInvalidIndex()) {
+        //remove local projectiles that have already been simulated in server
+        if (localProjectiles[i].createdInputId <= latestAppliedInputId) {
+            localProjectiles.removeElement(localProjectiles[i].uniqueId);
+        } else {
+            i++;
+        }
+    }
 }
 
 void C_EntityManager::updateRevealedUnits()
@@ -165,6 +201,28 @@ void C_EntityManager::updateRevealedUnits()
             }
         }
     }
+}
+
+int C_EntityManager::createProjectile(ProjectileType type, const Vector2& pos, float aimAngle, u8 teamId)
+{
+    //create locally predicted projectile
+    //add it to the locally predicted array
+    if (type < 0 || type >= PROJECTILE_MAX_TYPES) {
+        std::cout << "EntityManager::createProjectile error - Invalid type" << std::endl;
+        return -1;
+    }
+
+    u32 uniqueId = localLastUniqueId++;
+    int index = localProjectiles.addElement(uniqueId);
+
+    C_Projectile& projectile = localProjectiles[index];
+
+    C_Projectile_init(projectile, type, pos, aimAngle);
+
+    projectile.uniqueId = uniqueId;
+    projectile.teamId = teamId;
+
+    return uniqueId;
 }
 
 //@TODO: Implementation is very similar to method above
@@ -247,6 +305,7 @@ void C_EntityManager::allocateAll()
 {
     units.resize(MAX_UNITS);
     projectiles.resize(MAX_PROJECTILES);
+    localProjectiles.resize(MAX_PROJECTILES);
 }
 
 void C_EntityManager::setTileMap(TileMap* tileMap)
@@ -329,6 +388,18 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
         sprite.setScale(projectiles[i].scale, projectiles[i].scale);
         sprite.setOrigin(sprite.getLocalBounds().width/2.f, sprite.getLocalBounds().height/2.f);
         sprite.setPosition(projectiles[i].pos);
+    }
+
+    for (int i = 0; i < localProjectiles.firstInvalidIndex(); ++i) {
+        //@WIP: flyingHeight = shooter.height + shooter.flyingHeight
+        spriteNodes.emplace_back(RenderNode(100, localProjectiles[i].uniqueId, (float) localProjectiles[i].collisionRadius));
+
+        sf::Sprite& sprite = spriteNodes.back().sprite;
+
+        sprite.setTexture(m_context.textures->getResource(localProjectiles[i].textureId));
+        sprite.setScale(localProjectiles[i].scale, localProjectiles[i].scale);
+        sprite.setOrigin(sprite.getLocalBounds().width/2.f, sprite.getLocalBounds().height/2.f);
+        sprite.setPosition(localProjectiles[i].pos);
     }
 
     std::sort(spriteNodes.begin(), spriteNodes.end());

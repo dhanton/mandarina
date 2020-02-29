@@ -295,11 +295,13 @@ void GameClient::renderUpdate(sf::Time eTime)
 
     //calling this from here might be a performance hit
     m_entityManager.updateRevealedUnits();
+
+    m_entityManager.renderUpdate(eTime);
 }
 
 void GameClient::setupNextInterpolation()
 {
-    m_entityManager.copySnapshotData(&m_interSnapshot_it->entityManager);
+    m_entityManager.copySnapshotData(&m_interSnapshot_it->entityManager, m_interSnapshot_it->latestAppliedInput);
 
     //we need the end position of controlled entity in the server for this snapshot
     C_Unit* snapshotUnit =  m_interSnapshot_it->entityManager.units.atUniqueId(m_interSnapshot_it->entityManager.controlledEntityUniqueId);
@@ -340,7 +342,7 @@ void GameClient::handleInput(const sf::Event& event, bool focused)
         } else {
 #endif
 
-        PlayerInput_handleKeyboardInput(m_currentInput, event);
+        PlayerInput_handleInput(m_currentInput, event);
 
 #ifdef MANDARINA_DEBUG
         }
@@ -370,6 +372,7 @@ void GameClient::saveCurrentInput()
     C_EntityManager* manager = &m_entityManager;
 
     //use the most recent EntityManager available
+    //to check for collisions more accurately
     if (!m_snapshots.empty()) {
         manager = &m_snapshots.back().entityManager;
     }
@@ -377,6 +380,10 @@ void GameClient::saveCurrentInput()
     //we dont modify the unit since we intepolate its position
     //between two inputs (result is stored in unitPos)
     C_Unit_applyInput(*unit, unitPos, m_currentInput, C_ManagersContext(manager, &m_tileMap), m_inputRate);
+
+    //when casting abilities we use the normal entity manager
+    //since local entities might be created
+    C_Unit_applyAbilitiesInput(*unit, m_currentInput, C_ManagersContext(&m_entityManager, &m_tileMap));
 
     //send this input
     {

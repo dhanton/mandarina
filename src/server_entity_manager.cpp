@@ -147,7 +147,7 @@ void EntityManager::packData(const EntityManager* snapshot, u8 teamId, CRCPacket
             outPacket << projectile.type;
         }
 
-        Projectile_packData(projectile, prevProj, teamId, outPacket);
+        Projectile_packData(projectile, prevProj, teamId, outPacket, this);
     }
 }
 

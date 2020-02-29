@@ -590,36 +590,16 @@ bool C_Unit_shouldBeHiddenFrom(const C_Unit& unit, const C_Unit& otherUnit)
 void C_Unit_interpolate(C_Unit& unit, const C_ManagersContext& context, const C_Unit* prevUnit, const C_Unit* nextUnit, double t, double d)
 {
     if (prevUnit && nextUnit) {
-        Vector2 newPos = unit.pos;
-        float newAimAngle = unit.aimAngle;
-        bool locallyHidden = unit.status.locallyHidden;
-
         //only interpolate position and aimAngle for units we're not controlling
         if (unit.uniqueId != context.entityManager->controlledEntityTeamId) {
-            newPos = Helper_lerpVec2(prevUnit->pos, nextUnit->pos, t, d);
-            newAimAngle = Helper_lerpAngle(prevUnit->aimAngle, nextUnit->aimAngle, t, d);
+            unit.pos = Helper_lerpVec2(prevUnit->pos, nextUnit->pos, t, d);
+            unit.aimAngle = Helper_lerpAngle(prevUnit->aimAngle, nextUnit->aimAngle, t, d);
         }
-
-        //copy all fields
-        //@TODO: Some of them might require interpolation (animation data for example)
-        unit = *nextUnit;
-
-        //apply interpolation (or no copying at all) to special fields
-        unit.pos = newPos;
-        unit.aimAngle = newAimAngle;
-        unit.status.locallyHidden = locallyHidden;
     }
 
     if (!prevUnit && nextUnit) {
         //This is the first time the entity is being rendered
         //creation callbacks
-
-        //@TODO: Keep track of already sent entities
-        //to see which entities are being sent for the first time
-        //in the entire game
-        //store it as ranges: entities between [1, 130] and [136, 400] were already sent
-        //this is probably the most efficient method in memory (sorted range pairs)
-        //or just a simple hash table
     }
 
     if (prevUnit && !nextUnit) {
@@ -628,14 +608,40 @@ void C_Unit_interpolate(C_Unit& unit, const C_ManagersContext& context, const C_
     }
 }
 
-void Unit_applyInput(Unit& unit, const PlayerInput& input, const ManagersContext& context)
+void Unit_applyInput(Unit& unit, const PlayerInput& input, const ManagersContext& context, u16 clientDelay)
 {
     //@TODO: Check flags to see if we can actually move (stunned, rooted, etc)
 
     Vector2 newPos = unit.pos;
 
-    bool moved = PlayerInput_repeatAppliedInput(input, newPos, unit.movementSpeed);
     unit.aimAngle = input.aimAngle;
+
+    //@WIP: Check cooldowns and the type of ability to call proper callback
+    //We cast abilities before moving so it works like in the client
+    //(because in the client inputs don't move the unit instantaneously)
+    if (input.primaryFire) {
+        int uniqueId = context.entityManager->createProjectile(PROJECTILE_HellsBubble, unit.pos, unit.aimAngle, unit.teamId);
+
+        if (uniqueId != -1) {
+            Projectile* projectile = context.entityManager->projectiles.atUniqueId(uniqueId);
+
+            if (projectile) {
+                float totalDistance = ((float) clientDelay / 1000.f) * projectile->movementSpeed;
+
+                //do no more than 5 iteration steps
+                int steps = std::min((int) (totalDistance / projectile->collisionRadius), 5);
+                sf::Time stepTime = sf::milliseconds(clientDelay/steps);
+                int i = 0;
+
+                while (i < steps && !projectile->dead) {
+                    Projectile_update(*projectile, stepTime, context);
+                    i++;
+                }
+            }
+        }
+    }
+    
+    bool moved = PlayerInput_repeatAppliedInput(input, newPos, unit.movementSpeed);
 
     if (moved) {
         Unit_moveColliding(unit, newPos, context);
@@ -685,5 +691,16 @@ void C_Unit_applyInput(const C_Unit& unit, Vector2& unitPos, PlayerInput& input,
 
     if (moved) {
         _C_Unit_predictMovement(unit, oldPos, unitPos, context);
+    }
+}
+
+void C_Unit_applyAbilitiesInput(const C_Unit& unit, const PlayerInput& input, const C_ManagersContext& context)
+{
+    if (input.primaryFire) {
+        int uniqueId = context.entityManager->createProjectile(PROJECTILE_HellsBubble, unit.pos, unit.aimAngle, unit.teamId);
+
+        if (uniqueId != -1) {
+            context.entityManager->localProjectiles.atUniqueId(uniqueId)->createdInputId = input.id;
+        }
     }
 }

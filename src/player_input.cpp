@@ -15,6 +15,11 @@ void PlayerInput_packData(PlayerInput& playerInput, CRCPacket& outPacket)
     stream.pushBit(playerInput.up);
     stream.pushBit(playerInput.down);
 
+    stream.pushBit(playerInput.primaryFire);
+    stream.pushBit(playerInput.secondaryFire);
+    stream.pushBit(playerInput.altAbility);
+    stream.pushBit(playerInput.ultimate);
+
     outPacket << playerInput.id;
     outPacket << stream.popByte();
     outPacket << Helper_angleTo16bit(playerInput.aimAngle);
@@ -35,15 +40,22 @@ void PlayerInput_loadFromData(PlayerInput& playerInput, CRCPacket& inPacket)
     playerInput.up = stream.popBit();
     playerInput.down = stream.popBit();
 
+    playerInput.primaryFire = stream.popBit();
+    playerInput.secondaryFire = stream.popBit();
+    playerInput.altAbility = stream.popBit();
+    playerInput.ultimate = stream.popBit();
+
     u16 angle16bit;
     inPacket >> angle16bit;
 
     playerInput.aimAngle = Helper_angleFrom16bit(angle16bit);
 }
 
-void PlayerInput_handleKeyboardInput(PlayerInput& playerInput, const sf::Event& event)
+void PlayerInput_handleInput(PlayerInput& playerInput, const sf::Event& event)
 {
     //playerInput contains the result of the previous chain of inputs
+
+    //@TODO: Use player configurable hotkeys (store in a map)
 
     if (event.type == sf::Event::KeyPressed) {
         if (event.key.code == sf::Keyboard::A) {
@@ -60,6 +72,24 @@ void PlayerInput_handleKeyboardInput(PlayerInput& playerInput, const sf::Event& 
 
         if (event.key.code == sf::Keyboard::S) {
             playerInput.down = true;
+        }
+
+        if (event.key.code == sf::Keyboard::LShift) {
+            playerInput.altAbility = true;
+        }
+
+        if (event.key.code == sf::Keyboard::Q) {
+            playerInput.ultimate = true;
+        }
+    }
+
+    if (event.type == sf::Event::MouseButtonPressed) {
+        if (event.mouseButton.button == sf::Mouse::Left) {
+            playerInput.primaryFire = true;
+        }
+
+        if (event.mouseButton.button == sf::Mouse::Right) {
+            playerInput.secondaryFire = true;
         }
     }
 
@@ -79,6 +109,24 @@ void PlayerInput_handleKeyboardInput(PlayerInput& playerInput, const sf::Event& 
         if (event.key.code == sf::Keyboard::S) {
             playerInput.down = false;
         }
+
+        if (event.key.code == sf::Keyboard::LShift) {
+            playerInput.altAbility = false;
+        }
+
+        if (event.key.code == sf::Keyboard::Q) {
+            playerInput.ultimate = false;
+        }
+    }
+
+    if (event.type == sf::Event::MouseButtonReleased) {
+        if (event.mouseButton.button == sf::Mouse::Left) {
+            playerInput.primaryFire = false;
+        }
+
+        if (event.mouseButton.button == sf::Mouse::Right) {
+            playerInput.secondaryFire = false;
+        }
     }
 }
 
@@ -93,7 +141,9 @@ void PlayerInput_clearKeys(PlayerInput& playerInput)
 std::string PlayerInput_toString(const PlayerInput& input)
 {
     std::stringstream ss;
-    ss << input.left << ' ' << input.right << ' ' << input.up << ' ' << input.down;   
+    ss << input.left << ' ' << input.right << ' ' << input.up << ' ' << input.down
+       << input.primaryFire << ' ' << input.secondaryFire << ' ' << input.altAbility << ' ' << input.ultimate;
+   
     return ss.str();
 }
 

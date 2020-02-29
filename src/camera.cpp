@@ -41,7 +41,7 @@ void Camera::renderUpdate(sf::Time eTime)
 void Camera::handleInput(const sf::Event& event)
 {
 #ifdef MANDARINA_DEBUG
-    PlayerInput_handleKeyboardInput(m_freeInput, event);
+    PlayerInput_handleInput(m_freeInput, event);
 
     //@TODO: interpolate to zoom smoothly
     if (event.type == sf::Event::MouseWheelScrolled) {

@@ -121,6 +121,8 @@ GameServer::GameServer(const Context& context, int playersNeeded):
     m_maxSnapshotRate = m_updateRate;
     m_minSnapshotRate = sf::seconds(1.f/10.f);
 
+    m_maxPingCorrection = sf::milliseconds(70);
+
     m_tileMapFilename = "test_small";
 
     /////////////////////////////////////////////////////////////////////////////////////////////
@@ -138,8 +140,7 @@ GameServer::GameServer(const Context& context, int playersNeeded):
     //@DELETE (TESTING)
     m_entityManager.createUnit(UNIT_RedDemon, Vector2(100.f, 300.f), 0);
     for (int i = 0; i < 100; ++i) {
-        // int uniqueId = m_entityManager.createUnit(UNIT_RedDemon, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 1);
-        int uniqueId = m_entityManager.createProjectile(PROJECTILE_HellsBubble, Vector2(rand() % 100 + 1300, rand() % 100 + 1200.f), rand()%360, 1);
+        int uniqueId = m_entityManager.createUnit(UNIT_RedDemon, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 1);
     }
 
     if (!context.local) {
@@ -273,9 +274,15 @@ void GameServer::update(const sf::Time& eTime, bool& running)
     //When all party members are ready the game starts 
     //All the other players are kicked out
 
-    //reset number of inputs sent (for next update)
     for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
+        //reset number of inputs sent (for next update)
         m_clients[i].inputsSent = 0;
+
+        //get the ping 
+        //Maybe we should average previous pings to get more accurate info??
+        SteamNetworkingQuickConnectionStatus status;
+        SteamNetworkingSockets()->GetQuickConnectionStatus(m_clients[i].connectionId, &status);
+        m_clients[i].ping = status.m_nPing;
     }
 
     m_entityManager.update(eTime);
@@ -412,7 +419,12 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
 
             //only apply inputs that haven't been applied yet
             if (unit && playerInput.id > m_clients[index].latestInputId) {
-                Unit_applyInput(*unit, playerInput, ManagersContext(&m_entityManager, &m_collisionManager, &m_tileMap));
+                //@WIP: Don't hardcode 150, use the same interpolation delay the client is using
+                //Client::snapshotsRequiredToRender / Server::m_snapshotRate  = 0.150 seconds = renderDelay
+                //clientDelay = pingDelay + renderDelay
+                int clientDelay = Helper_clamp(m_clients[index].ping, 0, m_maxPingCorrection.asMilliseconds()) + 150;
+
+                Unit_applyInput(*unit, playerInput, ManagersContext(&m_entityManager, &m_collisionManager, &m_tileMap), clientDelay);
 
                 m_clients[index].latestInputId = playerInput.id;
             }

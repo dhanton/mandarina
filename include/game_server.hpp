@@ -44,6 +44,8 @@ public:
 
         u8 teamId = 0;
         u32 controlledEntityUniqueId = 0;
+
+        int ping = -1;
     };
 
     //data we're not using as much
@@ -97,6 +99,7 @@ private:
     sf::Time m_minInputRate;
     sf::Time m_maxSnapshotRate;
     sf::Time m_minSnapshotRate;
+    sf::Time m_maxPingCorrection;
 
     //Number of clients required to start the game
     int m_playersNeeded;

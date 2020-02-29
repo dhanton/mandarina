@@ -5,6 +5,7 @@
 #include "collision_manager.hpp"
 #include "quadtree.hpp"
 #include "server_entity_manager.hpp"
+#include "client_entity_manager.hpp"
 #include "tilemap.hpp"
 #include "bit_stream.hpp"
 #include "units.hpp"
@@ -24,6 +25,7 @@ bool _BaseProjectile_loadFromJson(JsonParser* jsonParser, ProjectileType type, c
 
     projectile.type = type;
 
+    projectile.dead = false;
     projectile.collisionRadius = (*doc)["collision_radius"].GetInt();
     projectile.movementSpeed = (*doc)["movement_speed"].GetInt();
     projectile.range = (*doc)["range"].GetInt();
@@ -49,12 +51,23 @@ bool _BaseProjectile_loadFromJson(JsonParser* jsonParser, ProjectileType type, c
     return true;
 }
 
+void _BaseProjectile_angleInit(_BaseProjectileData& projectile, const Vector2& pos, float aimAngle)
+{
+    aimAngle *= PI/180.f;
+    projectile.vel = Vector2(std::sin(aimAngle), std::cos(aimAngle)) * (float) projectile.movementSpeed;
+}
+
+bool _BaseProjectile_canHitTeam(const _BaseProjectileData& projectile, u8 teamId)
+{
+    return (teamId == projectile.teamId && (projectile.hitFlags & HitFlags::Allies) != 0) ||
+           (teamId != projectile.teamId && (projectile.hitFlags & HitFlags::Enemies) != 0);
+}
+
 void _Projectile_loadFromJson(JsonParser* jsonParser, ProjectileType type, const char* filename, Projectile& projectile)
 {
     bool result = _BaseProjectile_loadFromJson(jsonParser, type, filename, projectile);
 
     if (result) {
-        projectile.dead = false;
         projectile.distanceTraveled = 0.f;
     }
 }
@@ -103,8 +116,7 @@ void Projectile_init(Projectile& projectile, u8 type, const Vector2& pos, float 
     projectile = g_initialProjectileData[type];
 
     projectile.pos = pos;
-    aimAngle *= PI/180.f;
-    projectile.vel = Vector2(std::sin(aimAngle), std::cos(aimAngle)) * (float) projectile.movementSpeed;
+    _BaseProjectile_angleInit(projectile, pos, aimAngle);
 }
 
 void C_Projectile_init(C_Projectile& projectile, u8 type)
@@ -116,7 +128,19 @@ void C_Projectile_init(C_Projectile& projectile, u8 type)
     projectile = g_initialCProjectileData[type];
 }
 
-void Projectile_packData(const Projectile& projectile, const Projectile* prevProj, u8 teamId, CRCPacket& outPacket)
+void C_Projectile_init(C_Projectile& projectile, u8 type, const Vector2& pos, float aimAngle)
+{
+    if (type < 0 || type >= PROJECTILE_MAX_TYPES) {
+        return;
+    }
+
+    projectile = g_initialCProjectileData[type];
+
+    projectile.pos = pos;
+    _BaseProjectile_angleInit(projectile, pos, aimAngle);
+}
+
+void Projectile_packData(const Projectile& projectile, const Projectile* prevProj, u8 teamId, CRCPacket& outPacket, const EntityManager* entityManager)
 {
     BitStream bits;
 
@@ -128,6 +152,14 @@ void Projectile_packData(const Projectile& projectile, const Projectile* prevPro
 
     bool collisionRadiusChanged = !prevProj || projectile.collisionRadius != prevProj->collisionRadius;
     bits.pushBit(collisionRadiusChanged);
+
+    bool shooterUniqueIdChanged = !prevProj || projectile.shooterUniqueId != prevProj->shooterUniqueId;
+    bits.pushBit(shooterUniqueIdChanged);
+
+    const Unit* shooter = entityManager->units.atUniqueId(projectile.shooterUniqueId);
+    //Send position of shooter only for the first packet
+    bool sendShooterPos = !prevProj && shooter && !Unit_isVisibleForTeam(*shooter, teamId);
+    bits.pushBit(sendShooterPos);
 
     u8 byte = bits.popByte();
     outPacket << byte;
@@ -144,10 +176,13 @@ void Projectile_packData(const Projectile& projectile, const Projectile* prevPro
         outPacket << projectile.collisionRadius;
     }
     
-    //@WIP: We need to send the shooterId if it's visible for the team we're packing for
-    //otherwise send latest used position
-    //The client will locally predict the latest position of the shooter if it can't see it
-    //But it can't do anything if the shooter was never revealed
+    if (sendShooterPos) {
+        outPacket << projectile.lastShooterPos.x << projectile.lastShooterPos.y;
+    } 
+    
+    if (shooterUniqueIdChanged) {
+        outPacket << projectile.shooterUniqueId;
+    }
 }
 
 void C_Projectile_loadFromData(C_Projectile& projectile, CRCPacket& inPacket)
@@ -161,6 +196,8 @@ void C_Projectile_loadFromData(C_Projectile& projectile, CRCPacket& inPacket)
     bool posXChanged = bits.popBit();
     bool posYChanged = bits.popBit();
     bool collisionRadiusChanged = bits.popBit();
+    bool shooterUniqueIdChanged = bits.popBit();
+    bool sendShooterPos = bits.popBit();
 
     if (posXChanged) {
         inPacket >> projectile.pos.x;
@@ -173,14 +210,30 @@ void C_Projectile_loadFromData(C_Projectile& projectile, CRCPacket& inPacket)
     if (collisionRadiusChanged) {
         inPacket >> projectile.collisionRadius;
     }
+    
+    if (sendShooterPos) {
+        inPacket >> projectile.lastShooterPos.x >> projectile.lastShooterPos.y;
+    } 
+    
+    if (shooterUniqueIdChanged) {
+        inPacket >> projectile.shooterUniqueId;
+    }
 }
 
 void Projectile_update(Projectile& projectile, sf::Time eTime, const ManagersContext& context)
 {
+    if (projectile.dead) return;
+
     //0 range means the projectile can travel infinitely
     if (projectile.range != 0 && projectile.distanceTraveled > projectile.range) {
         projectile.dead = true;
         return;
+    }
+
+    Unit* shooter = context.entityManager->units.atUniqueId(projectile.shooterUniqueId);
+
+    if (shooter) {
+        projectile.lastShooterPos = shooter->pos;
     }
 
     Vector2 moveVec = projectile.vel * eTime.asSeconds();
@@ -220,8 +273,7 @@ void Projectile_update(Projectile& projectile, sf::Time eTime, const ManagersCon
         Unit* unit = context.entityManager->units.atUniqueId(collisionUniqueId);
 
         if (unit) {
-            if ((unit->teamId == projectile.teamId && (projectile.hitFlags & HitFlags::Allies) != 0) ||
-                (unit->teamId != projectile.teamId && (projectile.hitFlags & HitFlags::Enemies) != 0)) {
+            if (_BaseProjectile_canHitTeam(projectile, unit->teamId)) {
 
                 Projectile_onHit(projectile, unit);
                 projectile.dead = true;
@@ -230,6 +282,36 @@ void Projectile_update(Projectile& projectile, sf::Time eTime, const ManagersCon
         }
 
         query.Next();
+    }
+}
+
+void C_Projectile_localUpdate(C_Projectile& projectile, sf::Time eTime, const C_ManagersContext& context)
+{
+    projectile.pos += projectile.vel * eTime.asSeconds();
+}
+
+void C_Projectile_checkCollisions(C_Projectile& projectile, const C_ManagersContext& context)
+{
+    const Circlef circle(projectile.pos, projectile.collisionRadius);
+    Circlef unitCircle;
+
+    u16 collidingTile = context.tileMap->getCollidingTile(circle);
+    if ((collidingTile & (TILE_BLOCK | TILE_WALL)) != 0) {
+        projectile.dead = true;
+    }
+
+    for (int i = 0; i < context.entityManager->units.firstInvalidIndex(); ++i) {
+        const C_Unit& unit = context.entityManager->units[i];
+        unitCircle.center = unit.pos;
+        unitCircle.radius = (float) unit.collisionRadius;
+
+        if (_BaseProjectile_canHitTeam(projectile, unit.teamId) && circle.intersects(unitCircle)) {
+            projectile.dead = true;
+
+            //we can also reveal the unit locally if its locally hidden
+
+            break;
+        }
     }
 }
 
@@ -250,9 +332,6 @@ void Projectile_onHit(Projectile& projectile, Unit* unitHit)
 void C_Projectile_interpolate(C_Projectile& projectile, const C_Projectile* prevProj, const C_Projectile* nextProj, double t, double d)
 {
     if (prevProj && nextProj) {
-        Vector2 newPos = Helper_lerpVec2(prevProj->pos, nextProj->pos, t, d);
-
-        projectile = *nextProj;
-        projectile.pos = newPos;
+        projectile.pos = Helper_lerpVec2(prevProj->pos, nextProj->pos, t, d);
     }
 }

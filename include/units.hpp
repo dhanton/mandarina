@@ -165,7 +165,8 @@ bool C_Unit_shouldBeHiddenFrom(const C_Unit& unit, const C_Unit& otherUnit);
 
 void C_Unit_interpolate(C_Unit& unit, const C_ManagersContext& context, const C_Unit* prevUnit, const C_Unit* nextUnit, double t, double d);
 
-void Unit_applyInput(Unit& unit, const PlayerInput& input, const ManagersContext& context);
+void Unit_applyInput(Unit& unit, const PlayerInput& input, const ManagersContext& context, u16 clientDelay);
 
 //unit is not modified, only unitPos (since we want to interpolate)
 void C_Unit_applyInput(const C_Unit& unit, Vector2& unitPos, PlayerInput& input, const C_ManagersContext& context, sf::Time dt);
+void C_Unit_applyAbilitiesInput(const C_Unit& unit, const PlayerInput& input, const C_ManagersContext& context);

@@ -6,6 +6,10 @@
 #include "managers_context.hpp"
 #include "json_parser.hpp"
 
+//???
+//@TODO: Projectiles should be encapsulated in a more general class that includes
+//all entities that have no health/abilities/buffs
+
 enum ProjectileType {
     #define LoadProjectile(projectile_name, texture_id, json_id) \
         PROJECTILE_##projectile_name,
@@ -34,7 +38,12 @@ struct _BaseProjectileData
 {
     u32 uniqueId;
     Vector2 pos;
+    Vector2 vel;
+
+    u8 teamId;
     u8 type;
+    bool dead;
+
     u8 collisionRadius;
     u8 hitFlags;
     u16 movementSpeed;
@@ -51,10 +60,8 @@ struct _BaseProjectileData
     Vector2 lastShooterPos;
 };
 
-struct Projectile : _BaseProjectileData {
-    u8 teamId;
-    Vector2 vel;
-    bool dead;
+struct Projectile : _BaseProjectileData 
+{
     float distanceTraveled;
 
     //for projectiles that don't die when they hit something
@@ -64,9 +71,14 @@ struct Projectile : _BaseProjectileData {
     //onHit callback
 };
 
-struct C_Projectile : _BaseProjectileData {
+struct C_Projectile : _BaseProjectileData 
+{
     float scale;
     u16 textureId;
+
+    //if the projectile was locally created
+    //this is the input id that was used
+    u32 createdInputId;
 };
 
 extern Projectile g_initialProjectileData[PROJECTILE_MAX_TYPES];
@@ -80,15 +92,24 @@ struct Unit;
 void Projectile_init(Projectile& projectile, u8 type, const Vector2& pos, float aimAngle);
 void C_Projectile_init(C_Projectile& projectile, u8 type);
 
+//Used to locally predict projectiles when player fires
+void C_Projectile_init(C_Projectile& projectile, u8 type, const Vector2& pos, float aimAngle);
+
 //@WIP: Using delta encoding is probably worse for projectiles
 //since they're always moving and the don't carry any other info
 //(maybe we have to send the position of the one who shot it??, or his uniqueId??)
-void Projectile_packData(const Projectile& projectile, const Projectile* prevProj, u8 teamId, CRCPacket& outPacket);
+void Projectile_packData(const Projectile& projectile, const Projectile* prevProj, u8 teamId, CRCPacket& outPacket, const EntityManager* entityManager);
 void C_Projectile_loadFromData(C_Projectile& projectile, CRCPacket& inPacket);
 
 //check if it's hitting someone (using hitsAllies and hitsEnemies)
 //call onHit and set dead = true
 void Projectile_update(Projectile& projectile, sf::Time eTime, const ManagersContext& context);
+
+//simply update the position of the projectile using its velocity
+void C_Projectile_localUpdate(C_Projectile& projectile, sf::Time eTime, const C_ManagersContext& context);
+
+//check collisions with units locally and remove the projectile if collision happens
+void C_Projectile_checkCollisions(C_Projectile& projectile, const C_ManagersContext& context);
 
 //depending on the projectile type this function might do different things
 //default (and most projectiles) just deal damage
