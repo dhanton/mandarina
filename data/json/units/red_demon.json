@@ -2,6 +2,5 @@
     "max_health": 200,
     "movement_speed": 350,
     "collision_radius": 20,
-    "scale": 4,
-    "max_attacks_available": 3
+    "scale": 4
 }

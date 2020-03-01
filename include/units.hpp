@@ -10,13 +10,87 @@
 #include "json_parser.hpp"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////// ABILITIES ////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+enum class RechargeType {
+    None,
+
+    //recharged by cooldown
+    Cooldown,
+
+    //never recharged nor casted
+    Passive,
+
+    //recharged by doing thing (dealing damage, gettings kills, objectives)
+    Points
+};
+
+RechargeType rechargeTypeFromStr(const std::string& str);
+
+enum AbilityType {
+    ABILITY_NONE,
+
+    #define LoadAbility(ability_name, json_id) \
+        ABILITY_##ability_name,
+    #include "abilities.inc"
+    #undef LoadAbility
+
+    ABILITY_MAX_TYPES
+};
+
+struct _AbilityCooldown
+{
+    u8 maxCharges;
+    u8 currentCharges;
+    float cooldown;
+    float currentCooldown;
+
+    //time that has to pass to use the next charge available
+    float chargeRate;
+};
+
+struct _AbilityPoints
+{
+    float pointsMultiplier;
+    float pointPercentage;
+};
+
+struct _AbilityPassive
+{
+    u16 passiveBuff;
+};
+
+struct Ability
+{
+    u8 type;
+    RechargeType rechargeType;
+
+    //we use one or the other depending on rechargeType
+    union {
+        _AbilityCooldown abCooldown;
+        _AbilityPoints abPoints;
+        _AbilityPassive abPassive;
+    };  
+};
+
+extern Ability g_abilities[ABILITY_MAX_TYPES];
+
+void loadAbilitiesFromJson(JsonParser* jsonParser);
+
+void Ability_update(Ability& ability, sf::Time eTime);
+void Ability_onCallback(Ability& ability);
+bool Ability_canBeCasted(const Ability& ability);
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////// WEAPONS //////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-typedef void (*WeaponCallback)(void);
+// typedef void (*WeaponCallback)(void);
 
 struct WeaponData {
-    WeaponCallback callback;
+    u8 primaryFire;
+    u8 secondaryFire;
     float scale;
     float angleOffset;
     u16 textureId;
@@ -25,7 +99,7 @@ struct WeaponData {
 enum WeaponType {
     WEAPON_NONE,
 
-    #define LoadWeapon(weapon_name, callback_func, json_id) \
+    #define LoadWeapon(weapon_name, callback_func, json_id, primary_fire_id, secondary_fire_id) \
         WEAPON_##weapon_name,
     #include "weapons.inc"
     #undef LoadWeapon
@@ -35,7 +109,7 @@ enum WeaponType {
 
 extern WeaponData g_weaponData[WEAPON_MAX_TYPES];
 
-void initializeWeaponData(JsonParser* jsonParser);
+void loadWeaponsFromJson(JsonParser* jsonParser);
 
 void WeaponCallback_devilsBow();
 
@@ -44,7 +118,7 @@ void WeaponCallback_devilsBow();
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 enum UnitType {
-    #define LoadUnit(unit_name, texture_id, json_id, weapon_id) \
+    #define LoadUnit(unit_name, texture_id, json_id, weapon_id, alt_ability_id, ultimate_id) \
         UNIT_##unit_name,
     #include "units.inc"
     #undef LoadUnit
@@ -87,6 +161,10 @@ bool UnitStatus_equal(const UnitStatus& lhs, const UnitStatus& rhs);
 void UnitStatus_packData(const UnitStatus& status, u8 teamId, CRCPacket& packet);
 void C_UnitStatus_loadFromData(C_UnitStatus& status, CRCPacket& packet);
 
+//@TODO
+//Units and projectiles are too big to fit 2 in a single cache line anyway
+//So maybe it's better to just stick with OOP and new/delete operations?
+
 struct _BaseUnitData
 {
     u32 uniqueId;
@@ -97,12 +175,15 @@ struct _BaseUnitData
     u16 maxHealth;
     u16 health;
     u16 movementSpeed;
-    u8 maxAttacksAvailable;
-    u8 attacksAvailable;
     float aimAngle;
     u8 weaponId;
     u8 collisionRadius;
     u8 trueSightRadius;
+
+    Ability primaryFire;
+    Ability secondaryFire;
+    Ability altAbility;
+    Ability ultimate;
 };
 
 struct Unit : _BaseUnitData

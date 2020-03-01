@@ -7,7 +7,7 @@
 
 #include "managers_context.hpp"
 
-//@WIP: Use this?
+//@TODO: Use this?
 #include "static_bucket.hpp"
 
 class EntityManager

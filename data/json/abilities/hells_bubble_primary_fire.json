@@ -1,0 +1,6 @@
+{
+    "recharge_type": "Cooldown",
+    "charges": 3,
+    "charge_rate": 1,
+    "cooldown": 3
+}

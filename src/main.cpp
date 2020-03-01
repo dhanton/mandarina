@@ -78,7 +78,8 @@ int main(int argc, char* argv[])
 
     context.jsonParser = &jsonParser;
 
-    initializeWeaponData(&jsonParser);
+    loadWeaponsFromJson(&jsonParser);
+    loadAbilitiesFromJson(&jsonParser);
 
     SteamNetworkingIPAddr serverAddr;
     serverAddr.ParseString("127.0.0.1:7000");

@@ -4,7 +4,7 @@
 
 #include "defines.hpp"
 
-//@WIP: Maybe use this for entities
+//@TODO: Maybe use this for entities
 //and the other one for snapshots
 
 template<typename T> 
@@ -19,7 +19,7 @@ public:
     int addElement(u32 uniqueId);
     void removeElement(u32 uniqueId);
 
-    //@WIP: Allow to copy data to a dynamic bucket
+    //@TODO: Allow to copy data to a dynamic bucket
     template<typename OtherT>
     void copyValidDataTo(Bucket<OtherT>& otherBucket) const;
 

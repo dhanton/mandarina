@@ -13,13 +13,144 @@
 
 #include "tilemap.hpp"
 
+RechargeType rechargeTypeFromStr(const std::string& str)
+{
+    if (str == "Cooldown") {
+        return RechargeType::Cooldown;
+    } else if (str == "Passive") {
+        return RechargeType::Passive;
+    } else if (str == "Points") {
+        return RechargeType::Points;
+    }
+
+    return RechargeType::None;
+}
+
+Ability g_abilities[ABILITY_MAX_TYPES];
+
+void _loadAbility(JsonParser* jsonParser, AbilityType type, Ability& ability, const char* json_id)
+{
+    auto* doc = jsonParser->getDocument(json_id);
+
+    ability.type = type;
+    ability.rechargeType = rechargeTypeFromStr((*doc)["recharge_type"].GetString());
+
+    if (ability.rechargeType == RechargeType::Cooldown) {
+        ability.abCooldown.maxCharges = (*doc)["charges"].GetInt();
+        ability.abCooldown.cooldown = (*doc)["cooldown"].GetFloat();
+
+        if (doc->HasMember("charge_rate")) {
+            ability.abCooldown.chargeRate = (*doc)["charge_rate"].GetFloat();
+        } else {
+            ability.abCooldown.chargeRate = 0.f;
+        }
+
+        if (doc->HasMember("starting_charges")) {
+            ability.abCooldown.currentCharges = (*doc)["starting_charges"].GetInt();
+        } else {
+            ability.abCooldown.currentCharges = ability.abCooldown.maxCharges;
+        }
+
+        if (doc->HasMember("starting_cooldown")) {
+            ability.abCooldown.currentCooldown = (*doc)["starting_cooldown"].GetFloat();
+        } else {
+            ability.abCooldown.currentCooldown = 0.f;
+        }
+
+    } else if (ability.rechargeType == RechargeType::Points) {
+        if (doc->HasMember("starting_percentage")) {
+            ability.abPoints.pointPercentage = Helper_clamp((*doc)["starting_percentage"].GetFloat(), 0.f, 1.f);
+        } else {
+            ability.abPoints.pointPercentage = 0.f;
+        }
+
+        if (doc->HasMember("points_multiplier")) {
+            ability.abPoints.pointPercentage = (*doc)["points_multiplier"].GetFloat();
+        } else {
+            ability.abPoints.pointPercentage = 1.f;
+        }
+
+        ability.abPoints.pointsMultiplier = 1.f;
+    }
+}
+
+void loadAbilitiesFromJson(JsonParser* jsonParser)
+{
+    #define LoadAbility(ability_name, json_id) \
+        _loadAbility(jsonParser, ABILITY_##ability_name, g_abilities[ABILITY_##ability_name], json_id);
+    #include "abilities.inc"
+    #undef LoadAbility
+}
+void Ability_update(Ability& ability, sf::Time eTime)
+{
+    float dt = eTime.asSeconds();
+
+    switch (ability.rechargeType) 
+    {
+        case RechargeType::Cooldown:
+        {
+            if (ability.abCooldown.currentCharges < ability.abCooldown.maxCharges) {
+                if (ability.abCooldown.currentCooldown != 0.f) {
+                    ability.abCooldown.currentCooldown = std::max(ability.abCooldown.currentCooldown - dt, 0.f);
+
+                    if (std::fmod(ability.abCooldown.currentCooldown, ability.abCooldown.cooldown) == 0) {
+                        ability.abCooldown.currentCharges++;
+                    }
+                }
+            }
+            break;
+        }
+    }
+}
+
+void Ability_onCallback(Ability& ability)
+{
+    switch (ability.rechargeType) 
+    {
+        case RechargeType::Cooldown:
+        {
+            if (ability.abCooldown.currentCharges != 0) {
+                ability.abCooldown.currentCharges--;
+                ability.abCooldown.currentCooldown += ability.abCooldown.cooldown;
+            }
+            break;
+        }
+
+        case RechargeType::Points:
+        {
+            ability.abPoints.pointPercentage = 0;
+            break;
+        }
+    }
+}
+
+bool Ability_canBeCasted(const Ability& ability)
+{
+    switch (ability.rechargeType) 
+    {
+        case RechargeType::Cooldown:
+        {
+            return ability.abCooldown.currentCharges > 0;
+        }
+
+        case RechargeType::Points:
+        {
+            return ability.abPoints.pointPercentage >= 1;
+        }
+    }
+
+    return false;
+}
+
 WeaponData g_weaponData[WEAPON_MAX_TYPES];
 
-void _loadWeapon(JsonParser* jsonParser, WeaponData& weaponData, const char* filename, u16 textureId)
+void _loadWeapon(JsonParser* jsonParser, WeaponData& weaponData, const char* json_id, u16 textureId, u8 primaryFire, u8 secondaryFire)
 {
-    auto* doc = jsonParser->getDocument(filename);
+    auto* doc = jsonParser->getDocument(json_id);
 
     weaponData.textureId = textureId;
+    weaponData.primaryFire = primaryFire;
+    weaponData.secondaryFire = secondaryFire;
 
     if (doc->HasMember("scale")) {
         weaponData.scale = (*doc)["scale"].GetFloat();
@@ -34,11 +165,11 @@ void _loadWeapon(JsonParser* jsonParser, WeaponData& weaponData, const char* fil
     }
 }
 
-void initializeWeaponData(JsonParser* jsonParser)
+void loadWeaponsFromJson(JsonParser* jsonParser)
 {
-    #define LoadWeapon(weapon_name, callback_func, json_filename) \
-        _loadWeapon(jsonParser, g_weaponData[WEAPON_##weapon_name], json_filename, TextureId::weapon_name); \
-        g_weaponData[WEAPON_##weapon_name].callback = &WeaponCallback_##callback_func;
+    #define LoadWeapon(weapon_name, callback_func, json_id, primary_fire_id, secondary_fire_id) \
+        _loadWeapon(jsonParser, g_weaponData[WEAPON_##weapon_name], json_id, TextureId::weapon_name, primary_fire_id, secondary_fire_id); \
+        // g_weaponData[WEAPON_##weapon_name].callback = &WeaponCallback_##callback_func;
     #include "weapons.inc"
     #undef LoadWeapon
 }
@@ -92,16 +223,21 @@ void C_UnitStatus_loadFromData(C_UnitStatus& status, CRCPacket& packet)
 Unit g_initialUnitData[UNIT_MAX_TYPES];
 C_Unit g_initialCUnitData[UNIT_MAX_TYPES];
 
-bool _BaseUnit_loadFromJson(JsonParser* jsonParser, UnitType type, const char* filename, _BaseUnitData& unit, u8 weaponId)
+bool _BaseUnit_loadFromJson(JsonParser* jsonParser, UnitType type, const char* json_id, _BaseUnitData& unit, u8 weaponId, u8 altAbilityId, u8 ultimateId)
 {
-    auto* doc = jsonParser->getDocument(filename);
+    auto* doc = jsonParser->getDocument(json_id);
 
     if (doc == nullptr) {
-        std::cout << "_Unit_loadFromJson error - Invalid json filename " << filename << std::endl;
+        std::cout << "_Unit_loadFromJson error - Invalid json id " << json_id << std::endl;
         return false;
     }
 
     unit.type = type;
+
+    unit.primaryFire = g_abilities[g_weaponData[weaponId].primaryFire];
+    unit.secondaryFire = g_abilities[g_weaponData[weaponId].secondaryFire];
+    unit.altAbility = g_abilities[altAbilityId];
+    unit.ultimate = g_abilities[ultimateId];
 
     if (doc->HasMember("flying_height")) {
         unit.flyingHeight = (*doc)["flying_height"].GetInt();
@@ -118,13 +254,6 @@ bool _BaseUnit_loadFromJson(JsonParser* jsonParser, UnitType type, const char* f
     }
 
     unit.movementSpeed = (*doc)["movement_speed"].GetInt();
-    unit.maxAttacksAvailable = (*doc)["max_attacks_available"].GetInt();
-
-    if (doc->HasMember("attacks_available")) {
-        unit.attacksAvailable = (*doc)["attacks_available"].GetInt();
-    } else {
-        unit.attacksAvailable = unit.maxAttacksAvailable;
-    }
 
     unit.aimAngle = 0.f;
     unit.weaponId = weaponId;
@@ -139,23 +268,23 @@ bool _BaseUnit_loadFromJson(JsonParser* jsonParser, UnitType type, const char* f
     return true;
 }
 
-void _Unit_loadFromJson(JsonParser* jsonParser, UnitType type, const char* filename, Unit& unit, u8 weaponId)
+void _Unit_loadFromJson(JsonParser* jsonParser, UnitType type, const char* json_id, Unit& unit, u8 weaponId, u8 altAbilityId, u8 ultimateId)
 {
-    bool result = _BaseUnit_loadFromJson(jsonParser, type, filename, unit, weaponId);
+    bool result = _BaseUnit_loadFromJson(jsonParser, type, json_id, unit, weaponId, altAbilityId, ultimateId);
 
     if (result) {
         unit.dead = false;
     }
 }
 
-void _C_Unit_loadFromJson(JsonParser* jsonParser, UnitType type, const char* filename, C_Unit& unit, u16 textureId, u8 weaponId)
+void _C_Unit_loadFromJson(JsonParser* jsonParser, UnitType type, const char* json_id, C_Unit& unit, u16 textureId, u8 weaponId, u8 altAbilityId, u8 ultimateId)
 {
-    bool result = _BaseUnit_loadFromJson(jsonParser, type, filename, unit, weaponId);
+    bool result = _BaseUnit_loadFromJson(jsonParser, type, json_id, unit, weaponId, altAbilityId, ultimateId);
 
     if (result) {
         unit.textureId = textureId;
         
-        auto* doc = jsonParser->getDocument(filename);
+        auto* doc = jsonParser->getDocument(json_id);
 
         if (doc->HasMember("scale")) {
             unit.scale = (*doc)["scale"].GetFloat();
@@ -167,8 +296,8 @@ void _C_Unit_loadFromJson(JsonParser* jsonParser, UnitType type, const char* fil
 
 void loadUnitsFromJson(JsonParser* jsonParser)
 {
-    #define LoadUnit(unit_name, texture_id, json_filename, weapon_id) \
-        _Unit_loadFromJson(jsonParser, UNIT_##unit_name, json_filename, g_initialUnitData[UNIT_##unit_name], weapon_id);
+    #define LoadUnit(unit_name, texture_id, json_id, weapon_id, alt_ability_id, ultimate_id) \
+        _Unit_loadFromJson(jsonParser, UNIT_##unit_name, json_id, g_initialUnitData[UNIT_##unit_name], weapon_id, alt_ability_id, ultimate_id);
 
     #include "units.inc"
     #undef LoadUnit
@@ -176,8 +305,8 @@ void loadUnitsFromJson(JsonParser* jsonParser)
 
 void C_loadUnitsFromJson(JsonParser* jsonParser)
 {
-    #define LoadUnit(unit_name, texture_id, json_filename, weapon_id) \
-        _C_Unit_loadFromJson(jsonParser, UNIT_##unit_name, json_filename, g_initialCUnitData[UNIT_##unit_name], TextureId::texture_id, weapon_id);
+    #define LoadUnit(unit_name, texture_id, json_id, weapon_id, alt_ability_id, ultimate_id) \
+        _C_Unit_loadFromJson(jsonParser, UNIT_##unit_name, json_id, g_initialCUnitData[UNIT_##unit_name], TextureId::texture_id, weapon_id, alt_ability_id, ultimate_id);
 
     #include "units.inc"
     #undef LoadUnit
@@ -225,12 +354,6 @@ void Unit_packData(const Unit& unit, const Unit* prevUnit, u8 teamId, CRCPacket&
     bool healthChanged = !prevUnit || unit.health != prevUnit->health;
     mainBits.pushBit(healthChanged);
 
-    bool maxAttacksAvailableChanged = !prevUnit || unit.maxAttacksAvailable != prevUnit->maxAttacksAvailable;
-    mainBits.pushBit(maxAttacksAvailableChanged);
-
-    bool attacksAvailableChanged = !prevUnit || unit.attacksAvailable != prevUnit->attacksAvailable;
-    mainBits.pushBit(attacksAvailableChanged);
-
     bool aimAngleChanged = !prevUnit || unit.aimAngle != prevUnit->aimAngle;
     mainBits.pushBit(aimAngleChanged);
 
@@ -243,7 +366,8 @@ void Unit_packData(const Unit& unit, const Unit* prevUnit, u8 teamId, CRCPacket&
     //send the flags
     u8 byte1 = mainBits.popByte();
     u8 byte2 = mainBits.popByte();
-    outPacket << byte1 << byte2;
+    outPacket << byte1;
+    outPacket << byte2;
 
     //this didn't work (probably the order was incorrect??)
     // outPacket << mainBits.popByte() << mainBits.popByte();
@@ -273,14 +397,6 @@ void Unit_packData(const Unit& unit, const Unit* prevUnit, u8 teamId, CRCPacket&
         outPacket << unit.health;
     }
 
-    if (maxAttacksAvailableChanged) {
-        outPacket << unit.maxAttacksAvailable;
-    }
-
-    if (attacksAvailableChanged) {
-        outPacket << unit.attacksAvailable;
-    }
-
     if (aimAngleChanged) {
         outPacket << Helper_angleTo16bit(unit.aimAngle);
     }
@@ -308,8 +424,6 @@ void C_Unit_loadFromData(C_Unit& unit, CRCPacket& inPacket)
     bool flyingHeightChanged = mainBits.popBit();
     bool maxHealthChanged = mainBits.popBit();
     bool healthChanged = mainBits.popBit();
-    bool maxAttacksAvailableChanged = mainBits.popBit();
-    bool attacksAvailableChanged = mainBits.popBit();
     bool aimAngleChanged = mainBits.popBit();
     bool collisionRadiusChanged = mainBits.popBit();
     unit.status.forceSent = mainBits.popBit();
@@ -336,14 +450,6 @@ void C_Unit_loadFromData(C_Unit& unit, CRCPacket& inPacket)
 
     if (healthChanged) {
         inPacket >> unit.health;
-    }
-
-    if (maxAttacksAvailableChanged) {
-        inPacket >> unit.maxAttacksAvailable;
-    }
-
-    if (attacksAvailableChanged) {
-        inPacket >> unit.attacksAvailable;
     }
 
     if (aimAngleChanged) {
@@ -471,6 +577,11 @@ void Unit_moveColliding(Unit& unit, Vector2 newPos, const ManagersContext& conte
 
 void Unit_update(Unit& unit, sf::Time eTime, const ManagersContext& context)
 {
+    Ability_update(unit.primaryFire, eTime);
+    Ability_update(unit.secondaryFire, eTime);
+    Ability_update(unit.altAbility, eTime);
+    Ability_update(unit.ultimate, eTime);
+
     Vector2 newPos = unit.pos;
 
     //@DELETE
@@ -619,13 +730,17 @@ void Unit_applyInput(Unit& unit, const PlayerInput& input, const ManagersContext
     //@WIP: Check cooldowns and the type of ability to call proper callback
     //We cast abilities before moving so it works like in the client
     //(because in the client inputs don't move the unit instantaneously)
-    if (input.primaryFire) {
+    if (input.primaryFire && Ability_canBeCasted(unit.primaryFire)) {
         int uniqueId = context.entityManager->createProjectile(PROJECTILE_HellsBubble, unit.pos, unit.aimAngle, unit.teamId);
 
         if (uniqueId != -1) {
             Projectile* projectile = context.entityManager->projectiles.atUniqueId(uniqueId);
 
+            //@WIP: Do all this automatically for every projectile generated
+            //It has to work even for callbacks that generate multiple projectiles
             if (projectile) {
+                Ability_onCallback(unit.primaryFire);
+
                 float totalDistance = ((float) clientDelay / 1000.f) * projectile->movementSpeed;
 
                 //do no more than 5 iteration steps
@@ -696,6 +811,11 @@ void C_Unit_applyInput(const C_Unit& unit, Vector2& unitPos, PlayerInput& input,
 
 void C_Unit_applyAbilitiesInput(const C_Unit& unit, const PlayerInput& input, const C_ManagersContext& context)
 {
+    //@WIP
+    //Check if it can be casted
+    //Start reducing the cooldown
+    //If casting fails on server, correct the cooldown in client
+
     if (input.primaryFire) {
         int uniqueId = context.entityManager->createProjectile(PROJECTILE_HellsBubble, unit.pos, unit.aimAngle, unit.teamId);
 

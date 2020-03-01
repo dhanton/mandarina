@@ -95,14 +95,9 @@ void C_Projectile_init(C_Projectile& projectile, u8 type);
 //Used to locally predict projectiles when player fires
 void C_Projectile_init(C_Projectile& projectile, u8 type, const Vector2& pos, float aimAngle);
 
-//@WIP: Using delta encoding is probably worse for projectiles
-//since they're always moving and the don't carry any other info
-//(maybe we have to send the position of the one who shot it??, or his uniqueId??)
 void Projectile_packData(const Projectile& projectile, const Projectile* prevProj, u8 teamId, CRCPacket& outPacket, const EntityManager* entityManager);
 void C_Projectile_loadFromData(C_Projectile& projectile, CRCPacket& inPacket);
 
-//check if it's hitting someone (using hitsAllies and hitsEnemies)
-//call onHit and set dead = true
 void Projectile_update(Projectile& projectile, sf::Time eTime, const ManagersContext& context);
 
 //simply update the position of the projectile using its velocity
