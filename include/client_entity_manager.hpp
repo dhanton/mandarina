@@ -7,8 +7,11 @@
 
 #include "bucket.hpp"
 #include "context.hpp"
-#include "units.hpp"
 #include "projectiles.hpp"
+
+#include "entity_table.hpp"
+#include "entity.hpp"
+#include "unit.hpp"
 
 struct RenderNode {
     sf::Sprite sprite;
@@ -50,7 +53,7 @@ public:
     void setTileMap(TileMap* tileMap);
 
 public:
-    Bucket<C_Unit> units;
+    EntityTable<C_Entity> entities;
     Bucket<C_Projectile> projectiles;
 
     Bucket<C_Projectile> localProjectiles;

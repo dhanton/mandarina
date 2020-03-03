@@ -87,14 +87,12 @@ void C_EntityManager::performInterpolation(const C_EntityManager* prevSnapshot, 
 
     C_ManagersContext context(this, m_tileMap);
 
-    //interpolate units
-    for (int i = 0; i < units.firstInvalidIndex(); ++i) {
-        C_Unit& unit = units[i];
+    //interpolate entities
+    for (auto it = entities.begin(); it != entities.end(); ++it) {
+        const C_Entity* prevEntity = prevSnapshot->entities.atUniqueId(it->getUniqueId());
+        const C_Entity* nextEntity = nextSnapshot->entities.atUniqueId(it->getUniqueId());
 
-        const C_Unit* prevUnit = prevSnapshot->units.atUniqueId(unit.uniqueId);
-        const C_Unit* nextUnit = nextSnapshot->units.atUniqueId(unit.uniqueId);
-
-        C_Unit_interpolate(unit, context, prevUnit, nextUnit, elapsedTime, totalTime);
+        it->interpolate(context, prevEntity, nextEntity, elapsedTime, totalTime);
     }
 
     //interpolate projectiles
@@ -113,17 +111,14 @@ void C_EntityManager::copySnapshotData(const C_EntityManager* snapshot, u32 late
     //controlledEntity might change
     controlledEntityUniqueId = snapshot->controlledEntityUniqueId;
 
-    const C_Unit* controlledUnit = snapshot->units.atUniqueId(controlledEntityUniqueId);
+    const C_Entity* controlledEntity = snapshot->entities.atUniqueId(controlledEntityUniqueId);
 
-    //copy only entities that don't exist locally
-    for (int i = 0; i < snapshot->units.firstInvalidIndex(); ++i) {
-        const C_Unit& snapshotUnit = snapshot->units[i];
+    //copy entities that don't exist locally
+    for (auto it = snapshot->entities.begin(); it != snapshot->entities.end(); ++it) {
+        const C_Entity* currentEntity = entities.atUniqueId(it->getUniqueId());
 
-        int index = units.getIndexByUniqueId(snapshotUnit.uniqueId);
-
-        if (index == -1) {
-            int thisIndex = units.addElement(snapshotUnit.uniqueId);
-            units[thisIndex] = snapshotUnit;
+        if (!currentEntity) {
+            entities.addEntity(it->clone());
         }
     }
 
@@ -138,20 +133,20 @@ void C_EntityManager::copySnapshotData(const C_EntityManager* snapshot, u32 late
         }
     }
 
-    int i = 0;
+    auto it = entities.begin();
 
-    //remove units not in the snapshot
-    while (i < units.firstInvalidIndex()) {
-        const C_Unit* snapshotUnit = snapshot->units.atUniqueId(units[i].uniqueId);
+    //remove entities not in the snapshot
+    while (it != entities.end()) {
+        const C_Entity* snapshotEntity = snapshot->entities.atUniqueId(it->getUniqueId());
 
-        if (!snapshotUnit) {
-            units.removeElement(units[i].uniqueId);
+        if (!snapshotEntity) {
+            it = entities.removeEntity(it);
         } else {
-            i++;
+            ++it;
         }
     }
 
-    i = 0;
+    int i = 0;
 
     while (i < projectiles.firstInvalidIndex()) {
         const C_Projectile* snapshotProj = snapshot->projectiles.atUniqueId(projectiles[i].uniqueId);
@@ -185,20 +180,24 @@ void C_EntityManager::updateRevealedUnits()
 
     //O(n + m*n) where n is units and m is units on the same team
 
-    for (int i = 0; i < units.firstInvalidIndex(); ++i) {
-        units[i].status.inBush = m_tileMap->isColliding(TILE_BUSH, Circlef(units[i].pos, units[i].collisionRadius));
-        units[i].status.locallyHidden = C_Unit_isInvisible(units[i]);
+    //@BRANCH_WIP: Somehow only call this for entities that have the invisible component
+    //maybe by having a bitflag u8 components that gets update at runtime for each entity
+    //Isn't this like a shittier version of an ECS??
+
+    C_ManagersContext context(this, m_tileMap);
+
+    //locally update if each entity is visible or not
+    for (auto it = entities.begin(); it != entities.end(); ++it) {
+        it->updateLocallyVisible(context);
     }
 
-    //see which units are locally hidden
-    for (int i = 0; i < units.firstInvalidIndex(); ++i) {
-        if (units[i].teamId == controlledEntityTeamId) {
-            //check all units inside true sight range for everyone on the team
-            for (int j = 0; j < units.firstInvalidIndex(); ++j) {
-                if (!C_Unit_shouldBeHiddenFrom(units[i], units[j])) {
-                    units[j].status.locallyHidden = false;
-                } 
-            }
+    //reveal entities locally if they meet the conditions
+    for (auto it = entities.begin(); it != entities.end(); ++it) {
+        //only entities of this team can reveal other entities
+        if (it->teamId != controlledEntityTeamId) continue;
+
+        for (auto it2 = entities.begin(); it2 != entities.end(); ++it2) {
+            it->localReveal(&it2);
         }
     }
 }
@@ -235,40 +234,44 @@ void C_EntityManager::loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inP
     }
 
     //number of units
-    u16 unitNumber;
-    inPacket >> unitNumber;
+    u16 entityNumber;
+    inPacket >> entityNumber;
 
-    for (int i = 0; i < unitNumber; ++i) {
+    for (int i = 0; i < entityNumber; ++i) {
         u32 uniqueId;
         inPacket >> uniqueId;
 
-        C_Unit* prevUnit = nullptr;
+        C_Entity* prevEntity = nullptr;
         
         if (prevSnapshot) {
-            prevUnit = prevSnapshot->units.atUniqueId(uniqueId);
+            prevEntity = prevSnapshot->entities.atUniqueId(uniqueId);
         }
 
         //allocate the unit
-        int index = units.addElement(uniqueId);
+        // int index = units.addElement(uniqueId);
 
-        if (prevUnit) {
+        C_Entity* entity = nullptr;
+
+        if (prevEntity) {
             //if the unit existed in previous snapshot, copy it
-            units[index] = *prevUnit;
+            // units[index] = *prevEntity;
+            entity = entities.addEntity(prevEntity->clone());
 
         } else {
-            u8 unitType;
-            inPacket >> unitType;
+            u8 entityType;
+            inPacket >> entityType;
             
             //otherwise initialize it
-            C_Unit_init(units[index], (UnitType) unitType);
-            units[index].uniqueId = uniqueId;
+            
+            //@BRACH_WIP: Use entityType to deduce class to use
+            entity = entities.addEntity(new C_Unit(uniqueId));
 
             //Entity creation callbacks might go here?
             //Or is it better to have them when the entity is rendered for the first time?
         }
 
         //in both cases it has to be loaded from packet
-        C_Unit_loadFromData(units[index], inPacket);
+        entity->loadFromData(inPacket);
     }
 
     u16 projectileNumber;
@@ -303,7 +306,6 @@ void C_EntityManager::loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inP
 
 void C_EntityManager::allocateAll()
 {
-    units.resize(MAX_UNITS);
     projectiles.resize(MAX_PROJECTILES);
     localProjectiles.resize(MAX_PROJECTILES);
 }
@@ -321,7 +323,7 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
 
     std::vector<RenderNode> spriteNodes;
 
-    for (int i = 0; i < units.firstInvalidIndex(); ++i) {
+    for (auto it = entities.begin(); it != entities.end(); ++it) {
 #ifdef MANDARINA_DEBUG
         if (!renderingLocallyHidden && units[i].status.locallyHidden && units[i].status.forceSent) continue;
 #else

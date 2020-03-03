@@ -14,13 +14,13 @@ void EntityManager::update(sf::Time eTime)
 
     int i;
 
-    for (i = 0; i < units.firstInvalidIndex(); ++i) {
-        Unit_preUpdate(units[i], eTime, context);
-    }
+    // for (i = 0; i < units.firstInvalidIndex(); ++i) {
+    //     Unit_preUpdate(units[i], eTime, context);
+    // }
 
-    for (i = 0; i < units.firstInvalidIndex(); ++i) {
-        Unit_update(units[i], eTime, context);
-    }
+    // for (i = 0; i < units.firstInvalidIndex(); ++i) {
+    //     Unit_update(units[i], eTime, context);
+    // }
 
     for (i = 0; i < projectiles.firstInvalidIndex(); ++i) {
         Projectile_update(projectiles[i], eTime, context);
@@ -40,32 +40,32 @@ void EntityManager::update(sf::Time eTime)
     //don't remove units since they might respawn depending on the game mode
 }
 
-int EntityManager::createUnit(UnitType type, const Vector2& pos, u8 teamId)
-{
-    if (type < 0 || type >= UNIT_MAX_TYPES) {
-        std::cout << "EntityManager::createUnit error - Invalid type" << std::endl;
-        return -1;
-    }
+// int EntityManager::createUnit(UnitType type, const Vector2& pos, u8 teamId)
+// {
+//     if (type < 0 || type >= UNIT_MAX_TYPES) {
+//         std::cout << "EntityManager::createUnit error - Invalid type" << std::endl;
+//         return -1;
+//     }
 
-    u32 uniqueId = _getNewUniqueId();
-    int index = units.addElement(uniqueId);
+//     u32 uniqueId = _getNewUniqueId();
+//     int index = units.addElement(uniqueId);
 
-    Unit& unit = units[index];
+//     Unit& unit = units[index];
 
-    //init has to go first since it copies values
-    Unit_init(unit, type);
+//     //init has to go first since it copies values
+//     Unit_init(unit, type);
 
-    unit.teamId = teamId;
-    unit.uniqueId = uniqueId;
-    unit.pos = pos;
+//     unit.teamId = teamId;
+//     unit.uniqueId = uniqueId;
+//     unit.pos = pos;
 
-    m_collisionManager->onInsertUnit(uniqueId, pos, unit.collisionRadius);
+//     m_collisionManager->onInsertUnit(uniqueId, pos, unit.collisionRadius);
 
-    //we move the unit, forcing it to update its position while checking for collisions
-    Unit_moveColliding(unit, pos, ManagersContext(this, m_collisionManager, m_tileMap), true);
+//     //we move the unit, forcing it to update its position while checking for collisions
+//     Unit_moveColliding(unit, pos, ManagersContext(this, m_collisionManager, m_tileMap), true);
 
-    return uniqueId;
-}
+//     return uniqueId;
+// }
 
 int EntityManager::createProjectile(ProjectileType type, const Vector2& pos, float aimAngle, u8 teamId)
 {
@@ -95,40 +95,40 @@ void EntityManager::takeSnapshot(EntityManager* snapshot) const
 
 void EntityManager::packData(const EntityManager* snapshot, u8 teamId, CRCPacket& outPacket) const
 {
-    u16 unitsToSend = 0;
+    // u16 unitsToSend = 0;
 
-    for (int i = 0; i < units.firstInvalidIndex(); ++i) {
-        if (Unit_isVisibleForTeam(units[i], teamId) || Unit_isMarkedToSendForTeam(units[i], teamId)) {
-            unitsToSend++;
-        }
-    }
+    // for (int i = 0; i < units.firstInvalidIndex(); ++i) {
+    //     if (Unit_isVisibleForTeam(units[i], teamId) || Unit_isMarkedToSendForTeam(units[i], teamId)) {
+    //         unitsToSend++;
+    //     }
+    // }
 
-    outPacket << unitsToSend;
+    // outPacket << unitsToSend;
 
-    for (int i = 0; i < units.firstInvalidIndex(); ++i) {
-        const Unit& unit = units[i];
+    // for (int i = 0; i < units.firstInvalidIndex(); ++i) {
+    //     const Unit& unit = units[i];
 
-        //don't send units that player cannot see
-        if (!Unit_isVisibleForTeam(unit, teamId) && !Unit_isMarkedToSendForTeam(unit, teamId)) continue;
+    //     //don't send units that player cannot see
+    //     if (!Unit_isVisibleForTeam(unit, teamId) && !Unit_isMarkedToSendForTeam(unit, teamId)) continue;
 
-        const Unit* prevUnit = nullptr;
+    //     const Unit* prevUnit = nullptr;
 
-        if (snapshot) {
-            prevUnit = snapshot->units.atUniqueId(unit.uniqueId);
-        }
+    //     if (snapshot) {
+    //         prevUnit = snapshot->units.atUniqueId(unit.uniqueId);
+    //     }
 
-        outPacket << unit.uniqueId;
+    //     outPacket << unit.uniqueId;
 
-        //if the unit didn't exist or it wasn't visible or sent
-        if (!prevUnit || (!Unit_isVisibleForTeam(*prevUnit, teamId) && !Unit_isMarkedToSendForTeam(*prevUnit, teamId))) {
-            outPacket << unit.type;
+    //     //if the unit didn't exist or it wasn't visible or sent
+    //     if (!prevUnit || (!Unit_isVisibleForTeam(*prevUnit, teamId) && !Unit_isMarkedToSendForTeam(*prevUnit, teamId))) {
+    //         outPacket << unit.type;
             
-            //we pack all the data again
-            prevUnit = nullptr;
-        }
+    //         //we pack all the data again
+    //         prevUnit = nullptr;
+    //     }
 
-        Unit_packData(unit, prevUnit, teamId, outPacket);
-    }
+    //     Unit_packData(unit, prevUnit, teamId, outPacket);
+    // }
 
     //We're assuming here all projectiles are visible (which is true?)
     outPacket << (u16) projectiles.firstInvalidIndex();
@@ -153,7 +153,7 @@ void EntityManager::packData(const EntityManager* snapshot, u8 teamId, CRCPacket
 
 void EntityManager::allocateAll()
 {
-    units.resize(MAX_UNITS);
+// units.resize(MAX_UNITS);
     projectiles.resize(MAX_PROJECTILES);
 }
 

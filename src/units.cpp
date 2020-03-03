@@ -636,7 +636,6 @@ void Unit_preUpdate(Unit& unit, sf::Time eTime, const ManagersContext& context)
 void Unit_revealUnit(Unit& unit, u8 teamId)
 {
     unit.visionFlags |= (1 << teamId);
-
 }
 
 void Unit_markToSend(Unit& unit, u8 teamId)
