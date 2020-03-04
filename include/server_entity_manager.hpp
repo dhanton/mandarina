@@ -11,6 +11,7 @@
 #include "static_bucket.hpp"
 
 #include "entity.hpp"
+#include "entity_table.hpp"
 #include "unit.hpp"
 
 class EntityManager
@@ -20,7 +21,7 @@ public:
 
     void update(sf::Time eTime);
 
-    // int createUnit(UnitType type, const Vector2& pos, u8 teamId);
+    Entity* createEntity(const Vector2& pos, u8 teamId);
 
     int createProjectile(ProjectileType type, const Vector2& pos, float aimAngle, u8 teamId);
 
@@ -33,8 +34,9 @@ public:
     void setTileMap(TileMap* tileMap);
 
 public:
-    Bucket<Unit> units;
-    // Bucket<Projectile> projectiles;
+    // Bucket<Unit> units;
+    EntityTable<Entity> entities;
+    Bucket<Projectile> projectiles;
 
 private:
     inline u32 _getNewUniqueId();

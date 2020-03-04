@@ -87,7 +87,7 @@ extern C_Projectile g_initialCProjectileData[PROJECTILE_MAX_TYPES];
 void loadProjectilesFromJson(JsonParser* jsonParser);
 void C_loadProjectilesFromJson(JsonParser* jsonParser);
 
-struct Unit;
+class Unit;
 
 void Projectile_init(Projectile& projectile, u8 type, const Vector2& pos, float aimAngle);
 void C_Projectile_init(C_Projectile& projectile, u8 type);

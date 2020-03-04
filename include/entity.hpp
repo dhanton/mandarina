@@ -1,8 +1,11 @@
 #pragma once
 
+#include <SFML/System/Time.hpp>
+#include "context.hpp"
 #include "managers_context.hpp"
 #include "defines.hpp"
 #include "crcpacket.hpp"
+#include "player_input.hpp"
 
 //This is not an ECS
 //An ECS would probably be better but I have no idea how to make one
@@ -28,16 +31,32 @@ public:
 
     u32 getUniqueId() const;
 
-public:
-    Vector2 pos;
-    Vector2 vel;
-    u8 teamId;
-    u8 collisionRadius;
-    u8 flyingHeight;
-    bool inBush;
+    Vector2 getPosition() const;
+    void setPosition(const Vector2& pos);
 
-private:
+    Vector2 getVelocity() const;
+    void setVelocity(const Vector2& vel);
+    
+    u8 getTeamId() const;
+    void setTeamId(u8 teamId);
+
+    u8 getCollisionRadius() const;
+    void setCollisionRadius(u8 radius);
+
+    u8 getFlyingHeight() const;
+    void setFlyingHeight(u8 flyingHeight);
+
+    bool isInBush() const;
+
+protected:
     const u32 m_uniqueId;
+
+    Vector2 m_pos;
+    Vector2 m_vel;
+    u8 m_teamId;
+    u8 m_collisionRadius;
+    u8 m_flyingHeight;
+    bool m_inBush;
 };
 
 class Entity : public BaseEntityComponent
@@ -49,13 +68,25 @@ public:
     virtual void update(sf::Time eTime, const ManagersContext& context) = 0;
     virtual void preUpdate(sf::Time eTime, const ManagersContext& context) = 0;
     virtual void postUpdate(sf::Time eTime, const ManagersContext& context) = 0;
-    virtual void packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) = 0;
+    virtual void packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) const;
+
+    virtual bool shouldSendToTeam(u8 teamId) const;
+
+    virtual void applyInput(const PlayerInput& input, const ManagersContext& context, u16 clientDelay);
+
+    //Callback when the entity is inserted on the quadtree
+    virtual void onQuadtreeInserted(const ManagersContext& context);
+
+    virtual bool inQuadtree() const;
 
     bool isDead() const;
 
-private:
+protected:
     bool m_dead;
 };
+
+//Used by ClientEntityManager
+struct RenderNode;
 
 class C_Entity : public BaseEntityComponent
 {
@@ -68,12 +99,24 @@ public:
     virtual void interpolate(const C_ManagersContext& context, const C_Entity* prevEntity, 
                              const C_Entity* nextEntity, double t, double d);
 
+    //these 2 methods are called only for the controlled entity in client
+    //update the angle with respect to the mouse
+    virtual void updateControlledAngle(float newAngle);
+
+    virtual void applyMovementInput(Vector2& pos, PlayerInput& input, const C_ManagersContext& context, sf::Time dt);
+    virtual void applyAbilitiesInput(const PlayerInput& input, const C_ManagersContext& context);
+
+    //returns the movement speed of the entity
+    virtual u16 getControlledMovementSpeed() const;
+
     virtual void updateLocallyVisible(const C_ManagersContext& context);
     virtual void localReveal(const C_Entity* entity);
 
+    virtual void insertRenderNode(const C_ManagersContext& managersContext, const Context& context) const;
+
     //@BRANCH_WIP: render methods
 
-private:
+protected:
     u16 m_textureId;
     float m_scale;
 };
@@ -81,12 +124,18 @@ private:
 class HealthComponent
 {
 public:
+    HealthComponent();
+
     void dealDamage(u16 damage, Entity* source);
     void heal(u16 amount, Entity* source);
 
     virtual void onDealDamage(u16 damage, Entity* source);
     virtual void onHeal(u16 amount, Entity* source);
-private:
+
+    u16 getHealth() const;
+    u16 getMaxHealth() const;
+
+protected:
     u16 m_health;
     u16 m_maxHealth;
 };
@@ -99,7 +148,11 @@ public:
 public:
     TrueSightComponent(Vector2& pos, bool& inBush);
 
-    u8 trueSightRadius;
+    void setTrueSightRadius(u8 trueSightRadius);
+    u8 getTrueSightRadius() const;
+
+protected:
+    u8 m_trueSightRadius;
 
 private:
     //these must be stored in another component
@@ -124,10 +177,14 @@ public:
     bool isRevealedForTeam(u8 teamId) const;
     bool isMarkedToSendForTeam(u8 teamId) const;
     bool isVisibleForTeam(u8 teamId) const;
-    bool shouldBeHiddenFrom(TrueSightComponent* otherEntity) const;
+    bool shouldBeHiddenFrom(TrueSightComponent& otherEntity) const;
 
-public:
-    bool locallyHidden;
+    bool isLocallyHidden() const;
+    bool isForceSent() const;
+
+protected:
+    bool m_locallyHidden;
+    bool m_forceSent;
 
 private:
     //stores if the entity is visible for each team (max 64 teams)

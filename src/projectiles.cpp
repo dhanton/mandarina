@@ -8,7 +8,7 @@
 #include "client_entity_manager.hpp"
 #include "tilemap.hpp"
 #include "bit_stream.hpp"
-#include "units.hpp"
+#include "unit.hpp"
 #include "texture_ids.hpp"
 
 Projectile g_initialProjectileData[PROJECTILE_MAX_TYPES];
@@ -156,9 +156,14 @@ void Projectile_packData(const Projectile& projectile, const Projectile* prevPro
     bool shooterUniqueIdChanged = !prevProj || projectile.shooterUniqueId != prevProj->shooterUniqueId;
     bits.pushBit(shooterUniqueIdChanged);
 
-    const Unit* shooter = entityManager->units.atUniqueId(projectile.shooterUniqueId);
+    //@BRANCH_WIP: If the shooter is not a unit this crashes the game
+    //Should we use a dynamic_cast instead?
+    const Unit* shooter = (Unit*) entityManager->entities.atUniqueId(projectile.shooterUniqueId);
+    
     //Send position of shooter only for the first packet
-    bool sendShooterPos = !prevProj && shooter && !Unit_isVisibleForTeam(*shooter, teamId);
+    // bool sendShooterPos = !prevProj && shooter && !Unit_isVisibleForTeam(*shooter, teamId);
+    //should we use isVisibleForTeam instead?
+    bool sendShooterPos = !prevProj && shooter && !shooter->shouldSendToTeam(teamId);
     bits.pushBit(sendShooterPos);
 
     u8 byte = bits.popByte();
@@ -230,10 +235,11 @@ void Projectile_update(Projectile& projectile, sf::Time eTime, const ManagersCon
         return;
     }
 
-    Unit* shooter = context.entityManager->units.atUniqueId(projectile.shooterUniqueId);
+    //@BRANCH_WIP: Should we use dynamic_cast instead?
+    Unit* shooter = (Unit*) context.entityManager->entities.atUniqueId(projectile.shooterUniqueId);
 
     if (shooter) {
-        projectile.lastShooterPos = shooter->pos;
+        projectile.lastShooterPos = shooter->getPosition();
     }
 
     Vector2 moveVec = projectile.vel * eTime.asSeconds();
@@ -270,10 +276,10 @@ void Projectile_update(Projectile& projectile, sf::Time eTime, const ManagersCon
         }
 
         u32 collisionUniqueId = query.GetCurrent()->uniqueId;
-        Unit* unit = context.entityManager->units.atUniqueId(collisionUniqueId);
+        Unit* unit = (Unit*) context.entityManager->entities.atUniqueId(collisionUniqueId);
 
         if (unit) {
-            if (_BaseProjectile_canHitTeam(projectile, unit->teamId)) {
+            if (_BaseProjectile_canHitTeam(projectile, unit->getTeamId())) {
 
                 Projectile_onHit(projectile, unit);
                 projectile.dead = true;
@@ -300,19 +306,32 @@ void C_Projectile_checkCollisions(C_Projectile& projectile, const C_ManagersCont
         projectile.dead = true;
     }
 
-    for (int i = 0; i < context.entityManager->units.firstInvalidIndex(); ++i) {
-        const C_Unit& unit = context.entityManager->units[i];
-        unitCircle.center = unit.pos;
-        unitCircle.radius = (float) unit.collisionRadius;
+    for (auto it = context.entityManager->entities.begin(); it != context.entityManager->entities.end(); ++it) {
+        unitCircle.center = it->getPosition();
+        unitCircle.radius = (float) it->getCollisionRadius();
 
-        if (_BaseProjectile_canHitTeam(projectile, unit.teamId) && circle.intersects(unitCircle)) {
+        if (_BaseProjectile_canHitTeam(projectile, it->getTeamId()) && circle.intersects(unitCircle)) {
             projectile.dead = true;
 
-            //we can also reveal the unit locally if its locally hidden
+            //We could also reveal the entity if it's locally hidden
 
             break;
         }
     }
+
+    // for (int i = 0; i < context.entityManager->units.firstInvalidIndex(); ++i) {
+    //     const C_Unit& unit = context.entityManager->units[i];
+    //     unitCircle.center = unit.pos;
+    //     unitCircle.radius = (float) unit.collisionRadius;
+
+    //     if (_BaseProjectile_canHitTeam(projectile, unit.teamId) && circle.intersects(unitCircle)) {
+    //         projectile.dead = true;
+
+    //         //we can also reveal the unit locally if its locally hidden
+
+    //         break;
+    //     }
+    // }
 }
 
 void Projectile_onHit(Projectile& projectile, Unit* unitHit)

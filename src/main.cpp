@@ -10,6 +10,8 @@
 #include "texture_ids.hpp"
 
 #include "json_parser.hpp"
+#include "weapon.hpp"
+#include "ability.hpp"
 
 enum class ExecMode {
     Client,

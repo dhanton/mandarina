@@ -66,11 +66,46 @@ void C_EntityManager::update(sf::Time eTime)
 
 void C_EntityManager::renderUpdate(sf::Time eTime)
 {
-    C_ManagersContext context(this, m_tileMap);
+    C_ManagersContext managersContext(this, m_tileMap);
+
+    //update local projectiles
+    for (int i = 0; i < localProjectiles.firstInvalidIndex(); ++i) {
+        C_Projectile_localUpdate(localProjectiles[i], eTime, managersContext);
+    }
+
+    //Add the appropiate render nodes
+    m_renderNodes.clear();
+
+    for (auto it = entities.begin(); it != entities.end(); ++it) {
+        it->insertRenderNode(managersContext, m_context);
+    }
+
+    for (int i = 0; i < projectiles.firstInvalidIndex(); ++i) {
+        //@WIP: flyingHeight = shooter.height + shooter.flyingHeight
+        m_renderNodes.emplace_back(RenderNode(100, projectiles[i].uniqueId, (float) projectiles[i].collisionRadius));
+
+        sf::Sprite& sprite = m_renderNodes.back().sprite;
+
+        sprite.setTexture(m_context.textures->getResource(projectiles[i].textureId));
+        sprite.setScale(projectiles[i].scale, projectiles[i].scale);
+        sprite.setOrigin(sprite.getLocalBounds().width/2.f, sprite.getLocalBounds().height/2.f);
+        sprite.setPosition(projectiles[i].pos);
+    }
 
     for (int i = 0; i < localProjectiles.firstInvalidIndex(); ++i) {
-        C_Projectile_localUpdate(localProjectiles[i], eTime, context);
+        //@WIP: flyingHeight = shooter.height + shooter.flyingHeight
+        m_renderNodes.emplace_back(RenderNode(100, localProjectiles[i].uniqueId, (float) localProjectiles[i].collisionRadius));
+
+        sf::Sprite& sprite = m_renderNodes.back().sprite;
+
+        sprite.setTexture(m_context.textures->getResource(localProjectiles[i].textureId));
+        sprite.setScale(localProjectiles[i].scale, localProjectiles[i].scale);
+        sprite.setOrigin(sprite.getLocalBounds().width/2.f, sprite.getLocalBounds().height/2.f);
+        sprite.setPosition(localProjectiles[i].pos);
     }
+
+    //sort them by height so they're displayed properly
+    std::sort(m_renderNodes.begin(), m_renderNodes.end());
 }
 
 void C_EntityManager::performInterpolation(const C_EntityManager* prevSnapshot, const C_EntityManager* nextSnapshot, double elapsedTime, double totalTime)
@@ -194,7 +229,7 @@ void C_EntityManager::updateRevealedUnits()
     //reveal entities locally if they meet the conditions
     for (auto it = entities.begin(); it != entities.end(); ++it) {
         //only entities of this team can reveal other entities
-        if (it->teamId != controlledEntityTeamId) continue;
+        if (it->getTeamId() != controlledEntityTeamId) continue;
 
         for (auto it2 = entities.begin(); it2 != entities.end(); ++it2) {
             it->localReveal(&it2);
@@ -315,98 +350,18 @@ void C_EntityManager::setTileMap(TileMap* tileMap)
     m_tileMap = tileMap;
 }
 
+std::vector<RenderNode>& C_EntityManager::getRenderNodes()
+{
+    return m_renderNodes;
+}
+
 void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     //We have to sort all objects together by their height (accounting for flying objects)
     //(this has to be done every frame, otherwise the result might not look super good)
     //**vector sorting is faster because of the O(1) access operation**
 
-    std::vector<RenderNode> spriteNodes;
-
-    for (auto it = entities.begin(); it != entities.end(); ++it) {
-#ifdef MANDARINA_DEBUG
-        if (!renderingLocallyHidden && units[i].status.locallyHidden && units[i].status.forceSent) continue;
-#else
-        if (units[i].status.locallyHidden && units[i].status.forceSent) continue;
-#endif
-
-        spriteNodes.emplace_back(RenderNode(units[i].flyingHeight, units[i].uniqueId, (float) units[i].collisionRadius));
-
-        sf::Sprite& sprite = spriteNodes.back().sprite;
-
-        int aimQuadrant = Helper_angleQuadrant(units[i].aimAngle);
-        float mirrored = 1.f;
-
-        //flip the sprite depending on aimAngle
-        if (aimQuadrant == 3 || aimQuadrant == 4) {
-            mirrored = -1.f;
-        }
-
-        sprite.setTexture(m_context.textures->getResource(units[i].textureId));
-        sprite.setScale(mirrored * units[i].scale, units[i].scale);
-        sprite.setOrigin(sprite.getLocalBounds().width/2.f, sprite.getLocalBounds().height/2.f);
-        sprite.setPosition(units[i].pos);
-
-        if (C_Unit_isInvisible(units[i])) {
-            sf::Color color = sprite.getColor();
-            color.a = 150.f;
-
-            if (units[i].status.locallyHidden && renderingLocallyHidden) {
-                color.r += 100.f;    
-            }
-
-            sprite.setColor(color);
-        }
-
-        //setup the weapon node if equipped
-        if (units[i].weaponId != WEAPON_NONE) {
-            spriteNodes.emplace_back(RenderNode(units[i].flyingHeight, units[i].uniqueId, (float) units[i].collisionRadius));
-
-            const WeaponData& weaponData = g_weaponData[units[i].weaponId];
-            sf::Sprite& weaponSprite = spriteNodes.back().sprite;
-
-            weaponSprite.setTexture(m_context.textures->getResource(weaponData.textureId));
-            weaponSprite.setScale(weaponData.scale, weaponData.scale);
-            weaponSprite.setOrigin(weaponSprite.getLocalBounds().width/2.f, weaponSprite.getLocalBounds().height/2.f);
-            weaponSprite.setPosition(units[i].pos);
-            weaponSprite.setRotation(-units[i].aimAngle - weaponData.angleOffset);
-
-            //put the weapon behind or in front of the unit depending on the quadrant
-            if (aimQuadrant == 2 || aimQuadrant == 3) {
-                spriteNodes.back().manualFilter = -1;
-            } else {
-                spriteNodes.back().manualFilter = 1;
-            }
-        }
-    }
-
-    for (int i = 0; i < projectiles.firstInvalidIndex(); ++i) {
-        //@WIP: flyingHeight = shooter.height + shooter.flyingHeight
-        spriteNodes.emplace_back(RenderNode(100, projectiles[i].uniqueId, (float) projectiles[i].collisionRadius));
-
-        sf::Sprite& sprite = spriteNodes.back().sprite;
-
-        sprite.setTexture(m_context.textures->getResource(projectiles[i].textureId));
-        sprite.setScale(projectiles[i].scale, projectiles[i].scale);
-        sprite.setOrigin(sprite.getLocalBounds().width/2.f, sprite.getLocalBounds().height/2.f);
-        sprite.setPosition(projectiles[i].pos);
-    }
-
-    for (int i = 0; i < localProjectiles.firstInvalidIndex(); ++i) {
-        //@WIP: flyingHeight = shooter.height + shooter.flyingHeight
-        spriteNodes.emplace_back(RenderNode(100, localProjectiles[i].uniqueId, (float) localProjectiles[i].collisionRadius));
-
-        sf::Sprite& sprite = spriteNodes.back().sprite;
-
-        sprite.setTexture(m_context.textures->getResource(localProjectiles[i].textureId));
-        sprite.setScale(localProjectiles[i].scale, localProjectiles[i].scale);
-        sprite.setOrigin(sprite.getLocalBounds().width/2.f, sprite.getLocalBounds().height/2.f);
-        sprite.setPosition(localProjectiles[i].pos);
-    }
-
-    std::sort(spriteNodes.begin(), spriteNodes.end());
-
-    for (const auto& node : spriteNodes) {
+    for (const auto& node : m_renderNodes) {
         target.draw(node.sprite, states);
 
 #ifdef MANDARINA_DEBUG

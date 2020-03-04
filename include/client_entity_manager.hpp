@@ -52,6 +52,8 @@ public:
 
     void setTileMap(TileMap* tileMap);
 
+    std::vector<RenderNode>& getRenderNodes();
+
 public:
     EntityTable<C_Entity> entities;
     Bucket<C_Projectile> projectiles;
@@ -69,6 +71,9 @@ public:
 
     bool renderingLocallyHidden;
 
+
 private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const;
+    
+    std::vector<RenderNode> m_renderNodes;
 };

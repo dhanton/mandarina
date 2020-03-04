@@ -99,7 +99,6 @@ GameServer::GameServer(const Context& context, int playersNeeded):
     //Still has to always be larger than playersNeeded
     INITIAL_CLIENTS_SIZE(playersNeeded * 2 + 10)
 {
-    loadUnitsFromJson(context.jsonParser);
     loadProjectilesFromJson(context.jsonParser);
 
     m_gameStarted = false;
@@ -138,10 +137,10 @@ GameServer::GameServer(const Context& context, int playersNeeded):
     m_tileMap.loadFromFile(MAPS_PATH + m_tileMapFilename + "." + MAP_FILENAME_EXT);
     
     //@DELETE (TESTING)
-    m_entityManager.createUnit(UNIT_RedDemon, Vector2(100.f, 300.f), 0);
-    for (int i = 0; i < 100; ++i) {
-        int uniqueId = m_entityManager.createUnit(UNIT_RedDemon, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 1);
-    }
+    // m_entityManager.createEntity(Vector2(100.f, 300.f), 0);
+    // for (int i = 0; i < 100; ++i) {
+    //     m_entityManager.createEntity(Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 1);
+    // }
 
     if (!context.local) {
         m_endpoint.ParseString("127.0.0.1:7000");
@@ -415,16 +414,16 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
             PlayerInput_loadFromData(playerInput, packet);
             playerInput.timeApplied = m_clients[index].inputRate;
 
-            Unit* unit = m_entityManager.units.atUniqueId(m_clients[index].controlledEntityUniqueId);
+            Entity* entity = m_entityManager.entities.atUniqueId(m_clients[index].controlledEntityUniqueId);
 
             //only apply inputs that haven't been applied yet
-            if (unit && playerInput.id > m_clients[index].latestInputId) {
+            if (entity && playerInput.id > m_clients[index].latestInputId) {
                 //@WIP: Don't hardcode 150, use the same interpolation delay the client is using
                 //Client::snapshotsRequiredToRender / Server::m_snapshotRate  = 0.150 seconds = renderDelay
                 //clientDelay = pingDelay + renderDelay
                 int clientDelay = Helper_clamp(m_clients[index].ping, 0, m_maxPingCorrection.asMilliseconds()) + 150;
 
-                Unit_applyInput(*unit, playerInput, ManagersContext(&m_entityManager, &m_collisionManager, &m_tileMap), clientDelay);
+                entity->applyInput(playerInput, ManagersContext(&m_entityManager, &m_collisionManager, &m_tileMap), clientDelay);
 
                 m_clients[index].latestInputId = playerInput.id;
             }
@@ -472,10 +471,10 @@ void GameServer::onConnectionCompleted(HSteamNetConnection connectionId)
 
         //@TODO: Create unit based on game mode settings (position, teamId) and hero selection (class type)
         Vector2 pos = {1500.f, 1500.f};
-        int uniqueId = m_entityManager.createUnit(UNIT_RedDemon, pos, m_clients[index].teamId);
+        Entity* entity = m_entityManager.createEntity(pos, m_clients[index].teamId);
 
-        if (uniqueId != -1) {
-            m_clients[index].controlledEntityUniqueId = uniqueId;
+        if (entity != nullptr) {
+            m_clients[index].controlledEntityUniqueId = entity->getUniqueId();
             outPacket << m_clients[index].controlledEntityUniqueId;
             outPacket << m_clients[index].teamId;
             outPacket << pos.x << pos.y;

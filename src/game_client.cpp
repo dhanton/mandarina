@@ -61,7 +61,7 @@ GameClient::GameClient(const Context& context, const SteamNetworkingIPAddr& endp
     m_entityManager(context),
     m_tileMapRenderer(context, &m_tileMap)
 {
-    C_loadUnitsFromJson(context.jsonParser);
+    // C_loadUnitsFromJson(context.jsonParser);
     C_loadProjectilesFromJson(context.jsonParser);
 
     m_context.renderTarget = &m_canvas;
@@ -227,7 +227,7 @@ void GameClient::update(sf::Time eTime)
 
 void GameClient::renderUpdate(sf::Time eTime)
 {
-    C_Unit* unit = m_entityManager.units.atUniqueId(m_entityManager.controlledEntityUniqueId);
+    C_Entity* entity = m_entityManager.entities.atUniqueId(m_entityManager.controlledEntityUniqueId);
 
     if (std::next(m_interSnapshot_it, m_requiredSnapshotsToRender) != m_snapshots.end()) {
         m_interElapsed += eTime;
@@ -251,38 +251,38 @@ void GameClient::renderUpdate(sf::Time eTime)
                                              m_interElapsed.asSeconds(), totalTime.asSeconds());
 
         //interpolate the controlled entity between the latest two inputs
-        if (unit) {
+        if (entity) {
             if (!m_inputSnapshots.empty()) {
                 m_controlledEntityInterTimer += eTime;
 
                 //interpolate using current entity position if there's only one input available
-                Vector2 oldPos = unit->pos;
-                float oldAimAngle = unit->aimAngle;
+                Vector2 oldPos = entity->getPosition();
 
                 auto oldIt = std::next(m_inputSnapshots.end(), -2);
 
                 if (oldIt != m_inputSnapshots.end()) {
                     oldPos = oldIt->endPosition;
-                    oldAimAngle = oldIt->input.aimAngle;
                 }
 
-                unit->pos = Helper_lerpVec2(oldPos, m_inputSnapshots.back().endPosition, 
-                                            m_controlledEntityInterTimer.asSeconds(), m_inputRate.asSeconds());                      
+                Vector2 newPos = Helper_lerpVec2(oldPos, m_inputSnapshots.back().endPosition, 
+                                                 m_controlledEntityInterTimer.asSeconds(), m_inputRate.asSeconds());
+                entity->setPosition(newPos);
             }
 
             Vector2i mousePixel = sf::Mouse::getPosition(*m_context.window);
             Vector2 mousePos = m_camera.mapPixelToCoords(mousePixel);
 
-            PlayerInput_updateAimAngle(m_currentInput, unit->pos, mousePos);
-            unit->aimAngle = m_currentInput.aimAngle;
+            PlayerInput_updateAimAngle(m_currentInput, entity->getPosition(), mousePos);
+            entity->updateControlledAngle(m_currentInput.aimAngle);
         }
     }
 
-    //follow the unit with the camera
-    if (unit) {
-        Vector2 pos = unit->pos;
+    //follow the entity with the camera
+    if (entity) {
+        Vector2 pos = entity->getPosition();
 
-        float speed = (float) unit->movementSpeed;
+        float speed = (float) entity->getControlledMovementSpeed();
+
         if (Helper_vec2length(m_smoothUnitPos - pos) > m_smoothUnitRadius) {
             m_smoothUnitPos = pos;
 
@@ -304,11 +304,12 @@ void GameClient::setupNextInterpolation()
     m_entityManager.copySnapshotData(&m_interSnapshot_it->entityManager, m_interSnapshot_it->latestAppliedInput);
 
     //we need the end position of controlled entity in the server for this snapshot
-    C_Unit* snapshotUnit =  m_interSnapshot_it->entityManager.units.atUniqueId(m_interSnapshot_it->entityManager.controlledEntityUniqueId);
-    C_Unit* controlledUnit = m_entityManager.units.atUniqueId(m_entityManager.controlledEntityUniqueId);
+    C_Entity* snapshotEntity =  m_interSnapshot_it->entityManager.entities.atUniqueId(m_interSnapshot_it->entityManager.controlledEntityUniqueId);
+    C_Entity* controlledEntity = m_entityManager.entities.atUniqueId(m_entityManager.controlledEntityUniqueId);
 
-    if (snapshotUnit && controlledUnit) {
-        checkServerInput(m_interSnapshot_it->latestAppliedInput, snapshotUnit->pos, controlledUnit->movementSpeed);
+    if (snapshotEntity && controlledEntity) {
+        checkServerInput(m_interSnapshot_it->latestAppliedInput, snapshotEntity->getPosition(), 
+                         controlledEntity->getControlledMovementSpeed());
     }
 }
 
@@ -355,18 +356,18 @@ void GameClient::handleInput(const sf::Event& event, bool focused)
 
 void GameClient::saveCurrentInput()
 {
-    C_Unit* unit = m_entityManager.units.atUniqueId(m_entityManager.controlledEntityUniqueId);
+    C_Entity* entity = m_entityManager.entities.atUniqueId(m_entityManager.controlledEntityUniqueId);
 
     //@TODO: Should we send inputs even if there's no entity
     //to ensure players can move the entity as soon as available?
-    if (!unit) return;
+    if (!entity) return;
 
     //we don't want to modify entity position just yet (we want to interpolate it smoothly)
-    Vector2 unitPos = unit->pos;
+    Vector2 entityPos = entity->getPosition();
 
     //apply input using the previous input position if possible
     if (!m_inputSnapshots.empty()) {
-        unitPos = m_inputSnapshots.back().endPosition;
+        entityPos = m_inputSnapshots.back().endPosition;
     }
 
     C_EntityManager* manager = &m_entityManager;
@@ -378,12 +379,13 @@ void GameClient::saveCurrentInput()
     }
 
     //we dont modify the unit since we intepolate its position
-    //between two inputs (result is stored in unitPos)
-    C_Unit_applyInput(*unit, unitPos, m_currentInput, C_ManagersContext(manager, &m_tileMap), m_inputRate);
+    //between two inputs (result is stored in entityPos)
+    entity->applyMovementInput(entityPos, m_currentInput, C_ManagersContext(manager, &m_tileMap), m_inputRate);
+
 
     //when casting abilities we use the normal entity manager
     //since local entities might be created
-    C_Unit_applyAbilitiesInput(*unit, m_currentInput, C_ManagersContext(&m_entityManager, &m_tileMap));
+    entity->applyAbilitiesInput(m_currentInput, C_ManagersContext(&m_entityManager, &m_tileMap));
 
     //send this input
     {
@@ -395,7 +397,7 @@ void GameClient::saveCurrentInput()
 
     m_inputSnapshots.push_back(InputSnapshot());
     m_inputSnapshots.back().input = m_currentInput;
-    m_inputSnapshots.back().endPosition = unitPos;
+    m_inputSnapshots.back().endPosition = entityPos;
 
     //reset input timer
     m_currentInput.timeApplied = sf::Time::Zero;
@@ -612,4 +614,3 @@ void GameClient::writeLatestSnapshotId(CRCPacket& packet)
     packet << (u8) ServerCommand::LatestSnapshotId;
     packet << m_snapshots.back().id;
 }
-

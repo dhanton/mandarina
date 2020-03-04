@@ -136,6 +136,11 @@ void PlayerInput_clearKeys(PlayerInput& playerInput)
     playerInput.right = false;
     playerInput.up = false;
     playerInput.down = false;
+
+    playerInput.primaryFire = false;
+    playerInput.secondaryFire = false;
+    playerInput.altAbility = false;
+    playerInput.ultimate = false;
 }
 
 std::string PlayerInput_toString(const PlayerInput& input)
