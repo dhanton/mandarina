@@ -143,6 +143,11 @@ void Unit::packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) c
     }
 }
 
+void Unit::applyInput(const PlayerInput& input, const ManagersContext& context, u16 clientDelay)
+{
+
+}
+
 bool Unit::shouldSendForTeam(u8 teamId) const
 {
     return isVisibleForTeam(teamId) || isMarkedToSendForTeam(teamId);
@@ -166,6 +171,7 @@ C_Unit::C_Unit(u32 uniqueId):
     //@BRANCH_WIP: Load from global array here as well
     m_textureId = TextureId::RED_DEMON;
     m_weaponId = WEAPON_DEVILS_BOW;
+    m_scale = 4.f;
 }
 
 C_Unit* C_Unit::clone() const
@@ -180,8 +186,59 @@ void C_Unit::update(sf::Time eTime, const C_ManagersContext& context)
 
 void C_Unit::loadFromData(CRCPacket& inPacket)
 {
+    // C_UnitStatus_loadFromData(unit.status, inPacket);
 
+    BitStream mainBits;
 
+    u8 byte;
+    inPacket >> byte;
+    mainBits.pushByte(byte);
+    inPacket >> byte;
+    mainBits.pushByte(byte);
+
+    bool posXChanged = mainBits.popBit();
+    bool posYChanged = mainBits.popBit();
+    bool teamIdChanged = mainBits.popBit();
+    bool flyingHeightChanged = mainBits.popBit();
+    bool maxHealthChanged = mainBits.popBit();
+    bool healthChanged = mainBits.popBit();
+    bool aimAngleChanged = mainBits.popBit();
+    bool collisionRadiusChanged = mainBits.popBit();
+    m_forceSent = mainBits.popBit();
+
+    if (posXChanged) {
+        inPacket >> m_pos.x;
+    }
+
+    if (posYChanged) {
+        inPacket >> m_pos.y;
+    }
+
+    if (teamIdChanged) {
+        inPacket >> m_teamId;
+    }
+
+    if (flyingHeightChanged) {
+        inPacket >> m_flyingHeight;
+    }
+
+    if (maxHealthChanged) {
+        inPacket >> m_maxHealth;
+    }
+
+    if (healthChanged) {
+        inPacket >> m_health;
+    }
+
+    if (aimAngleChanged) {
+        u16 angle16bit;
+        inPacket >> angle16bit;
+        m_aimAngle = Helper_angleFrom16bit(angle16bit);
+    }
+
+    if (collisionRadiusChanged) {
+        inPacket >> m_collisionRadius;
+    }
 }
 
 void C_Unit::interpolate(const C_ManagersContext& context, const C_Unit* prevUnit, const C_Unit* nextUnit, double t, double d)

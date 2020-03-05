@@ -34,6 +34,8 @@ public:
     virtual void postUpdate(sf::Time eTime, const ManagersContext& context);
     virtual void packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) const;
 
+    virtual void applyInput(const PlayerInput& input, const ManagersContext& context, u16 clientDelay);
+
     virtual bool shouldSendForTeam(u8 teamId) const;
 
     virtual void onQuadtreeInserted(const ManagersContext& context);
