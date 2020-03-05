@@ -13,33 +13,52 @@ private:
 public:
     //These custom iterators return second element of pair when referenced
     //which is very useful
-    class iterator : public _Table::iterator
+    class iterator
     {
     private:
-        _Entity_Type* second;
-    public:
-        iterator() : _Table::iterator(), second(nullptr) {}
-        iterator(typename _Table::iterator it) : _Table::iterator(it), second(it->second.get())  {}
-        _Entity_Type& operator*()  {return *second;}
-        _Entity_Type* operator->() {return second;}
+        friend class EntityTable<_Entity_Type>;
+        typename _Table::iterator _internal_it;
 
-        //I'm not sure this one should be used
-        _Entity_Type* operator&()  {return second;}
+    public:
+        iterator() {}
+        iterator(typename _Table::iterator _it) : _internal_it(_it)  {}
+
+        _Entity_Type& operator*()  const {return *_internal_it->second.get();}
+        _Entity_Type* operator->() const {return _internal_it->second.get();}
+        _Entity_Type* operator&()  const {return _internal_it->second.get();}
+
+        bool operator==(const iterator& rhs) const {return _internal_it == rhs._internal_it;}
+        bool operator!=(const iterator& rhs) const {return _internal_it != rhs._internal_it;}
+
+        iterator& operator++()   {++_internal_it; return *this;}
+        iterator operator++(int) {iterator _copy_it(_internal_it); ++(*this); return _copy_it;}
+
+        iterator& operator--()   {--_internal_it; return *this;}
+        iterator operator--(int) {iterator _copy_it(_internal_it); --(*this); return _copy_it;}
     };
-    class const_iterator : public _Table::const_iterator
+
+    class const_iterator
     {
     private:
-        _Entity_Type* second;
+        friend class EntityTable<_Entity_Type>;
+        typename _Table::const_iterator _internal_it;
     public:
-        const_iterator() : _Table::const_iterator(), second(nullptr) {}
-        const_iterator(const typename _Table::const_iterator& it) : _Table::const_iterator(it), second(it->second.get())  {}
-        const _Entity_Type& operator*()  const {return *second;}
-        const _Entity_Type* operator->() const {return second;}
-        const _Entity_Type* operator&()  const {return second;}
-    };
+        const_iterator() {}
+        const_iterator(const typename _Table::const_iterator& _it) : _internal_it(_it) {}
 
-    // typedef typename _Table::iterator iterator;
-    // typedef typename _Table::const_iterator const_iterator;
+        const _Entity_Type& operator*()  const {return *_internal_it->second.get();}
+        const _Entity_Type* operator->() const {return _internal_it->second.get();}
+        const _Entity_Type* operator&()  const {return _internal_it->second.get();}
+
+        bool operator==(const const_iterator& rhs) const {return _internal_it == rhs._internal_it;}
+        bool operator!=(const const_iterator& rhs) const {return _internal_it != rhs._internal_it;}
+
+        const_iterator& operator++()   {++_internal_it; return *this;}
+        const_iterator operator++(int) {const_iterator _copy_it(_internal_it); ++(*this); return _copy_it;}
+
+        const_iterator& operator--()   {--_internal_it; return *this;}
+        const_iterator operator--(int) {const_iterator _copy_it(_internal_it); --(*this); return _copy_it;}
+    };
 
 public:
     _Entity_Type* atUniqueId(u32 uniqueId);
@@ -56,6 +75,8 @@ public:
 
     iterator end();
     const_iterator end() const;
+
+    size_t size() const;
 
 private:
     _Table m_table;

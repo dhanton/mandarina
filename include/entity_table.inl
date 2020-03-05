@@ -29,13 +29,13 @@ const _Entity_Type* EntityTable<_Entity_Type>::atUniqueId(u32 uniqueId) const
 template<typename _Entity_Type>
 _Entity_Type* EntityTable<_Entity_Type>::addEntity(_Entity_Type* entity)
 {
-    if (!entity || entity->getUniqueId() == 0) {
+    if (!entity) {
         std::cout << "EntityTable::addEntity error - Invalid entity pointer" << std::endl;
         return nullptr;
     }
 
-    if (m_table.find(entity->getUniqueId()) != m_table.end()) {
-        std::cout << "EntityTable::addEntity error - UniqueId already exists" << std::endl;
+    if (entity->getUniqueId() == 0 || m_table.find(entity->getUniqueId()) != m_table.end()) {
+        std::cout << "EntityTable::addEntity error - Invalid or repeated uniqueId" << std::endl;
         return nullptr;
     }
 
@@ -59,7 +59,7 @@ typename EntityTable<_Entity_Type>::iterator EntityTable<_Entity_Type>::removeEn
 template<typename _Entity_Type>
 typename EntityTable<_Entity_Type>::iterator EntityTable<_Entity_Type>::removeEntity(iterator it)
 {
-    return iterator(m_table.erase(it));
+    return iterator(m_table.erase(it._internal_it));
 }
 
 template<typename _Entity_Type>
@@ -84,4 +84,10 @@ template<typename _Entity_Type>
 typename EntityTable<_Entity_Type>::const_iterator EntityTable<_Entity_Type>::end() const
 {
     return const_iterator(m_table.end());
+}
+
+template<typename _Entity_Type>
+size_t EntityTable<_Entity_Type>::size() const
+{
+    return m_table.size();
 }

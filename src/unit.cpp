@@ -1,9 +1,17 @@
 #include "unit.hpp"
 
+#include "texture_ids.hpp"
 #include "bit_stream.hpp"
 #include "tilemap.hpp"
 #include "client_entity_manager.hpp"
 #include "weapon.hpp"
+
+_UnitBase::_UnitBase()
+{
+    m_weaponId = 0;
+    m_aimAngle = 0.f;
+    m_movementSpeed = 0;
+}
 
 float _UnitBase::getAimAngle() const
 {
@@ -57,9 +65,11 @@ void Unit::postUpdate(sf::Time eTime, const ManagersContext& context)
 
 }
 
-void Unit::packData(const Unit* prevUnit, u8 teamId, CRCPacket& outPacket) const
+void Unit::packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) const
 {
     // UnitStatus_packData(status, teamId, outPacket);
+
+    const Unit* prevUnit = (const Unit*) prevEntity;
 
     BitStream mainBits;
     
@@ -153,7 +163,9 @@ C_Unit::C_Unit(u32 uniqueId):
     InvisibleComponent(m_teamId, m_pos, m_inBush),
     TrueSightComponent(m_pos, m_inBush)
 {
-
+    //@BRANCH_WIP: Load from global array here as well
+    m_textureId = TextureId::RED_DEMON;
+    m_weaponId = WEAPON_DEVILS_BOW;
 }
 
 C_Unit* C_Unit::clone() const

@@ -276,20 +276,18 @@ void C_EntityManager::loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inP
         u32 uniqueId;
         inPacket >> uniqueId;
 
-        C_Entity* prevEntity = nullptr;
+        const C_Entity* prevEntity = nullptr;
         
         if (prevSnapshot) {
             prevEntity = prevSnapshot->entities.atUniqueId(uniqueId);
         }
 
         //allocate the unit
-        // int index = units.addElement(uniqueId);
 
         C_Entity* entity = nullptr;
 
         if (prevEntity) {
             //if the unit existed in previous snapshot, copy it
-            // units[index] = *prevEntity;
             entity = entities.addEntity(prevEntity->clone());
 
         } else {

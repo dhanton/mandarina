@@ -77,11 +77,6 @@ Entity::Entity(u32 uniqueId):
 
 }
 
-void Entity::packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) const
-{
-
-}
-
 bool Entity::shouldSendToTeam(u8 teamId) const
 {
     return true;

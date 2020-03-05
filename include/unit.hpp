@@ -6,6 +6,8 @@
 class _UnitBase
 {
 public:
+    _UnitBase();
+
     float getAimAngle() const;
     void setAimAngle(float aimAngle);
 
@@ -30,7 +32,7 @@ public:
     virtual void update(sf::Time eTime, const ManagersContext& context);
     virtual void preUpdate(sf::Time eTime, const ManagersContext& context);
     virtual void postUpdate(sf::Time eTime, const ManagersContext& context);
-    virtual void packData(const Unit* prevUnit, u8 teamId, CRCPacket& outPacket) const;
+    virtual void packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) const;
 
     virtual bool shouldSendForTeam(u8 teamId) const;
 

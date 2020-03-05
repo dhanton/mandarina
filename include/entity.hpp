@@ -68,7 +68,7 @@ public:
     virtual void update(sf::Time eTime, const ManagersContext& context) = 0;
     virtual void preUpdate(sf::Time eTime, const ManagersContext& context) = 0;
     virtual void postUpdate(sf::Time eTime, const ManagersContext& context) = 0;
-    virtual void packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) const;
+    virtual void packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) const = 0;
 
     virtual bool shouldSendToTeam(u8 teamId) const;
 
