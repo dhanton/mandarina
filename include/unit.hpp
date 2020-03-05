@@ -25,6 +25,10 @@ protected:
 class Unit : public Entity, public _UnitBase, public HealthComponent, 
              public InvisibleComponent, public TrueSightComponent
 {
+private:
+    TRUE_SIGHT_COMPONENT()
+    INVISIBLE_COMPONENT()
+
 public:
     Unit(u32 uniqueId);
     virtual Unit* clone() const;
@@ -36,11 +40,12 @@ public:
 
     virtual void applyInput(const PlayerInput& input, const ManagersContext& context, u16 clientDelay);
 
-    virtual bool shouldSendForTeam(u8 teamId) const;
+    virtual bool shouldSendToTeam(u8 teamId) const;
 
     virtual void onQuadtreeInserted(const ManagersContext& context);
 
-    bool inQuadtree() const;
+private:
+    void moveColliding(Vector2 newPos, const ManagersContext& context, bool force = false);
 };
 
 struct RenderNode;
@@ -48,14 +53,18 @@ struct RenderNode;
 class C_Unit : public C_Entity, public _UnitBase, public HealthComponent, 
                public InvisibleComponent, public TrueSightComponent
 {
+private:
+    TRUE_SIGHT_COMPONENT()
+    INVISIBLE_COMPONENT()
+
 public:
     C_Unit(u32 uniqueId);
     virtual C_Unit* clone() const;
 
     virtual void update(sf::Time eTime, const C_ManagersContext& context);
     virtual void loadFromData(CRCPacket& inPacket);
-    virtual void interpolate(const C_ManagersContext& context, const C_Unit* prevUnit, 
-                             const C_Unit* nextUnit, double t, double d);
+    virtual void interpolate(const C_ManagersContext& context, const C_Entity* prevEntity, 
+                             const C_Entity* nextEntity, double t, double d);
 
     virtual void updateControlledAngle(float aimAngle);
     
@@ -65,8 +74,11 @@ public:
     virtual u16 getControlledMovementSpeed() const;
 
     virtual void updateLocallyVisible(const C_ManagersContext& context);
-    virtual void localReveal(C_Unit* unit);
+    virtual void localReveal(C_Entity* unit);
     virtual void insertRenderNode(const C_ManagersContext& managersContext, const Context& context) const;
+
+private:
+    void predictMovementLocally(const Vector2& oldPos, Vector2& newPos, const C_ManagersContext& context) const;
 };
 
 

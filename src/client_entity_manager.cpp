@@ -215,10 +215,6 @@ void C_EntityManager::updateRevealedUnits()
 
     //O(n + m*n) where n is units and m is units on the same team
 
-    //@BRANCH_WIP: Somehow only call this for entities that have the invisible component
-    //maybe by having a bitflag u8 components that gets update at runtime for each entity
-    //Isn't this like a shittier version of an ECS??
-
     C_ManagersContext context(this, m_tileMap);
 
     //locally update if each entity is visible or not
@@ -232,6 +228,9 @@ void C_EntityManager::updateRevealedUnits()
         if (it->getTeamId() != controlledEntityTeamId) continue;
 
         for (auto it2 = entities.begin(); it2 != entities.end(); ++it2) {
+            //entities revealed have to be of other teams
+            if (it2->getTeamId() == controlledEntityTeamId) continue;
+
             it->localReveal(&it2);
         }
     }

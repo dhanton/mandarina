@@ -15,11 +15,16 @@ void EntityManager::update(sf::Time eTime)
     int i;
 
     for (auto it = entities.begin(); it != entities.end(); ++it) {
-        it->update(eTime, context);
+        it->preUpdate(eTime, context);
     }
 
     for (auto it = entities.begin(); it != entities.end(); ++it) {
-        it->preUpdate(eTime, context);
+        it->update(eTime, context);
+    }
+
+    //Is postupdate really needed?
+    for (auto it = entities.begin(); it != entities.end(); ++it) {
+        it->postUpdate(eTime, context);
     }
 
     for (i = 0; i < projectiles.firstInvalidIndex(); ++i) {
@@ -37,7 +42,7 @@ void EntityManager::update(sf::Time eTime)
         }
     }
 
-    //@BRANCH_WIP: See how we can remove entities properly in a general way
+    //@BRANCH_WIP: See how we can remove entities properly in a general way (without abusing delete)
     //Taking into account that some entities might respawn depending on game mode
 }
 
@@ -61,7 +66,8 @@ Entity* EntityManager::createEntity(const Vector2& pos, u8 teamId)
 
     entities.addEntity(entity);
 
-    if (entity->inQuadtree()) {
+    //if the entity is initially solid, add it to the quadtree
+    if (entity->isSolid()) {
         m_collisionManager->onInsertUnit(uniqueId, pos, entity->getCollisionRadius());
         entity->onQuadtreeInserted(ManagersContext(this, m_collisionManager, m_tileMap));
     }

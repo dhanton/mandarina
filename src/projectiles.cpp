@@ -158,7 +158,7 @@ void Projectile_packData(const Projectile& projectile, const Projectile* prevPro
 
     //@BRANCH_WIP: If the shooter is not a unit this crashes the game
     //Should we use a dynamic_cast instead?
-    const Unit* shooter = (Unit*) entityManager->entities.atUniqueId(projectile.shooterUniqueId);
+    const Unit* shooter = static_cast<const Unit*>(entityManager->entities.atUniqueId(projectile.shooterUniqueId));
     
     //Send position of shooter only for the first packet
     // bool sendShooterPos = !prevProj && shooter && !Unit_isVisibleForTeam(*shooter, teamId);
@@ -236,7 +236,7 @@ void Projectile_update(Projectile& projectile, sf::Time eTime, const ManagersCon
     }
 
     //@BRANCH_WIP: Should we use dynamic_cast instead?
-    Unit* shooter = (Unit*) context.entityManager->entities.atUniqueId(projectile.shooterUniqueId);
+    Unit* shooter = static_cast<Unit*>(context.entityManager->entities.atUniqueId(projectile.shooterUniqueId));
 
     if (shooter) {
         projectile.lastShooterPos = shooter->getPosition();

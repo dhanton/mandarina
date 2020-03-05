@@ -4,7 +4,67 @@
 #include "bit_stream.hpp"
 #include "tilemap.hpp"
 #include "client_entity_manager.hpp"
+#include "server_entity_manager.hpp"
 #include "weapon.hpp"
+#include "collision_manager.hpp"
+
+namespace {
+Vector2 _moveCollidingMap_impl(const Vector2& oldPos, Vector2 newPos, float collisionRadius, TileMap* map)
+{
+    const Vector2 posMovingX = {newPos.x, oldPos.y};
+    const Vector2 posMovingY = {oldPos.x, newPos.y};
+
+    sf::FloatRect collidingTile;
+
+    if (map->getCollidingTileRect(TILE_BLOCK | TILE_WALL, Circlef(posMovingX, collisionRadius), collidingTile)) {
+        //we assume if there's collision there was movement 
+
+        if (oldPos.x > newPos.x) {
+            newPos.x = collidingTile.left + collidingTile.width + collisionRadius;
+
+        } else if (oldPos.x < newPos.x) {
+            newPos.x = collidingTile.left - collisionRadius;
+        }
+    }
+
+    if (map->getCollidingTileRect(TILE_BLOCK | TILE_WALL, Circlef(posMovingY, collisionRadius), collidingTile)) {
+        if (oldPos.y > newPos.y) {
+            newPos.y = collidingTile.top + collidingTile.height + collisionRadius;
+
+        } else if (oldPos.y < newPos.y) {
+            newPos.y = collidingTile.top - collisionRadius;
+        }
+    }
+
+    return newPos;
+}
+
+Vector2 _moveColliding_impl(const Vector2& oldPos, const Vector2& newPos, float collisionRadius, const BaseEntityComponent& collisionEntity)
+{
+    const Vector2 collisionPos = collisionEntity.getPosition();
+    const float collisionEntityRadius = collisionEntity.getCollisionRadius();
+
+    const Vector2 fixVector = newPos - collisionPos;
+    const Vector2 fixDir = Helper_vec2unitary(fixVector);
+    
+    //should we force the unit to slide if it's moving exactly towards the other center?
+    // if (Helper_pointsCollinear(oldPos, newPos, collisionPos)) {
+    //     fixVector += Vector2(-fixDir.y, fixDir.x) * 1.f;
+    //     fixDir = Helper_vec2unitary(fixVector);
+    // }
+
+    const float distance = Helper_vec2length(fixVector);
+    const float targetDistance = std::abs(collisionEntityRadius + collisionRadius - distance);
+
+    //push the unit in a random direction if it's too close
+    if (distance == 0) {
+        return Helper_vec2unitary(Vector2(1.f, 1.f)) * targetDistance;
+    }
+
+    return fixDir * targetDistance;
+}
+
+}
 
 _UnitBase::_UnitBase()
 {
@@ -35,14 +95,18 @@ void _UnitBase::setMovementSpeed(u8 movementSpeed)
 
 Unit::Unit(u32 uniqueId):
     Entity(uniqueId),
-    InvisibleComponent(m_teamId, m_pos, m_inBush),
-    TrueSightComponent(m_pos, m_inBush)
+    InvisibleComponent(),
+    TrueSightComponent()
 {
     //@BRANCH_WIP
     //We need a static boolean that tells us if the units jsons are loaded
     //If its false, we load them here
     //If its true we just use it normally
     //Units are loaded into a global array (like they are now)
+    m_collisionRadius = 20;
+    m_solid = true;
+    m_movementSpeed = 350;
+    m_trueSightRadius = 170;
 }
 
 Unit* Unit::clone() const
@@ -52,12 +116,65 @@ Unit* Unit::clone() const
 
 void Unit::update(sf::Time eTime, const ManagersContext& context)
 {
+    //@BRANCH_WIP: Update abilities (cooldowns/etc)
 
+    Vector2 newPos = m_pos;
+
+    //@DELETE
+    //move all units of team 1 randomly (player is team 0)
+    if (m_teamId == 1) {
+        if (m_vel == Vector2()) {
+            m_vel = Vector2(rand() % 200 - 100.f, rand() % 200 - 100.f);
+        }
+    }
+
+    newPos += m_vel * eTime.asSeconds();
+    //other required movement (like dragged movement, forces and friction, etc)
+
+    if (newPos != m_pos) {
+        moveColliding(newPos, context);
+    }
+
+    m_inBush = context.tileMap->isColliding(TILE_BUSH, Circlef(m_pos, m_collisionRadius));
+
+    //reveal of all units inside true sight radius
+    //we also send units slightly farther away so revealing them looks smooth on the client
+    Circlef trueSightCircle(m_pos, (float) m_trueSightRadius + 100.f);
+    auto query = context.collisionManager->getQuadtree()->QueryIntersectsRegion(BoundingBody<float>(trueSightCircle));
+
+    while (!query.EndOfQuery()) {
+        Entity* revealedEntity = context.entityManager->entities.atUniqueId(query.GetCurrent()->uniqueId);
+
+        //we don't need to reveal units of the same team
+        if (revealedEntity->getTeamId() == m_teamId) {
+            query.Next();
+            continue;
+        }
+
+        //@TODO: Maybe we should change this dynamic_cast using some sort of virtual function or component flags
+        //Only if this could be bottlenecking performance
+        InvisibleComponent* invisComp = dynamic_cast<InvisibleComponent*>(revealedEntity);
+
+        if (invisComp) {
+            if (!invisComp->shouldBeHiddenFrom(*this)) {
+                //if the unit is inside true sight radius, reveal it
+                invisComp->reveal(m_teamId);
+            }
+
+            //we mark it to send since it's inside the bigger circle
+            invisComp->markToSend(m_teamId);
+        }
+
+        query.Next();
+    }
+
+    //@DELETE
+    m_aimAngle += 100 * eTime.asSeconds();
 }
 
 void Unit::preUpdate(sf::Time eTime, const ManagersContext& context)
 {
-
+    resetInvisibleFlags();
 }
 
 void Unit::postUpdate(sf::Time eTime, const ManagersContext& context)
@@ -69,10 +186,13 @@ void Unit::packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) c
 {
     // UnitStatus_packData(status, teamId, outPacket);
 
-    const Unit* prevUnit = (const Unit*) prevEntity;
+    const Unit* prevUnit = static_cast<const Unit*>(prevEntity);
 
     BitStream mainBits;
     
+    mainBits.pushBit(isInvisible());
+    mainBits.pushBit(isSolid());
+
     bool posXChanged = !prevUnit || m_pos.x != prevUnit->getPosition().x;
     mainBits.pushBit(posXChanged);
 
@@ -145,10 +265,49 @@ void Unit::packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) c
 
 void Unit::applyInput(const PlayerInput& input, const ManagersContext& context, u16 clientDelay)
 {
+     //@TODO: Check flags to see if we can actually move (stunned, rooted, etc)
 
+    Vector2 newPos = m_pos;
+
+    m_aimAngle = input.aimAngle;
+
+    //@WIP: Check cooldowns and the type of ability to call proper callback
+    //We cast abilities before moving so it works like in the client
+    //(because in the client inputs don't move the unit instantaneously)
+    if (input.primaryFire /**&& Ability_canBeCasted(unit.primaryFire)**/) {
+        int uniqueId = context.entityManager->createProjectile(PROJECTILE_HellsBubble, m_pos, m_aimAngle, m_teamId);
+
+        if (uniqueId != -1) {
+            Projectile* projectile = context.entityManager->projectiles.atUniqueId(uniqueId);
+
+            //@WIP: Do all this automatically for every projectile generated
+            //It has to work even for callbacks that generate multiple projectiles
+            if (projectile) {
+                // Ability_onCallback(primaryFire);
+
+                float totalDistance = ((float) clientDelay / 1000.f) * projectile->movementSpeed;
+
+                //do no more than 5 iteration steps
+                int steps = std::min((int) (totalDistance / projectile->collisionRadius), 5);
+                sf::Time stepTime = sf::milliseconds(clientDelay/steps);
+                int i = 0;
+
+                while (i < steps && !projectile->dead) {
+                    Projectile_update(*projectile, stepTime, context);
+                    i++;
+                }
+            }
+        }
+    }
+    
+    bool moved = PlayerInput_repeatAppliedInput(input, newPos, m_movementSpeed);
+
+    if (moved) {
+        moveColliding(newPos, context);
+    }
 }
 
-bool Unit::shouldSendForTeam(u8 teamId) const
+bool Unit::shouldSendToTeam(u8 teamId) const
 {
     return isVisibleForTeam(teamId) || isMarkedToSendForTeam(teamId);
 }
@@ -158,20 +317,62 @@ void Unit::onQuadtreeInserted(const ManagersContext& context)
 
 }
 
-bool Unit::inQuadtree() const
+void Unit::moveColliding(Vector2 newPos, const ManagersContext& context, bool force)
 {
-    return true;
+    if (!force && newPos == m_pos) return;
+    
+    //since the collision we need is very simple, 
+    //we'll only perform it against the closest unit
+    const Entity* closestEntity = nullptr;
+    float closestDistance = 0.f;
+
+    if (m_solid) {      
+        const Circlef circle(newPos, m_collisionRadius);
+
+        auto query = context.collisionManager->getQuadtree()->QueryIntersectsRegion(BoundingBody<float>(circle));
+
+        while (!query.EndOfQuery()) {
+            u32 collisionUniqueId = query.GetCurrent()->uniqueId;
+            // const Unit* collisionUnit = context.entityManager->units.atUniqueId(collisionUniqueId);
+
+            const Entity* collisionEntity = context.entityManager->entities.atUniqueId(collisionUniqueId);
+
+            if (collisionEntity) {
+                if (canCollide(*collisionEntity)) {
+                    float distance = Helper_vec2length(collisionEntity->getPosition() - newPos);
+
+                    if (!closestEntity || distance < closestDistance) {
+                        closestEntity = collisionEntity;
+                        closestDistance = distance;
+                    }
+                }
+            }
+
+            query.Next();
+        }
+
+        if (closestEntity) {
+            newPos += _moveColliding_impl(m_pos, newPos, m_collisionRadius, *closestEntity);
+        }
+    }
+
+    m_pos = _moveCollidingMap_impl(m_pos, newPos, m_collisionRadius, context.tileMap);
+
+    context.collisionManager->onUpdateUnit(m_uniqueId, m_pos, m_collisionRadius);
 }
 
 C_Unit::C_Unit(u32 uniqueId):
     C_Entity(uniqueId),
-    InvisibleComponent(m_teamId, m_pos, m_inBush),
-    TrueSightComponent(m_pos, m_inBush)
+    InvisibleComponent(),
+    TrueSightComponent()
 {
     //@BRANCH_WIP: Load from global array here as well
     m_textureId = TextureId::RED_DEMON;
     m_weaponId = WEAPON_DEVILS_BOW;
     m_scale = 4.f;
+    m_solid = true;
+    m_movementSpeed = 350;
+    m_trueSightRadius = 170;
 }
 
 C_Unit* C_Unit::clone() const
@@ -195,6 +396,9 @@ void C_Unit::loadFromData(CRCPacket& inPacket)
     mainBits.pushByte(byte);
     inPacket >> byte;
     mainBits.pushByte(byte);
+
+    setInvisible(mainBits.popBit());
+    setSolid(mainBits.popBit());
 
     bool posXChanged = mainBits.popBit();
     bool posYChanged = mainBits.popBit();
@@ -241,9 +445,28 @@ void C_Unit::loadFromData(CRCPacket& inPacket)
     }
 }
 
-void C_Unit::interpolate(const C_ManagersContext& context, const C_Unit* prevUnit, const C_Unit* nextUnit, double t, double d)
+void C_Unit::interpolate(const C_ManagersContext& context, const C_Entity* prevEntity, const C_Entity* nextEntity, double t, double d)
 {
+    const C_Unit* prevUnit = static_cast<const C_Unit*>(prevEntity);
+    const C_Unit* nextUnit = static_cast<const C_Unit*>(nextEntity);
 
+    if (prevUnit && nextUnit) {
+        //only interpolate position and aimAngle for units we're not controlling
+        if (m_uniqueId != context.entityManager->controlledEntityTeamId) {
+            m_pos = Helper_lerpVec2(prevUnit->getPosition(), nextUnit->getPosition(), t, d);
+            m_aimAngle = Helper_lerpAngle(prevUnit->getAimAngle(), nextUnit->getAimAngle(), t, d);
+        }
+    }
+
+    if (!prevUnit && nextUnit) {
+        //This is the first time the entity is being rendered
+        //creation callbacks (?)
+    }
+
+    if (prevUnit && !nextUnit) {
+        //This is the last time entity is being rendered
+        //destruction callbacks (?)
+    }
 }
 
 void C_Unit::updateControlledAngle(float aimAngle)
@@ -253,12 +476,30 @@ void C_Unit::updateControlledAngle(float aimAngle)
 
 void C_Unit::applyMovementInput(Vector2& pos, PlayerInput& input, const C_ManagersContext& context, sf::Time dt)
 {
+     //@TODO: Check flags to see if we can actually move (stunned, rooted, etc)
 
+    Vector2 oldPos = pos;
+    bool moved = PlayerInput_applyInput(input, pos, (float) m_movementSpeed, dt);
+
+    if (moved) {
+        predictMovementLocally(oldPos, pos, context);
+    }
 }
 
 void C_Unit::applyAbilitiesInput(const PlayerInput& input, const C_ManagersContext& context)
 {
+    //@WIP
+    //Check if it can be casted
+    //Start reducing the cooldown
+    //If casting fails on server, correct the cooldown in client
 
+    if (input.primaryFire) {
+        int uniqueId = context.entityManager->createProjectile(PROJECTILE_HellsBubble, m_pos, m_aimAngle, m_teamId);
+
+        if (uniqueId != -1) {
+            context.entityManager->localProjectiles.atUniqueId(uniqueId)->createdInputId = input.id;
+        }
+    }
 }
 
 u16 C_Unit::getControlledMovementSpeed() const
@@ -269,20 +510,24 @@ u16 C_Unit::getControlledMovementSpeed() const
 void C_Unit::updateLocallyVisible(const C_ManagersContext& context)
 {
     m_inBush = context.tileMap->isColliding(TILE_BUSH, Circlef(m_pos, (float) m_collisionRadius));
-    m_locallyHidden = isInvisible();
+    m_locallyHidden = isInvisibleOrBush();
 }
 
-void C_Unit::localReveal(C_Unit* unit)
+void C_Unit::localReveal(C_Entity* entity)
 {
-    if (unit->m_locallyHidden && !unit->shouldBeHiddenFrom(*this)) {
-        unit->m_locallyHidden = false;
+    InvisibleComponent* invisComp = dynamic_cast<InvisibleComponent*>(entity);
+
+    if (invisComp) {
+        if (invisComp->isLocallyHidden() && !invisComp->shouldBeHiddenFrom(*this)) {
+            invisComp->setLocallyHidden(false);
+        }
     }
 }
 
 void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Context& context) const
 {
     bool renderingLocallyHidden = managersContext.entityManager->renderingLocallyHidden;
-
+ 
 #ifdef MANDARINA_DEBUG
         if (!renderingLocallyHidden && m_locallyHidden && m_forceSent) return;
 #else
@@ -305,7 +550,7 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
     //flip the sprite depending on aimAngle
     sprite.setScale(mirrored * m_scale, m_scale);
 
-    if (isInvisible()) {
+    if (isInvisibleOrBush()) {
         sf::Color color = sprite.getColor();
         color.a = 150.f;
 
@@ -336,4 +581,38 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
             renderNodes.back().manualFilter = 1;
         }
     }
+}
+
+void C_Unit::predictMovementLocally(const Vector2& oldPos, Vector2& newPos, const C_ManagersContext& context) const
+{
+    //we don't update the circle to mimic how it works in the server
+    //where we only use one Query
+    const Circlef circle(newPos, m_collisionRadius);
+ 
+    const C_Entity* closestEntity = nullptr;
+    float closestDistance = 0.f;
+
+    auto it = context.entityManager->entities.begin();
+    for (; it != context.entityManager->entities.end(); ++it) {
+        if (!it->isSolid()) continue;
+
+        if (canCollide(*it)) {
+            const Circlef otherCircle(it->getPosition(), it->getCollisionRadius());
+
+            if (circle.intersects(otherCircle)) {
+                float distance = Helper_vec2length(it->getPosition() - newPos);
+
+                if (!closestEntity || distance < closestDistance) {
+                    closestEntity = &it;
+                    closestDistance = distance;
+                }
+            }
+        }
+    }
+
+    if (closestEntity) {
+        newPos += _moveColliding_impl(oldPos, newPos, m_collisionRadius, *closestEntity);
+    }
+
+    newPos = _moveCollidingMap_impl(oldPos, newPos, m_collisionRadius, context.tileMap);
 }

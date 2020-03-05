@@ -146,7 +146,7 @@ void PlayerInput_clearKeys(PlayerInput& playerInput)
 std::string PlayerInput_toString(const PlayerInput& input)
 {
     std::stringstream ss;
-    ss << input.left << ' ' << input.right << ' ' << input.up << ' ' << input.down
+    ss << input.left << ' ' << input.right << ' ' << input.up << ' ' << input.down << ' '
        << input.primaryFire << ' ' << input.secondaryFire << ' ' << input.altAbility << ' ' << input.ultimate;
    
     return ss.str();

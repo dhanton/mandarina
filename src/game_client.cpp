@@ -382,7 +382,6 @@ void GameClient::saveCurrentInput()
     //between two inputs (result is stored in entityPos)
     entity->applyMovementInput(entityPos, m_currentInput, C_ManagersContext(manager, &m_tileMap), m_inputRate);
 
-
     //when casting abilities we use the normal entity manager
     //since local entities might be created
     entity->applyAbilitiesInput(m_currentInput, C_ManagersContext(&m_entityManager, &m_tileMap));

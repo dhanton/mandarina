@@ -71,6 +71,22 @@ bool BaseEntityComponent::isInBush() const
     return m_inBush;
 }
 
+bool BaseEntityComponent::isSolid() const
+{
+    return m_solid;
+}
+
+void BaseEntityComponent::setSolid(bool solid)
+{
+    m_solid = solid;
+}
+
+bool BaseEntityComponent::canCollide(const BaseEntityComponent& otherEntity) const
+{
+    //@TODO: should we check flyingheight as well?
+    return m_uniqueId != otherEntity.m_uniqueId && m_solid && otherEntity.m_solid;
+}
+
 Entity::Entity(u32 uniqueId):
     BaseEntityComponent(uniqueId)
 {
@@ -92,12 +108,6 @@ void Entity::onQuadtreeInserted(const ManagersContext& context)
 
 }
 
-bool Entity::inQuadtree() const
-{
-    return false;
-}
-
-
 bool Entity::isDead() const
 {
     return m_dead;
@@ -108,11 +118,6 @@ C_Entity::C_Entity(u32 uniqueId):
 {
     m_textureId = 0;
     m_scale = 1.f;
-}
-
-void C_Entity::interpolate(const C_ManagersContext& context, const C_Entity* prevEntity, const C_Entity* nextEntity, double t, double d)
-{
-
 }
 
 void C_Entity::updateControlledAngle(float newAngle)
@@ -140,7 +145,7 @@ void C_Entity::updateLocallyVisible(const C_ManagersContext& context)
 
 }
 
-void C_Entity::localReveal(const C_Entity* entity)
+void C_Entity::localReveal(C_Entity* entity)
 {
 
 }
@@ -194,9 +199,7 @@ u16 HealthComponent::getMaxHealth() const
     return m_maxHealth;
 }
 
-TrueSightComponent::TrueSightComponent(Vector2& pos, bool& inBush):
-    ref_pos(pos),
-    ref_inBush(inBush)
+TrueSightComponent::TrueSightComponent()
 {
     //default value
     m_trueSightRadius = 0;
@@ -212,10 +215,7 @@ u8 TrueSightComponent::getTrueSightRadius() const
     return m_trueSightRadius;
 }
 
-InvisibleComponent::InvisibleComponent(u8& teamId, Vector2& pos, bool& inBush):
-    ref_teamId(teamId),
-    ref_pos(pos),
-    ref_inBush(inBush)
+InvisibleComponent::InvisibleComponent()
 {
     m_locallyHidden = false;
     m_forceSent = false;
@@ -224,7 +224,7 @@ InvisibleComponent::InvisibleComponent(u8& teamId, Vector2& pos, bool& inBush):
     m_invisible = false;
 }
 
-void InvisibleComponent::resetFlags()
+void InvisibleComponent::resetInvisibleFlags()
 {
     m_visionFlags = 0;
     m_teamSentFlags = 0;
@@ -250,6 +250,11 @@ bool InvisibleComponent::isInvisible() const
     return m_invisible;
 }
 
+bool InvisibleComponent::isInvisibleOrBush() const
+{
+    return m_invisible || _invisible_inBush();
+}
+
 bool InvisibleComponent::isRevealedForTeam(u8 teamId) const
 {
     return (m_visionFlags & (1 << teamId));
@@ -262,7 +267,7 @@ bool InvisibleComponent::isMarkedToSendForTeam(u8 teamId) const
 
 bool InvisibleComponent::isVisibleForTeam(u8 teamId) const
 {
-    if (ref_teamId == teamId || !isInvisible()) {
+    if (_invisible_teamId() == teamId || !isInvisibleOrBush()) {
         return true;
     } else {
         return isRevealedForTeam(teamId);
@@ -271,10 +276,12 @@ bool InvisibleComponent::isVisibleForTeam(u8 teamId) const
 
 bool InvisibleComponent::shouldBeHiddenFrom(TrueSightComponent& otherEntity) const
 {
-    if (Helper_vec2length(ref_pos - otherEntity.ref_pos) >= otherEntity.getTrueSightRadius()) {
+    if (_invisible_teamId() == otherEntity._trueSight_teamId()) {
+        return false;
+    } else if (Helper_vec2length(_invisible_pos() - otherEntity._trueSight_pos()) >= otherEntity.getTrueSightRadius()) {
         return true;
     } else {
-        return otherEntity.ref_inBush ? !ref_inBush : false;
+        return _invisible_inBush() ? !otherEntity._trueSight_inBush() : false;
     }
 }
 
@@ -283,7 +290,17 @@ bool InvisibleComponent::isLocallyHidden() const
     return m_locallyHidden;
 }
 
+void InvisibleComponent::setLocallyHidden(bool locallyHidden)
+{
+    m_locallyHidden = locallyHidden;
+}
+
 bool InvisibleComponent::isForceSent() const
 {
     return m_forceSent;
+}
+
+void InvisibleComponent::setForceSent(bool forceSent)
+{
+    m_forceSent = forceSent;
 }

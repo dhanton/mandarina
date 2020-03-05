@@ -137,10 +137,10 @@ GameServer::GameServer(const Context& context, int playersNeeded):
     m_tileMap.loadFromFile(MAPS_PATH + m_tileMapFilename + "." + MAP_FILENAME_EXT);
     
     //@DELETE (TESTING)
-    // m_entityManager.createEntity(Vector2(100.f, 300.f), 0);
-    // for (int i = 0; i < 100; ++i) {
-    //     m_entityManager.createEntity(Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 1);
-    // }
+    m_entityManager.createEntity(Vector2(1550.f, 800.f), 1);
+    for (int i = 0; i < 100; ++i) {
+        m_entityManager.createEntity(Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 1);
+    }
 
     if (!context.local) {
         m_endpoint.ParseString("127.0.0.1:7000");

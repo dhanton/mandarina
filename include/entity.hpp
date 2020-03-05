@@ -48,6 +48,11 @@ public:
 
     bool isInBush() const;
 
+    bool isSolid() const;
+    void setSolid(bool solid);
+
+    bool canCollide(const BaseEntityComponent& otherEntity) const;
+
 protected:
     const u32 m_uniqueId;
 
@@ -57,6 +62,7 @@ protected:
     u8 m_collisionRadius;
     u8 m_flyingHeight;
     bool m_inBush;
+    bool m_solid;
 };
 
 class Entity : public BaseEntityComponent
@@ -77,8 +83,6 @@ public:
     //Callback when the entity is inserted on the quadtree
     virtual void onQuadtreeInserted(const ManagersContext& context);
 
-    virtual bool inQuadtree() const;
-
     bool isDead() const;
 
 protected:
@@ -97,7 +101,7 @@ public:
     virtual void update(sf::Time eTime, const C_ManagersContext& context) = 0;
     virtual void loadFromData(CRCPacket& inPacket) = 0;
     virtual void interpolate(const C_ManagersContext& context, const C_Entity* prevEntity, 
-                             const C_Entity* nextEntity, double t, double d);
+                             const C_Entity* nextEntity, double t, double d) = 0;
 
     //these 2 methods are called only for the controlled entity in client
     //update the angle with respect to the mouse
@@ -110,16 +114,33 @@ public:
     virtual u16 getControlledMovementSpeed() const;
 
     virtual void updateLocallyVisible(const C_ManagersContext& context);
-    virtual void localReveal(const C_Entity* entity);
+    virtual void localReveal(C_Entity* entity);
 
     virtual void insertRenderNode(const C_ManagersContext& managersContext, const Context& context) const;
-
-    //@BRANCH_WIP: render methods
 
 protected:
     u16 m_textureId;
     float m_scale;
 };
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////// COMPONENTS //////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//These macros are used to generate getters for required fields that the component needs
+//and that are stored in another class (usually the child or another component)
+#define COMP_CROSS_VIRTUAL(comp_name, var_type, var_name) \
+    virtual var_type _##comp_name##_##var_name() const = 0;
+
+#define COMP_CROSS_VARIABLE(comp_name, var_type, var_name) \
+    virtual var_type _##comp_name##_##var_name() const {return m_##var_name;}
+
+#define COMP_CROSS_VARIABLE_PUBLIC(comp_name, var_type, var_name) \
+    virtual var_type _##comp_name##_##var_name() const {return ##var_name;}
+
+//@BRANCH_WIP: Maybe we can create a MACRO to set some flags in child classes to 
+//check which components an entity has so we don't have to use dynamic_cast
+//Is it needed? Is dynamic cast that slow??
 
 class HealthComponent
 {
@@ -146,7 +167,7 @@ public:
     friend class InvisibleComponent;
 
 public:
-    TrueSightComponent(Vector2& pos, bool& inBush);
+    TrueSightComponent();
 
     void setTrueSightRadius(u8 trueSightRadius);
     u8 getTrueSightRadius() const;
@@ -155,10 +176,15 @@ protected:
     u8 m_trueSightRadius;
 
 private:
-    //these must be stored in another component
-    Vector2& ref_pos;
-    bool& ref_inBush;
+    COMP_CROSS_VIRTUAL(trueSight, u8, teamId)
+    COMP_CROSS_VIRTUAL(trueSight, bool, inBush)
+    COMP_CROSS_VIRTUAL(trueSight, Vector2, pos)
 };
+
+#define TRUE_SIGHT_COMPONENT() \
+    COMP_CROSS_VARIABLE(trueSight, u8, teamId) \
+    COMP_CROSS_VARIABLE(trueSight, bool, inBush) \
+    COMP_CROSS_VARIABLE(trueSight, Vector2, pos)
 
 class InvisibleComponent
 {
@@ -166,21 +192,25 @@ public:
     friend class TrueSightComponent;
 
 public:
-    InvisibleComponent(u8& teamId, Vector2& pos, bool& inBush);
+    InvisibleComponent();
 
-    void resetFlags();
+    void resetInvisibleFlags();
     void markToSend(u8 teamId);
     void reveal(u8 teamId);
 
     void setInvisible(bool invisible);
     bool isInvisible() const;
+    bool isInvisibleOrBush() const;
+
     bool isRevealedForTeam(u8 teamId) const;
     bool isMarkedToSendForTeam(u8 teamId) const;
     bool isVisibleForTeam(u8 teamId) const;
     bool shouldBeHiddenFrom(TrueSightComponent& otherEntity) const;
 
     bool isLocallyHidden() const;
+    void setLocallyHidden(bool locallyHidden);
     bool isForceSent() const;
+    void setForceSent(bool forceSent);
 
 protected:
     bool m_locallyHidden;
@@ -197,8 +227,14 @@ private:
 
     bool m_invisible;
 
-    //these must be stored in another component
-    u8& ref_teamId;
-    Vector2& ref_pos;
-    bool& ref_inBush;
+    //variables that have to be stored in another component or child class
+    COMP_CROSS_VIRTUAL(invisible, u8, teamId)
+    COMP_CROSS_VIRTUAL(invisible, bool, inBush)
+    COMP_CROSS_VIRTUAL(invisible, Vector2, pos)
 };
+
+//This is used by child classes to properly generate cross variable methods
+#define INVISIBLE_COMPONENT() \
+    COMP_CROSS_VARIABLE(invisible, u8, teamId) \
+    COMP_CROSS_VARIABLE(invisible, bool, inBush) \
+    COMP_CROSS_VARIABLE(invisible, Vector2, pos)
