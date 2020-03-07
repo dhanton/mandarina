@@ -17,7 +17,7 @@ public:
     CollisionManager(const CollisionManager&) = delete;
     CollisionManager& operator=(const CollisionManager&) = delete;
 
-    QuadtreeEntityType onInsertUnit(u32 uniqueId, const Vector2& pos, u8 radius);
+    void onInsertEntity(u32 uniqueId, const Vector2& pos, u8 radius);
     void onUpdateUnit(u32 uniqueId, const Vector2& newPos, float newRadius);
     void onDeleteUnit(u32 uniqueId);
 

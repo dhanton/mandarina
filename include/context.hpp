@@ -10,9 +10,6 @@ struct Context {
     sf::Window* window = nullptr;
     sf::View* view = nullptr;
 
-    bool SERVER = false;
-    bool CLIENT = false;
-
     TextureLoader* textures = nullptr;
 
     bool local = false;

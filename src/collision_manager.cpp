@@ -14,7 +14,7 @@ CollisionManager::~CollisionManager()
 
 }
 
-QuadtreeEntityType CollisionManager::onInsertUnit(u32 uniqueId, const Vector2& pos, u8 radius)
+void CollisionManager::onInsertEntity(u32 uniqueId, const Vector2& pos, u8 radius)
 {
     Circlef circle(pos, (float) radius);
     m_entities[uniqueId] = std::unique_ptr<QuadtreeEntityType>(new QuadtreeEntityType(uniqueId, circle));

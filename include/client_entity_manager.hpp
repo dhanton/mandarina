@@ -77,4 +77,9 @@ private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const;
     
     std::vector<RenderNode> m_renderNodes;
+
+    static bool m_entitiesJsonLoaded;
+    static std::unique_ptr<C_Entity> m_entityData[ENTITY_MAX_TYPES];
+
+    static void loadEntityData(const JsonParser* jsonParser);
 };

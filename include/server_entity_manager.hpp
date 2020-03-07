@@ -1,5 +1,6 @@
 #pragma once
 
+#include "json_parser.hpp"
 #include "bucket.hpp"
 #include "defines.hpp"
 // #include "units.hpp"
@@ -17,6 +18,7 @@
 class EntityManager
 {
 public:
+    EntityManager(const JsonParser* jsonParser);
     EntityManager();
 
     void update(sf::Time eTime);
@@ -45,4 +47,9 @@ private:
     TileMap* m_tileMap;
 
     u32 m_lastUniqueId;
+
+    static bool m_entitiesJsonLoaded;
+    static std::unique_ptr<Entity> m_entityData[ENTITY_MAX_TYPES];
+
+    static void loadEntityData(const JsonParser* jsonParser);
 };

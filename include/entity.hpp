@@ -6,6 +6,7 @@
 #include "defines.hpp"
 #include "crcpacket.hpp"
 #include "player_input.hpp"
+#include "json_parser.hpp"
 
 //This is not an ECS
 //An ECS would probably be better but I have no idea how to make one
@@ -27,9 +28,11 @@
 class BaseEntityComponent
 {
 public:
-    BaseEntityComponent(u8 entityType, u32 uniqueId);
-
     u32 getUniqueId() const;
+    void setUniqueId(u32 uniqueId);
+
+    u8 getEntityType() const;
+    void setEntityType(u8 entityType);
 
     Vector2 getPosition() const;
     void setPosition(const Vector2& pos);
@@ -54,8 +57,11 @@ public:
     bool canCollide(const BaseEntityComponent& otherEntity) const;
 
 protected:
-    const u32 m_uniqueId;
-    const u8 m_type;
+    void loadFromJson(u8 entityType, const rapidjson::Document& doc);
+
+protected:
+    u32 m_uniqueId;
+    u8 m_type;
 
     Vector2 m_pos;
     Vector2 m_vel;
@@ -78,8 +84,9 @@ enum EntityType {
 class Entity : public BaseEntityComponent
 {
 public:
-    Entity(u8 entityType, u32 uniqueId);
     virtual Entity* clone() const = 0;
+
+    virtual void loadFromJson(u8 entityType, const rapidjson::Document& doc);
 
     virtual void update(sf::Time eTime, const ManagersContext& context) = 0;
     virtual void preUpdate(sf::Time eTime, const ManagersContext& context) = 0;
@@ -105,8 +112,9 @@ struct RenderNode;
 class C_Entity : public BaseEntityComponent
 {
 public:
-    C_Entity(u8 entityType, u32 uniqueId);
     virtual C_Entity* clone() const = 0;
+
+    virtual void loadFromJson(u8 entityType, const rapidjson::Document& doc, u16 textureId);
 
     virtual void update(sf::Time eTime, const C_ManagersContext& context) = 0;
     virtual void loadFromData(CRCPacket& inPacket) = 0;
@@ -155,8 +163,6 @@ protected:
 class HealthComponent
 {
 public:
-    HealthComponent();
-
     void dealDamage(u16 damage, Entity* source);
     void heal(u16 amount, Entity* source);
 
@@ -165,6 +171,9 @@ public:
 
     u16 getHealth() const;
     u16 getMaxHealth() const;
+
+protected:
+    void loadFromJson(const rapidjson::Document& doc);
 
 protected:
     u16 m_health;
@@ -177,10 +186,13 @@ public:
     friend class InvisibleComponent;
 
 public:
-    TrueSightComponent();
-
     void setTrueSightRadius(u8 trueSightRadius);
     u8 getTrueSightRadius() const;
+
+    static const u8 defaultTrueSightRadius;
+
+protected:
+    void loadFromJson(const rapidjson::Document& doc);
 
 protected:
     u8 m_trueSightRadius;

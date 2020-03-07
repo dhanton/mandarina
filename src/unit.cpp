@@ -66,13 +66,6 @@ Vector2 _moveColliding_impl(const Vector2& oldPos, const Vector2& newPos, float 
 
 }
 
-_UnitBase::_UnitBase()
-{
-    m_weaponId = 0;
-    m_aimAngle = 0.f;
-    m_movementSpeed = 0;
-}
-
 float _UnitBase::getAimAngle() const
 {
     return m_aimAngle;
@@ -93,26 +86,26 @@ void _UnitBase::setMovementSpeed(u8 movementSpeed)
     m_movementSpeed = movementSpeed;
 }
 
-Unit::Unit(u8 entityType, u32 uniqueId):
-    Entity(entityType, uniqueId),
-    InvisibleComponent(),
-    TrueSightComponent()
+void _UnitBase::loadFromJson(const rapidjson::Document& doc)
 {
-    //@BRANCH_WIP
-    //We need a static boolean that tells us if the units jsons are loaded
-    //If its false, we load them here
-    //If its true we just use it normally
-    //Units are loaded into a global array (like they are now)
-    m_collisionRadius = 20;
-    m_solid = true;
-    m_movementSpeed = 350;
-    m_trueSightRadius = 170;
-    m_flyingHeight = 0;
+    m_aimAngle = 0.f;
+    m_weaponId = Weapon_stringToType(doc["weapon"].GetString());
+    m_movementSpeed = doc["movement_speed"].GetInt();
 }
 
 Unit* Unit::clone() const
 {
     return new Unit(*this);
+}
+
+void Unit::loadFromJson(u8 entityType, const rapidjson::Document& doc)
+{
+    Entity::loadFromJson(entityType, doc);
+    _UnitBase::loadFromJson(doc);
+    HealthComponent::loadFromJson(doc);
+    TrueSightComponent::loadFromJson(doc);
+
+    m_solid = true;
 }
 
 void Unit::update(sf::Time eTime, const ManagersContext& context)
@@ -362,25 +355,21 @@ void Unit::moveColliding(Vector2 newPos, const ManagersContext& context, bool fo
     context.collisionManager->onUpdateUnit(m_uniqueId, m_pos, m_collisionRadius);
 }
 
-C_Unit::C_Unit(u8 entityType, u32 uniqueId):
-    C_Entity(entityType, uniqueId),
-    InvisibleComponent(),
-    TrueSightComponent()
-{
-    //@BRANCH_WIP: Load from global array here as well
-    m_textureId = TextureId::RED_DEMON;
-    m_weaponId = WEAPON_DEVILS_BOW;
-    m_scale = 4.f;
-    m_solid = true;
-    m_movementSpeed = 350;
-    m_trueSightRadius = 170;
-    m_flyingHeight = 0;
-}
-
 C_Unit* C_Unit::clone() const
 {
     return new C_Unit(*this);
 }
+
+void C_Unit::loadFromJson(u8 entityType, const rapidjson::Document& doc, u16 textureId)
+{
+    C_Entity::loadFromJson(entityType, doc, textureId);
+    _UnitBase::loadFromJson(doc);
+    HealthComponent::loadFromJson(doc);
+    TrueSightComponent::loadFromJson(doc);
+
+    m_solid = true;
+}
+
 
 void C_Unit::update(sf::Time eTime, const C_ManagersContext& context)
 {

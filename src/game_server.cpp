@@ -97,7 +97,8 @@ GameServer::GameServer(const Context& context, int playersNeeded):
     //This can be hight/low independently of playersNeeded 
     //for example if a streamer sets up a server maybe 10k people try to connect (even for a 2-man party)
     //Still has to always be larger than playersNeeded
-    INITIAL_CLIENTS_SIZE(playersNeeded * 2 + 10)
+    INITIAL_CLIENTS_SIZE(playersNeeded * 2 + 10),
+    m_entityManager(context.jsonParser)
 {
     loadProjectilesFromJson(context.jsonParser);
 

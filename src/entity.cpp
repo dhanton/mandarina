@@ -4,16 +4,24 @@
 #include "helper.hpp"
 #include "client_entity_manager.hpp"
 
-BaseEntityComponent::BaseEntityComponent(u8 entityType, u32 uniqueId):
-    m_uniqueId(uniqueId),
-    m_type(entityType)
-{
-
-}
-
 u32 BaseEntityComponent::getUniqueId() const
 {
     return m_uniqueId;
+}
+
+void BaseEntityComponent::setUniqueId(u32 uniqueId)
+{
+    m_uniqueId = uniqueId;
+}
+
+u8 BaseEntityComponent::getEntityType() const
+{
+    return m_type;
+}
+    
+void BaseEntityComponent::setEntityType(u8 entityType)
+{
+    m_type = entityType;
 }
 
 Vector2 BaseEntityComponent::getPosition() const
@@ -88,10 +96,33 @@ bool BaseEntityComponent::canCollide(const BaseEntityComponent& otherEntity) con
     return m_uniqueId != otherEntity.m_uniqueId && m_solid && otherEntity.m_solid;
 }
 
-Entity::Entity(u8 entityType, u32 uniqueId):
-    BaseEntityComponent(uniqueId, entityType)
+void BaseEntityComponent::loadFromJson(u8 entityType, const rapidjson::Document& doc)
 {
+    m_type = entityType;
+    m_teamId = 0;
 
+    if (doc.HasMember("flying_height")) {
+        m_flyingHeight = doc["flying_height"].GetInt();
+    } else {
+        m_flyingHeight = 0;
+    }
+
+    m_collisionRadius = doc["collision_radius"].GetInt();
+
+    m_inBush = false;
+
+    if (doc.HasMember("solid")) {
+        m_solid = doc["solid"].GetBool();
+    } else {
+        m_solid = false;
+    }
+}
+
+void Entity::loadFromJson(u8 entityType, const rapidjson::Document& doc)
+{
+    BaseEntityComponent::loadFromJson(entityType, doc);
+
+    m_dead = false;
 }
 
 bool Entity::shouldSendToTeam(u8 teamId) const
@@ -114,11 +145,17 @@ bool Entity::isDead() const
     return m_dead;
 }
 
-C_Entity::C_Entity(u8 entityType, u32 uniqueId):
-    BaseEntityComponent(uniqueId, entityType)
+void C_Entity::loadFromJson(u8 entityType, const rapidjson::Document& doc, u16 textureId)
 {
-    m_textureId = 0;
-    m_scale = 1.f;
+    BaseEntityComponent::loadFromJson(entityType, doc);
+
+    m_textureId = textureId;
+
+    if (doc.HasMember("scale")) {
+        m_scale = doc["scale"].GetFloat();
+    } else {
+        m_scale = 1.f;
+    }
 }
 
 void C_Entity::updateControlledAngle(float newAngle)
@@ -163,13 +200,6 @@ void C_Entity::insertRenderNode(const C_ManagersContext& managersContext, const 
     sprite.setPosition(m_pos);
 }
 
-HealthComponent::HealthComponent()
-{
-    //default values
-    m_health = 1;
-    m_maxHealth = 1;
-}
-
 void HealthComponent::dealDamage(u16 damage, Entity* source)
 {
     m_health = std::max((int) m_health - (int) damage, 0);
@@ -200,11 +230,18 @@ u16 HealthComponent::getMaxHealth() const
     return m_maxHealth;
 }
 
-TrueSightComponent::TrueSightComponent()
+void HealthComponent::loadFromJson(const rapidjson::Document& doc)
 {
-    //default value
-    m_trueSightRadius = 0;
+    m_maxHealth = doc["max_health"].GetInt();
+
+    if (doc.HasMember("starting_health")) {
+        m_health = doc["starting_health"].GetInt();
+    } else {
+        m_health = m_maxHealth;
+    }
 }
+
+const u8 TrueSightComponent::defaultTrueSightRadius = 170;
 
 void TrueSightComponent::setTrueSightRadius(u8 trueSightRadius)
 {
@@ -214,6 +251,15 @@ void TrueSightComponent::setTrueSightRadius(u8 trueSightRadius)
 u8 TrueSightComponent::getTrueSightRadius() const
 {
     return m_trueSightRadius;
+}
+
+void TrueSightComponent::loadFromJson(const rapidjson::Document& doc)
+{
+    if (doc.HasMember("true_sight_radius")) {
+        m_trueSightRadius = doc["true_sight_radius"].GetInt();
+    } else {
+        m_trueSightRadius = defaultTrueSightRadius;
+    }
 }
 
 InvisibleComponent::InvisibleComponent()

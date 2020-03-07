@@ -92,8 +92,6 @@ int main(int argc, char* argv[])
     switch (execMode) {
         case ExecMode::Client:
         {
-            context.CLIENT = true;
-
             GameClient client(context, serverAddr);
             client.mainLoop(running);
 
@@ -102,8 +100,6 @@ int main(int argc, char* argv[])
 
         case ExecMode::Server:
         {
-            context.SERVER = true;
-
             GameServer server(context, 1);
             server.mainLoop(running);
 
@@ -112,9 +108,6 @@ int main(int argc, char* argv[])
 
         case ExecMode::LocalConnection:
         {
-            context.CLIENT = true;
-            context.SERVER = true;
-
             GameServer server(context, 1);
 
             std::thread thread(&GameServer::mainLoop, &server, std::ref(running));

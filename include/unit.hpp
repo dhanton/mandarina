@@ -1,17 +1,19 @@
 #pragma once
 
 #include "entity.hpp"
+#include "json_parser.hpp"
 
 class _UnitBase
 {
 public:
-    _UnitBase();
-
     float getAimAngle() const;
     void setAimAngle(float aimAngle);
 
     u8 getMovementSpeed() const;
     void setMovementSpeed(u8 movementSpeed);
+
+protected:
+    void loadFromJson(const rapidjson::Document& doc);
 
 protected:
     float m_aimAngle;
@@ -29,9 +31,10 @@ private:
     INVISIBLE_COMPONENT()
 
 public:
-    Unit(u8 entityType, u32 uniqueId);
     virtual Unit* clone() const;
     
+    virtual void loadFromJson(u8 entityType, const rapidjson::Document& doc);
+
     virtual void update(sf::Time eTime, const ManagersContext& context);
     virtual void preUpdate(sf::Time eTime, const ManagersContext& context);
     virtual void postUpdate(sf::Time eTime, const ManagersContext& context);
@@ -57,8 +60,9 @@ private:
     INVISIBLE_COMPONENT()
 
 public:
-    C_Unit(u8 entityType, u32 uniqueId);
     virtual C_Unit* clone() const;
+
+    virtual void loadFromJson(u8 entityType, const rapidjson::Document& doc, u16 textureId);
 
     virtual void update(sf::Time eTime, const C_ManagersContext& context);
     virtual void loadFromData(CRCPacket& inPacket);

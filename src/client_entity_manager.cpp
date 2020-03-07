@@ -5,6 +5,7 @@
 
 #include "helper.hpp"
 #include "tilemap.hpp"
+#include "texture_ids.hpp"
 
 RenderNode::RenderNode(float flyingHeight, u32 uniqueId, float collisionRadius)
 {
@@ -34,6 +35,8 @@ inline bool RenderNode::operator<(const RenderNode& other)
 C_EntityManager::C_EntityManager(const Context& context, sf::Time worldTime):
     InContext(context)
 {
+    loadEntityData(context.jsonParser);
+
     localLastUniqueId = 0;
     controlledEntityUniqueId = 0;
     controlledEntityTeamId = 0;
@@ -45,7 +48,7 @@ C_EntityManager::C_EntityManager():
     //dummy context used if this instance is a snapshot
     InContext(Context())
 {
-    controlledEntityUniqueId = 0;    
+
 }
 
 void C_EntityManager::update(sf::Time eTime)
@@ -245,22 +248,8 @@ C_Entity* C_EntityManager::createEntity(u8 entityType, u32 uniqueId)
 
     C_Entity* entity = nullptr;
 
-    switch(entityType) 
-    {
-        #define DoEntity(class_name, type, json_id) \
-            case ENTITY_##type: \
-            { \
-                entity = new C_##class_name(uniqueId, entityType); \
-                break; \
-            }
-        #include "entities.inc"
-        #undef DoEntity
-    }
-
-    if (!entity) {
-        std::cout << "EntityManager::createEntity error - Invalid entity type" << std::endl;
-        return nullptr;
-    }
+    entity = m_entityData[entityType]->clone();
+    entity->setUniqueId(uniqueId);
 
     entities.addEntity(entity);
 
@@ -403,4 +392,20 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
         }
 #endif
     }
+}
+
+bool C_EntityManager::m_entitiesJsonLoaded = false;
+std::unique_ptr<C_Entity> C_EntityManager::m_entityData[ENTITY_MAX_TYPES];
+
+void C_EntityManager::loadEntityData(const JsonParser* jsonParser)
+{
+    if (m_entitiesJsonLoaded) return;
+
+    #define DoEntity(class_name, type, json_id) \
+        m_entityData[ENTITY_##type] = std::unique_ptr<C_Entity>(new C_##class_name()); \
+        m_entityData[ENTITY_##type]->loadFromJson(ENTITY_##type, *jsonParser->getDocument(json_id), TextureId::type);
+    #include "entities.inc"
+    #undef DoEntity
+
+    m_entitiesJsonLoaded = true;
 }

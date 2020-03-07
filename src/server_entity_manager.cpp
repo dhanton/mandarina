@@ -3,9 +3,17 @@
 #include "collision_manager.hpp"
 #include "tilemap.hpp"
 
+EntityManager::EntityManager(const JsonParser* jsonParser)
+{
+    loadEntityData(jsonParser);
+
+    m_lastUniqueId = 0;
+}
+
+//constructor used if the instance is a snapshot
 EntityManager::EntityManager()
 {
-    m_lastUniqueId = 0;
+
 }
 
 void EntityManager::update(sf::Time eTime)
@@ -57,22 +65,8 @@ Entity* EntityManager::createEntity(u8 entityType, const Vector2& pos, u8 teamId
     u32 uniqueId = _getNewUniqueId();
     Entity* entity = nullptr;
 
-    switch(entityType) 
-    {
-        #define DoEntity(class_name, type, json_id) \
-            case ENTITY_##type: \
-            { \
-                entity = new class_name(uniqueId, entityType); \
-                break; \
-            }
-        #include "entities.inc"
-        #undef DoEntity
-    }
-
-    if (!entity) {
-        std::cout << "EntityManager::createEntity error - Invalid entity type" << std::endl;
-        return nullptr;
-    }
+    entity = m_entityData[entityType]->clone();
+    entity->setUniqueId(uniqueId);
 
     entity->setTeamId(teamId);
     entity->setPosition(pos);
@@ -80,8 +74,9 @@ Entity* EntityManager::createEntity(u8 entityType, const Vector2& pos, u8 teamId
     entities.addEntity(entity);
 
     //if the entity is initially solid, add it to the quadtree
+    //@BRANCH_WIP: Maybe some quadtree entities start not being solid?
     if (entity->isSolid()) {
-        m_collisionManager->onInsertUnit(uniqueId, pos, entity->getCollisionRadius());
+        m_collisionManager->onInsertEntity(uniqueId, pos, entity->getCollisionRadius());
         entity->onQuadtreeInserted(ManagersContext(this, m_collisionManager, m_tileMap));
     }
 
@@ -190,4 +185,20 @@ void EntityManager::setTileMap(TileMap* tileMap)
 inline u32 EntityManager::_getNewUniqueId()
 {
     return ++m_lastUniqueId;
+}
+
+bool EntityManager::m_entitiesJsonLoaded = false;
+std::unique_ptr<Entity> EntityManager::m_entityData[ENTITY_MAX_TYPES];
+
+void EntityManager::loadEntityData(const JsonParser* jsonParser)
+{
+    if (m_entitiesJsonLoaded) return;
+
+    #define DoEntity(class_name, type, json_id) \
+        m_entityData[ENTITY_##type] = std::unique_ptr<Entity>(new class_name()); \
+        m_entityData[ENTITY_##type]->loadFromJson(ENTITY_##type, *jsonParser->getDocument(json_id));
+    #include "entities.inc"
+    #undef DoEntity
+
+    m_entitiesJsonLoaded = true;
 }
