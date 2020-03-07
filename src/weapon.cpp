@@ -6,13 +6,26 @@
 
 Weapon g_weaponData[WEAPON_MAX_TYPES];
 
-void _loadWeapon(JsonParser* jsonParser, Weapon& weapon, const char* json_id, u16 textureId, u8 primaryFire, u8 secondaryFire)
+void _loadWeapon(JsonParser* jsonParser, Weapon& weapon, const char* json_id, u16 textureId)
 {
     auto* doc = jsonParser->getDocument(json_id);
 
     weapon.textureId = textureId;
-    weapon.primaryFire = primaryFire;
-    weapon.secondaryFire = secondaryFire;
+
+    //All weapons have a primary fire ability
+    weapon.primaryFire = Ability_strToType((*doc)["primary_fire"].GetString());
+
+    //(different from WEAPON_NONE)
+    if (weapon.primaryFire == WEAPON_NONE) {
+        throw std::runtime_error("LoadWeaponsFromJson error - Weapon must have primary fire in file " + std::string(json_id));
+    }
+
+    //but they might not have a secondary fire
+    if (doc->HasMember("secondary_fire")) {
+        weapon.secondaryFire = Ability_strToType((*doc)["secondary_fire"].GetString());
+    } else {
+        weapon.secondaryFire = ABILITY_NONE;
+    }
 
     if (doc->HasMember("scale")) {
         weapon.scale = (*doc)["scale"].GetFloat();
@@ -27,13 +40,24 @@ void _loadWeapon(JsonParser* jsonParser, Weapon& weapon, const char* json_id, u1
     }
 }
 
+u8 Weapon_stringToType(const std::string& typeStr)
+{
+    if (typeStr == "NONE") return WEAPON_NONE;
+    
+    #define DoWeapon(weapon_name, json_id) \
+        if (typeStr == #weapon_name) return WEAPON_##weapon_name; 
+    #include "weapons.inc"
+    #undef DoWeapon
+
+    return WEAPON_NONE;
+}
+
 void loadWeaponsFromJson(JsonParser* jsonParser)
 {
-    #define LoadWeapon(weapon_name, callback_func, json_id, primary_fire_id, secondary_fire_id) \
-        _loadWeapon(jsonParser, g_weaponData[WEAPON_##weapon_name], json_id, TextureId::weapon_name, primary_fire_id, secondary_fire_id); \
-        // g_weaponData[WEAPON_##weapon_name].callback = &WeaponCallback_##callback_func;
+    #define DoWeapon(weapon_name, json_id) \
+        _loadWeapon(jsonParser, g_weaponData[WEAPON_##weapon_name], json_id, TextureId::weapon_name);
     #include "weapons.inc"
-    #undef LoadWeapon
+    #undef DoWeapon
 }
 
 //Placeholder callback

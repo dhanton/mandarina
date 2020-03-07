@@ -45,6 +45,7 @@ public:
     void updateRevealedUnits();
 
     int createProjectile(ProjectileType type, const Vector2& pos, float aimAngle, u8 teamId);
+    C_Entity* createEntity(u8 entityType, u32 uniqueId);
 
     void loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inPacket);
 

@@ -11,10 +11,10 @@
 //all entities that have no health/abilities/buffs
 
 enum ProjectileType {
-    #define LoadProjectile(projectile_name, texture_id, json_id) \
+    #define DoProjectile(projectile_name, json_id) \
         PROJECTILE_##projectile_name,
     #include "projectiles.inc"
-    #undef LoadProjectile
+    #undef DoProjectile
     
     PROJECTILE_MAX_TYPES
 };

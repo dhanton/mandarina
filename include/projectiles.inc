@@ -1,3 +1,3 @@
-//LoadProjectile(projectile_name, texture_id, json_id)
+//DoProjectile(projectile_name, json_id)
 
-LoadProjectile(HellsBubble, HELLS_BUBBLE, "hells_bubble")
+DoProjectile(HELLS_BUBBLE, "hells_bubble")

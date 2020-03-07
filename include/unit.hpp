@@ -2,7 +2,6 @@
 
 #include "entity.hpp"
 
-
 class _UnitBase
 {
 public:
@@ -30,7 +29,7 @@ private:
     INVISIBLE_COMPONENT()
 
 public:
-    Unit(u32 uniqueId);
+    Unit(u8 entityType, u32 uniqueId);
     virtual Unit* clone() const;
     
     virtual void update(sf::Time eTime, const ManagersContext& context);
@@ -58,7 +57,7 @@ private:
     INVISIBLE_COMPONENT()
 
 public:
-    C_Unit(u32 uniqueId);
+    C_Unit(u8 entityType, u32 uniqueId);
     virtual C_Unit* clone() const;
 
     virtual void update(sf::Time eTime, const C_ManagersContext& context);

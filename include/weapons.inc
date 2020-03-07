@@ -1,3 +1,3 @@
-//LoadWeapon(weapon_name, callback_name, json_file, primary_fire_id, secondary_fire_id)
+//DoWeapon(weapon_name, json_file)
 
-LoadWeapon(DEVILS_BOW, devilsBow, "devils_bow", ABILITY_HellsBubble, ABILITY_HellsDart)
+DoWeapon(DEVILS_BOW, "devils_bow")

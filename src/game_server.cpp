@@ -137,9 +137,9 @@ GameServer::GameServer(const Context& context, int playersNeeded):
     m_tileMap.loadFromFile(MAPS_PATH + m_tileMapFilename + "." + MAP_FILENAME_EXT);
     
     //@DELETE (TESTING)
-    m_entityManager.createEntity(Vector2(1550.f, 800.f), 1);
+    m_entityManager.createEntity(ENTITY_RED_DEMON, Vector2(1550.f, 800.f), 1);
     for (int i = 0; i < 100; ++i) {
-        m_entityManager.createEntity(Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 1);
+        m_entityManager.createEntity(ENTITY_RED_DEMON, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 1);
     }
 
     if (!context.local) {
@@ -471,7 +471,7 @@ void GameServer::onConnectionCompleted(HSteamNetConnection connectionId)
 
         //@TODO: Create unit based on game mode settings (position, teamId) and hero selection (class type)
         Vector2 pos = {1500.f, 1500.f};
-        Entity* entity = m_entityManager.createEntity(pos, m_clients[index].teamId);
+        Entity* entity = m_entityManager.createEntity(ENTITY_RED_DEMON, pos, m_clients[index].teamId);
 
         if (entity != nullptr) {
             m_clients[index].controlledEntityUniqueId = entity->getUniqueId();

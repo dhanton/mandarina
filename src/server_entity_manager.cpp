@@ -46,21 +46,34 @@ void EntityManager::update(sf::Time eTime)
     //Taking into account that some entities might respawn depending on game mode
 }
 
-//@BRANCH_WIP: See how we can create specific units using their type
-//its important to have a type thats a u8 so we can send it between client/server
-//and create entities in different places
-Entity* EntityManager::createEntity(const Vector2& pos, u8 teamId)
+
+Entity* EntityManager::createEntity(u8 entityType, const Vector2& pos, u8 teamId)
 {
-    //@BRANCH_WIP: See the specified type is correct
-    // if (type < 0 || type >= UNIT_MAX_TYPES) {
-        // std::cout << "EntityManager::createUnit error - Invalid type" << std::endl;
-        // return -1;
-    // }
+    if (entityType < 0 || entityType >= ENTITY_MAX_TYPES) {
+        std::cout << "EntityManager::createEntity error - Invalid entity type" << std::endl;
+        return nullptr;
+    }
 
     u32 uniqueId = _getNewUniqueId();
+    Entity* entity = nullptr;
 
-    //@BRANCH_WIP: Use the specified type here
-    Entity* entity = new Unit(uniqueId);
+    switch(entityType) 
+    {
+        #define DoEntity(class_name, type, json_id) \
+            case ENTITY_##type: \
+            { \
+                entity = new class_name(uniqueId, entityType); \
+                break; \
+            }
+        #include "entities.inc"
+        #undef DoEntity
+    }
+
+    if (!entity) {
+        std::cout << "EntityManager::createEntity error - Invalid entity type" << std::endl;
+        return nullptr;
+    }
+
     entity->setTeamId(teamId);
     entity->setPosition(pos);
 

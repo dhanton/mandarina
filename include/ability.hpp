@@ -4,6 +4,10 @@
 #include <SFML/System/Time.hpp>
 #include "defines.hpp"
 
+//@BRANCH_WIP: Most of how the abilities are done has to be changed
+//Using virtual classes for more flexibility
+//That includes removing the RechargeType
+
 enum class RechargeType {
     None,
 
@@ -22,10 +26,10 @@ RechargeType rechargeTypeFromStr(const std::string& str);
 enum AbilityType {
     ABILITY_NONE,
 
-    #define LoadAbility(ability_name, json_id) \
+    #define DoAbility(ability_name, json_id) \
         ABILITY_##ability_name,
     #include "abilities.inc"
-    #undef LoadAbility
+    #undef DoAbility
 
     ABILITY_MAX_TYPES
 };
@@ -70,6 +74,8 @@ class JsonParser;
 extern Ability g_abilities[ABILITY_MAX_TYPES];
 
 void loadAbilitiesFromJson(JsonParser* jsonParser);
+
+u8 Ability_strToType(const std::string& typeStr);
 
 void Ability_update(Ability& ability, sf::Time eTime);
 void Ability_onCallback(Ability& ability);

@@ -236,6 +236,37 @@ void C_EntityManager::updateRevealedUnits()
     }
 }
 
+C_Entity* C_EntityManager::createEntity(u8 entityType, u32 uniqueId)
+{
+    if (entityType < 0 || entityType >= ENTITY_MAX_TYPES) {
+        std::cout << "EntityManager::createEntity error - Invalid entity type" << std::endl;
+        return nullptr;
+    }
+
+    C_Entity* entity = nullptr;
+
+    switch(entityType) 
+    {
+        #define DoEntity(class_name, type, json_id) \
+            case ENTITY_##type: \
+            { \
+                entity = new C_##class_name(uniqueId, entityType); \
+                break; \
+            }
+        #include "entities.inc"
+        #undef DoEntity
+    }
+
+    if (!entity) {
+        std::cout << "EntityManager::createEntity error - Invalid entity type" << std::endl;
+        return nullptr;
+    }
+
+    entities.addEntity(entity);
+
+    return entity;
+}
+
 int C_EntityManager::createProjectile(ProjectileType type, const Vector2& pos, float aimAngle, u8 teamId)
 {
     //create locally predicted projectile
@@ -294,9 +325,7 @@ void C_EntityManager::loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inP
             inPacket >> entityType;
             
             //otherwise initialize it
-            
-            //@BRACH_WIP: Use entityType to deduce class to use
-            entity = entities.addEntity(new C_Unit(uniqueId));
+            entity = createEntity(entityType, uniqueId);
 
             //Entity creation callbacks might go here?
             //Or is it better to have them when the entity is rendered for the first time?

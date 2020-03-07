@@ -4,8 +4,9 @@
 #include "helper.hpp"
 #include "client_entity_manager.hpp"
 
-BaseEntityComponent::BaseEntityComponent(u32 uniqueId):
-    m_uniqueId(uniqueId)
+BaseEntityComponent::BaseEntityComponent(u8 entityType, u32 uniqueId):
+    m_uniqueId(uniqueId),
+    m_type(entityType)
 {
 
 }
@@ -87,8 +88,8 @@ bool BaseEntityComponent::canCollide(const BaseEntityComponent& otherEntity) con
     return m_uniqueId != otherEntity.m_uniqueId && m_solid && otherEntity.m_solid;
 }
 
-Entity::Entity(u32 uniqueId):
-    BaseEntityComponent(uniqueId)
+Entity::Entity(u8 entityType, u32 uniqueId):
+    BaseEntityComponent(uniqueId, entityType)
 {
 
 }
@@ -113,8 +114,8 @@ bool Entity::isDead() const
     return m_dead;
 }
 
-C_Entity::C_Entity(u32 uniqueId):
-    BaseEntityComponent(uniqueId)
+C_Entity::C_Entity(u8 entityType, u32 uniqueId):
+    BaseEntityComponent(uniqueId, entityType)
 {
     m_textureId = 0;
     m_scale = 1.f;

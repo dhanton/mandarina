@@ -66,11 +66,24 @@ void _loadAbility(JsonParser* jsonParser, AbilityType type, Ability& ability, co
 
 void loadAbilitiesFromJson(JsonParser* jsonParser)
 {
-    #define LoadAbility(ability_name, json_id) \
+    #define DoAbility(ability_name, json_id) \
         _loadAbility(jsonParser, ABILITY_##ability_name, g_abilities[ABILITY_##ability_name], json_id);
     #include "abilities.inc"
-    #undef LoadAbility
+    #undef DoAbility
 }
+
+u8 Ability_strToType(const std::string& typeStr)
+{
+    if (typeStr == "NONE") return ABILITY_NONE;
+
+    #define DoAbility(ability_name, json_id) \
+        if (typeStr == #ability_name) return ABILITY_##ability_name;
+    #include "abilities.inc"
+    #undef DoAbility
+
+    return ABILITY_NONE;
+}
+
 void Ability_update(Ability& ability, sf::Time eTime)
 {
     float dt = eTime.asSeconds();

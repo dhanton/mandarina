@@ -10,22 +10,22 @@ namespace TextureId
     enum _TextureId {
         TEST_TILESET,
 
-        //textures used by units
-        #define LoadUnit(unit_name, texture_id, json_filename, weapon_id, alt_ability_id, ultimate_id) \
-            texture_id,
-        #include "units.inc"
-        #undef LoadUnit
+        //textures used by entities
+        #define DoEntity(class_name, type, json_id) \
+            type,
+        #include "entities.inc"
+        #undef DoEntity
 
         //textures used by weapons
-        #define LoadWeapon(weapon_name, callback_name, json_file, primary_fire_id, secondary_fire_id) \
+        #define DoWeapon(weapon_name, json_file) \
             weapon_name,
         #include "weapons.inc"
-        #undef LoadWeapon
+        #undef DoWeapon
 
         //textures used by projectiles
-        #define LoadProjectile(projectile_name, texture_id, json_file) \
-            texture_id,
+        #define DoProjectile(projectile_name, json_file) \
+            projectile_name,
         #include "projectiles.inc"
-        #undef LoadProjectile
+        #undef DoProjectile
     };
 }

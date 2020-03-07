@@ -1,6 +1,6 @@
-//LoadAbility(ability_name, json_id)
+//AddAbility(ability_name, json_id)
 
-LoadAbility(HellsBubble, "hells_bubble_primary_fire")
-LoadAbility(HellsDart, "hells_dart")
-LoadAbility(HellsDash, "hells_dash")
-LoadAbility(HelssRain, "hells_rain")
+DoAbility(HELLS_BUBBLE, "hells_bubble_primary_fire")
+DoAbility(HELLS_DART, "hells_dart")
+DoAbility(HELLS_DASH, "hells_dash")
+DoAbility(HELLS_RAIN, "hells_rain")

@@ -27,7 +27,7 @@
 class BaseEntityComponent
 {
 public:
-    BaseEntityComponent(u32 uniqueId);
+    BaseEntityComponent(u8 entityType, u32 uniqueId);
 
     u32 getUniqueId() const;
 
@@ -55,6 +55,7 @@ public:
 
 protected:
     const u32 m_uniqueId;
+    const u8 m_type;
 
     Vector2 m_pos;
     Vector2 m_vel;
@@ -65,10 +66,19 @@ protected:
     bool m_solid;
 };
 
+enum EntityType {
+    #define DoEntity(class_name, type, json_id) \
+        ENTITY_##type,
+    #include "entities.inc"
+    #undef DoEntity
+
+    ENTITY_MAX_TYPES
+};
+
 class Entity : public BaseEntityComponent
 {
 public:
-    Entity(u32 uniqueId);
+    Entity(u8 entityType, u32 uniqueId);
     virtual Entity* clone() const = 0;
 
     virtual void update(sf::Time eTime, const ManagersContext& context) = 0;
@@ -95,7 +105,7 @@ struct RenderNode;
 class C_Entity : public BaseEntityComponent
 {
 public:
-    C_Entity(u32 uniqueId);
+    C_Entity(u8 entityType, u32 uniqueId);
     virtual C_Entity* clone() const = 0;
 
     virtual void update(sf::Time eTime, const C_ManagersContext& context) = 0;

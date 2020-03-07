@@ -91,20 +91,20 @@ void _C_Projectile_loadFromJson(JsonParser* jsonParser, ProjectileType type, con
 
 void loadProjectilesFromJson(JsonParser* jsonParser)
 {
-    #define LoadProjectile(projectile_name, texture_id, json_filename) \
+    #define DoProjectile(projectile_name, json_filename) \
         _Projectile_loadFromJson(jsonParser, PROJECTILE_##projectile_name, json_filename, g_initialProjectileData[PROJECTILE_##projectile_name]);
     
     #include "projectiles.inc"
-    #undef LoadProjectile
+    #undef DoProjectile
 }
 
 void C_loadProjectilesFromJson(JsonParser* jsonParser)
 {
-    #define LoadProjectile(projectile_name, texture_id, json_filename) \
-        _C_Projectile_loadFromJson(jsonParser, PROJECTILE_##projectile_name, json_filename, g_initialCProjectileData[PROJECTILE_##projectile_name], TextureId::texture_id);
+    #define DoProjectile(projectile_name, json_filename) \
+        _C_Projectile_loadFromJson(jsonParser, PROJECTILE_##projectile_name, json_filename, g_initialCProjectileData[PROJECTILE_##projectile_name], TextureId::projectile_name);
     
     #include "projectiles.inc"
-    #undef LoadProjectile
+    #undef DoProjectile
 }
 
 void Projectile_init(Projectile& projectile, u8 type, const Vector2& pos, float aimAngle)

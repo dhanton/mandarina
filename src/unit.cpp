@@ -93,8 +93,8 @@ void _UnitBase::setMovementSpeed(u8 movementSpeed)
     m_movementSpeed = movementSpeed;
 }
 
-Unit::Unit(u32 uniqueId):
-    Entity(uniqueId),
+Unit::Unit(u8 entityType, u32 uniqueId):
+    Entity(entityType, uniqueId),
     InvisibleComponent(),
     TrueSightComponent()
 {
@@ -107,6 +107,7 @@ Unit::Unit(u32 uniqueId):
     m_solid = true;
     m_movementSpeed = 350;
     m_trueSightRadius = 170;
+    m_flyingHeight = 0;
 }
 
 Unit* Unit::clone() const
@@ -275,7 +276,7 @@ void Unit::applyInput(const PlayerInput& input, const ManagersContext& context, 
     //We cast abilities before moving so it works like in the client
     //(because in the client inputs don't move the unit instantaneously)
     if (input.primaryFire /**&& Ability_canBeCasted(unit.primaryFire)**/) {
-        int uniqueId = context.entityManager->createProjectile(PROJECTILE_HellsBubble, m_pos, m_aimAngle, m_teamId);
+        int uniqueId = context.entityManager->createProjectile(PROJECTILE_HELLS_BUBBLE, m_pos, m_aimAngle, m_teamId);
 
         if (uniqueId != -1) {
             Projectile* projectile = context.entityManager->projectiles.atUniqueId(uniqueId);
@@ -361,8 +362,8 @@ void Unit::moveColliding(Vector2 newPos, const ManagersContext& context, bool fo
     context.collisionManager->onUpdateUnit(m_uniqueId, m_pos, m_collisionRadius);
 }
 
-C_Unit::C_Unit(u32 uniqueId):
-    C_Entity(uniqueId),
+C_Unit::C_Unit(u8 entityType, u32 uniqueId):
+    C_Entity(entityType, uniqueId),
     InvisibleComponent(),
     TrueSightComponent()
 {
@@ -373,6 +374,7 @@ C_Unit::C_Unit(u32 uniqueId):
     m_solid = true;
     m_movementSpeed = 350;
     m_trueSightRadius = 170;
+    m_flyingHeight = 0;
 }
 
 C_Unit* C_Unit::clone() const
@@ -494,7 +496,7 @@ void C_Unit::applyAbilitiesInput(const PlayerInput& input, const C_ManagersConte
     //If casting fails on server, correct the cooldown in client
 
     if (input.primaryFire) {
-        int uniqueId = context.entityManager->createProjectile(PROJECTILE_HellsBubble, m_pos, m_aimAngle, m_teamId);
+        int uniqueId = context.entityManager->createProjectile(PROJECTILE_HELLS_BUBBLE, m_pos, m_aimAngle, m_teamId);
 
         if (uniqueId != -1) {
             context.entityManager->localProjectiles.atUniqueId(uniqueId)->createdInputId = input.id;

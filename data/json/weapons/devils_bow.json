@@ -1,4 +1,6 @@
 {
+    "primary_fire": "HELLS_BUBBLE",
+    "secondary_fire": "HELLS_DART",
     "scale": 2.0,
     "angle_offset": 45.0
 }
