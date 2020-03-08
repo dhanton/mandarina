@@ -11,6 +11,7 @@ struct Context {
     sf::View* view = nullptr;
 
     TextureLoader* textures = nullptr;
+    FontLoader* fonts = nullptr;
 
     bool local = false;
     uint32_t localCon1 = 0;

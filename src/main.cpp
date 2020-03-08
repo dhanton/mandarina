@@ -75,6 +75,10 @@ int main(int argc, char* argv[])
         context.textures = textures.get();
     }
 
+    FontLoader fonts;
+    fonts.loadResource(FONTS_PATH + "Hacen Tunisia.ttf", "test_font");
+    context.fonts = &fonts;
+
     JsonParser jsonParser;
     jsonParser.loadAll(JSON_PATH);
 

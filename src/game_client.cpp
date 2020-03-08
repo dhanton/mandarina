@@ -319,21 +319,29 @@ void GameClient::handleInput(const sf::Event& event, bool focused)
 
     if (focused) {
 #ifdef MANDARINA_DEBUG
-        //render collision shapes
-        if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F1) {
-            m_entityManager.renderingDebug = !m_entityManager.renderingDebug;
-        }
+        if (event.type == sf::Event::KeyPressed) {
+            //render collision shapes
+            if (event.key.code == sf::Keyboard::F1) {
+                m_entityManager.renderingDebug = !m_entityManager.renderingDebug;
+            }
 
-        if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F3) {
-            m_entityManager.renderingLocallyHidden = !m_entityManager.renderingLocallyHidden;
-        }
+            //check camera free view
+            if (event.key.code == sf::Keyboard::F2) {
+                m_camera.changeState();
 
-        //check camera free view
-        if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::F2) {
-            m_camera.changeState();
+                if (m_camera.isFreeView()) {
+                    PlayerInput_clearKeys(m_currentInput);
+                }
+            }
 
-            if (m_camera.isFreeView()) {
-                PlayerInput_clearKeys(m_currentInput);
+            //render locally hidden entities
+            if (event.key.code == sf::Keyboard::F3) {
+                m_entityManager.renderingLocallyHidden = !m_entityManager.renderingLocallyHidden;
+            }
+
+            //render some data above each entity
+            if (event.key.code == sf::Keyboard::F4) {
+                m_entityManager.renderingEntityData = !m_entityManager.renderingEntityData;
             }
         }
 

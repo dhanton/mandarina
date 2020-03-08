@@ -24,6 +24,10 @@ struct RenderNode {
     u32 uniqueId;
     int manualFilter;
 
+#ifdef MANDARINA_DEBUG
+    std::string debugDisplayData; 
+#endif
+
     RenderNode(float flyingHeight, u32 uniqueId, float collisionRadius);
 
     inline bool operator<(const RenderNode& other);
@@ -71,6 +75,8 @@ public:
     bool renderingDebug;
 
     bool renderingLocallyHidden;
+
+    bool renderingEntityData;
 
 
 private:

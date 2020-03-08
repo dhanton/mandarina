@@ -198,6 +198,10 @@ void C_Entity::insertRenderNode(const C_ManagersContext& managersContext, const 
     sprite.setScale(m_scale, m_scale);
     sprite.setOrigin(sprite.getLocalBounds().width/2.f, sprite.getLocalBounds().height/2.f);
     sprite.setPosition(m_pos);
+
+#ifdef MANDARINA_DEBUG
+    renderNodes.back().debugDisplayData = std::to_string(m_uniqueId);
+#endif
 }
 
 void HealthComponent::dealDamage(u16 damage, Entity* source)

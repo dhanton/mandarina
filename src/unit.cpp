@@ -572,6 +572,14 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
             renderNodes.back().manualFilter = 1;
         }
     }
+
+#ifdef MANDARINA_DEBUG
+    std::string& dataString = renderNodes.back().debugDisplayData;
+    dataString += std::to_string(m_uniqueId) + "\n";
+    dataString += "InvisOrBu:" + std::to_string(isInvisibleOrBush()) + "\n";
+    dataString += "ForceSent:" + std::to_string(isForceSent()) + "\n";
+    dataString += "LocallyHi:" + std::to_string(isLocallyHidden()) + "\n";
+#endif
 }
 
 void C_Unit::predictMovementLocally(const Vector2& oldPos, Vector2& newPos, const C_ManagersContext& context) const

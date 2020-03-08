@@ -42,6 +42,7 @@ C_EntityManager::C_EntityManager(const Context& context, sf::Time worldTime):
     controlledEntityTeamId = 0;
     renderingDebug = false;
     renderingLocallyHidden = false;
+    renderingEntityData = false;
 }
 
 C_EntityManager::C_EntityManager():
@@ -106,6 +107,10 @@ void C_EntityManager::renderUpdate(sf::Time eTime)
         sprite.setOrigin(sprite.getLocalBounds().width/2.f, sprite.getLocalBounds().height/2.f);
         sprite.setPosition(localProjectiles[i].pos);
     }
+
+    //We have to sort all objects together by their height (accounting for flying objects)
+    //(this has to be done every frame, otherwise the result might not look super good)
+    //**vector sorting is faster because of the O(1) access operation**
 
     //sort them by height so they're displayed properly
     std::sort(m_renderNodes.begin(), m_renderNodes.end());
@@ -372,10 +377,6 @@ std::vector<RenderNode>& C_EntityManager::getRenderNodes()
 
 void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
-    //We have to sort all objects together by their height (accounting for flying objects)
-    //(this has to be done every frame, otherwise the result might not look super good)
-    //**vector sorting is faster because of the O(1) access operation**
-
     for (const auto& node : m_renderNodes) {
         target.draw(node.sprite, states);
 
@@ -389,6 +390,16 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
             shape.setOutlineThickness(1.5f);
             shape.setPosition(node.sprite.getPosition());
             target.draw(shape, states);
+        }
+
+        if (renderingEntityData) {
+            sf::Text text;
+            text.setPosition(node.sprite.getPosition() - Vector2(20.f, 100.f));
+            text.setFillColor(sf::Color::Red);
+            text.setFont(m_context.fonts->getResource("test_font"));
+            text.setCharacterSize(15);
+            text.setString(node.debugDisplayData);
+            target.draw(text, states);
         }
 #endif
     }
