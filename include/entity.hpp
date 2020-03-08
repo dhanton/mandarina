@@ -118,8 +118,10 @@ public:
 
     virtual void update(sf::Time eTime, const C_ManagersContext& context) = 0;
     virtual void loadFromData(CRCPacket& inPacket) = 0;
-    virtual void interpolate(const C_ManagersContext& context, const C_Entity* prevEntity, 
-                             const C_Entity* nextEntity, double t, double d) = 0;
+    virtual void interpolate(const C_Entity* prevEntity, const C_Entity* nextEntity, double t, double d, bool isControlled) = 0;
+    
+    //Setup for the next interpolation
+    virtual void copySnapshotData(const C_Entity* snapshotEntity, bool isControlled) = 0;
 
     //these 2 methods are called only for the controlled entity in client
     //update the angle with respect to the mouse

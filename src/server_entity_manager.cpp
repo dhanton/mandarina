@@ -136,8 +136,7 @@ void EntityManager::packData(const EntityManager* snapshot, u8 teamId, CRCPacket
         outPacket << it->getUniqueId();
 
         if (!prevEntity || !(prevEntity->shouldSendToTeam(teamId))) {
-            //@BRANCH_WIP: Send the correct type
-            outPacket << (u8) 0;
+            outPacket << it->getEntityType();
 
             //pack all data again
             prevEntity = nullptr;

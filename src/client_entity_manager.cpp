@@ -135,7 +135,7 @@ void C_EntityManager::performInterpolation(const C_EntityManager* prevSnapshot, 
         const C_Entity* prevEntity = prevSnapshot->entities.atUniqueId(it->getUniqueId());
         const C_Entity* nextEntity = nextSnapshot->entities.atUniqueId(it->getUniqueId());
 
-        it->interpolate(context, prevEntity, nextEntity, elapsedTime, totalTime);
+        it->interpolate(prevEntity, nextEntity, elapsedTime, totalTime, it->getUniqueId() == controlledEntityUniqueId);
     }
 
     //interpolate projectiles
@@ -158,10 +158,12 @@ void C_EntityManager::copySnapshotData(const C_EntityManager* snapshot, u32 late
 
     //copy entities that don't exist locally
     for (auto it = snapshot->entities.begin(); it != snapshot->entities.end(); ++it) {
-        const C_Entity* currentEntity = entities.atUniqueId(it->getUniqueId());
+        C_Entity* currentEntity = entities.atUniqueId(it->getUniqueId());
 
         if (!currentEntity) {
             entities.addEntity(it->clone());
+        } else {
+            currentEntity->copySnapshotData(&it, it->getUniqueId() == controlledEntityUniqueId);
         }
     }
 

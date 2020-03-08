@@ -399,7 +399,7 @@ void C_Unit::loadFromData(CRCPacket& inPacket)
     bool healthChanged = mainBits.popBit();
     bool aimAngleChanged = mainBits.popBit();
     bool collisionRadiusChanged = mainBits.popBit();
-    m_forceSent = mainBits.popBit();
+    setForceSent(mainBits.popBit());
 
     if (posXChanged) {
         inPacket >> m_pos.x;
@@ -436,14 +436,14 @@ void C_Unit::loadFromData(CRCPacket& inPacket)
     }
 }
 
-void C_Unit::interpolate(const C_ManagersContext& context, const C_Entity* prevEntity, const C_Entity* nextEntity, double t, double d)
+void C_Unit::interpolate(const C_Entity* prevEntity, const C_Entity* nextEntity, double t, double d, bool isControlled)
 {
     const C_Unit* prevUnit = static_cast<const C_Unit*>(prevEntity);
     const C_Unit* nextUnit = static_cast<const C_Unit*>(nextEntity);
 
     if (prevUnit && nextUnit) {
         //only interpolate position and aimAngle for units we're not controlling
-        if (m_uniqueId != context.entityManager->controlledEntityTeamId) {
+        if (!isControlled) {
             m_pos = Helper_lerpVec2(prevUnit->getPosition(), nextUnit->getPosition(), t, d);
             m_aimAngle = Helper_lerpAngle(prevUnit->getAimAngle(), nextUnit->getAimAngle(), t, d);
         }
@@ -457,6 +457,22 @@ void C_Unit::interpolate(const C_ManagersContext& context, const C_Entity* prevE
     if (prevUnit && !nextUnit) {
         //This is the last time entity is being rendered
         //destruction callbacks (?)
+    }
+}
+
+void C_Unit::copySnapshotData(const C_Entity* snapshotEntity, bool isControlled)
+{
+    Vector2 pos = getPosition();
+    float aimAngle = getAimAngle();
+
+    *this = *(static_cast<const C_Unit*>(snapshotEntity)->clone());
+
+    if (isControlled) {
+        //this is not really needed since the controlled entity position is
+        //constatly being interpolated from the latest two inputs
+        //but we do it just in case
+        setPosition(pos);
+        setAimAngle(aimAngle);
     }
 }
 
@@ -518,7 +534,7 @@ void C_Unit::localReveal(C_Entity* entity)
 void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Context& context) const
 {
     bool renderingLocallyHidden = managersContext.entityManager->renderingLocallyHidden;
- 
+
 #ifdef MANDARINA_DEBUG
         if (!renderingLocallyHidden && m_locallyHidden && m_forceSent) return;
 #else
@@ -576,9 +592,8 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
 #ifdef MANDARINA_DEBUG
     std::string& dataString = renderNodes.back().debugDisplayData;
     dataString += std::to_string(m_uniqueId) + "\n";
-    dataString += "InvisOrBu:" + std::to_string(isInvisibleOrBush()) + "\n";
+    dataString += "Team:" + std::to_string(m_teamId) + "\n";
     dataString += "ForceSent:" + std::to_string(isForceSent()) + "\n";
-    dataString += "LocallyHi:" + std::to_string(isLocallyHidden()) + "\n";
 #endif
 }
 
