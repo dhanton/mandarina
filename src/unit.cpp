@@ -465,7 +465,7 @@ void C_Unit::copySnapshotData(const C_Entity* snapshotEntity, bool isControlled)
     Vector2 pos = getPosition();
     float aimAngle = getAimAngle();
 
-    *this = *(static_cast<const C_Unit*>(snapshotEntity)->clone());
+    *this = *(static_cast<const C_Unit*>(snapshotEntity));
 
     if (isControlled) {
         //this is not really needed since the controlled entity position is
