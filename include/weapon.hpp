@@ -29,5 +29,3 @@ extern Weapon g_weaponData[WEAPON_MAX_TYPES];
 u8 Weapon_stringToType(const std::string& typeStr);
 
 void loadWeaponsFromJson(JsonParser* jsonParser);
-
-void WeaponCallback_devilsBow();

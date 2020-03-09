@@ -53,6 +53,9 @@ bool _BaseProjectile_loadFromJson(JsonParser* jsonParser, ProjectileType type, c
 
 void _BaseProjectile_angleInit(_BaseProjectileData& projectile, const Vector2& pos, float aimAngle)
 {
+    //we want rotation to be in degrees
+    projectile.rotation = aimAngle;
+
     aimAngle *= PI/180.f;
     projectile.vel = Vector2(std::sin(aimAngle), std::cos(aimAngle)) * (float) projectile.movementSpeed;
 }
@@ -86,6 +89,18 @@ void _C_Projectile_loadFromJson(JsonParser* jsonParser, ProjectileType type, con
         } else {
             projectile.scale = 1.f;
         }
+
+        if (doc->HasMember("rotation_offset")) {
+            projectile.rotationOffset = (*doc)["rotation_offset"].GetFloat();
+        } else {
+            projectile.rotationOffset = 0.f;
+        }
+
+        if (doc->HasMember("render_rotation")) {
+            projectile.renderRotation = (*doc)["render_rotation"].GetBool();
+        } else {
+            projectile.renderRotation = true;
+        }
     }
 }
 
@@ -105,6 +120,19 @@ void C_loadProjectilesFromJson(JsonParser* jsonParser)
     
     #include "projectiles.inc"
     #undef DoProjectile
+}
+
+u8 Projectile_stringToType(const std::string& typeStr)
+{
+    //There is no PROJECTILE_NONE so we return invalid projectile
+    if (typeStr == "NONE") return PROJECTILE_MAX_TYPES;
+
+    #define DoProjectile(projectile_name, json_filename) \
+        if (typeStr == #projectile_name) return PROJECTILE_##projectile_name;
+    #include "projectiles.inc"
+    #undef DoProjectile
+
+    return PROJECTILE_MAX_TYPES;
 }
 
 void Projectile_init(Projectile& projectile, u8 type, const Vector2& pos, float aimAngle)
@@ -153,18 +181,8 @@ void Projectile_packData(const Projectile& projectile, const Projectile* prevPro
     bool collisionRadiusChanged = !prevProj || projectile.collisionRadius != prevProj->collisionRadius;
     bits.pushBit(collisionRadiusChanged);
 
-    bool shooterUniqueIdChanged = !prevProj || projectile.shooterUniqueId != prevProj->shooterUniqueId;
-    bits.pushBit(shooterUniqueIdChanged);
-
-    //@BRANCH_WIP: If the shooter is not a unit this crashes the game
-    //Should we use a dynamic_cast instead?
-    const Unit* shooter = static_cast<const Unit*>(entityManager->entities.atUniqueId(projectile.shooterUniqueId));
-    
-    //Send position of shooter only for the first packet
-    // bool sendShooterPos = !prevProj && shooter && !Unit_isVisibleForTeam(*shooter, teamId);
-    //should we use isVisibleForTeam instead?
-    bool sendShooterPos = !prevProj && shooter && !shooter->shouldSendToTeam(teamId);
-    bits.pushBit(sendShooterPos);
+    bool rotationChanged = !prevProj || projectile.rotation != prevProj->rotation;
+    bits.pushBit(rotationChanged);
 
     u8 byte = bits.popByte();
     outPacket << byte;
@@ -181,12 +199,8 @@ void Projectile_packData(const Projectile& projectile, const Projectile* prevPro
         outPacket << projectile.collisionRadius;
     }
     
-    if (sendShooterPos) {
-        outPacket << projectile.lastShooterPos.x << projectile.lastShooterPos.y;
-    } 
-    
-    if (shooterUniqueIdChanged) {
-        outPacket << projectile.shooterUniqueId;
+    if (rotationChanged) {
+        outPacket << Helper_angleTo16bit(projectile.rotation);
     }
 }
 
@@ -201,8 +215,7 @@ void C_Projectile_loadFromData(C_Projectile& projectile, CRCPacket& inPacket)
     bool posXChanged = bits.popBit();
     bool posYChanged = bits.popBit();
     bool collisionRadiusChanged = bits.popBit();
-    bool shooterUniqueIdChanged = bits.popBit();
-    bool sendShooterPos = bits.popBit();
+    bool rotationChanged = bits.popBit();
 
     if (posXChanged) {
         inPacket >> projectile.pos.x;
@@ -216,12 +229,10 @@ void C_Projectile_loadFromData(C_Projectile& projectile, CRCPacket& inPacket)
         inPacket >> projectile.collisionRadius;
     }
     
-    if (sendShooterPos) {
-        inPacket >> projectile.lastShooterPos.x >> projectile.lastShooterPos.y;
-    } 
-    
-    if (shooterUniqueIdChanged) {
-        inPacket >> projectile.shooterUniqueId;
+    if (rotationChanged) {
+        u16 angle16bit;
+        inPacket >> angle16bit;
+        projectile.rotation = Helper_angleFrom16bit(angle16bit);
     }
 }
 
@@ -233,13 +244,6 @@ void Projectile_update(Projectile& projectile, sf::Time eTime, const ManagersCon
     if (projectile.range != 0 && projectile.distanceTraveled > projectile.range) {
         projectile.dead = true;
         return;
-    }
-
-    //@BRANCH_WIP: Should we use dynamic_cast instead?
-    Unit* shooter = static_cast<Unit*>(context.entityManager->entities.atUniqueId(projectile.shooterUniqueId));
-
-    if (shooter) {
-        projectile.lastShooterPos = shooter->getPosition();
     }
 
     Vector2 moveVec = projectile.vel * eTime.asSeconds();
@@ -291,6 +295,21 @@ void Projectile_update(Projectile& projectile, sf::Time eTime, const ManagersCon
     }
 }
 
+void Projectile_backtrackCollisions(Projectile& projectile, const ManagersContext& context, u16 clientDelay)
+{
+    float totalDistance = ((float) clientDelay / 1000.f) * projectile.movementSpeed;
+
+    //do no more than 5 iteration steps
+    int steps = std::min((int) (totalDistance / projectile.collisionRadius), 5);
+    sf::Time stepTime = sf::milliseconds(clientDelay/steps);
+    int i = 0;
+
+    while (i < steps && !projectile.dead) {
+        Projectile_update(projectile, stepTime, context);
+        i++;
+    }
+}
+
 void C_Projectile_localUpdate(C_Projectile& projectile, sf::Time eTime, const C_ManagersContext& context)
 {
     projectile.pos += projectile.vel * eTime.asSeconds();
@@ -319,6 +338,7 @@ void C_Projectile_checkCollisions(C_Projectile& projectile, const C_ManagersCont
         }
     }
 
+    //No need to check projectile collisions in the client
     // for (int i = 0; i < context.entityManager->units.firstInvalidIndex(); ++i) {
     //     const C_Unit& unit = context.entityManager->units[i];
     //     unitCircle.center = unit.pos;
@@ -339,12 +359,13 @@ void Projectile_onHit(Projectile& projectile, Unit* unitHit)
     //if the unit shooter unit is dead
     //then we need the damage stored somewhere else
 
-    //@WIP: Most projectiles apply a certain force on hit
-    //(implement friction as well)
+    //@WIP
+    //Projectiles apply a certain force on hit => projectile.hitForce
+    //They also reveal the unit for ~2 seconds => projectile.revealTime
+    //They deal damage                         => projectile.damage
+    //They apply a buff                        => projectile.buffAppliedType
+    //(implement some sort of friction for units as well)
 
-    //the hook projectile does something as well
-
-    //@WIP: Apply reveal on hit for ~2 seconds
     std::cout << "Hit some unit!" << std::endl;
 }
 
@@ -353,4 +374,24 @@ void C_Projectile_interpolate(C_Projectile& projectile, const C_Projectile* prev
     if (prevProj && nextProj) {
         projectile.pos = Helper_lerpVec2(prevProj->pos, nextProj->pos, t, d);
     }
+}
+
+void C_Projectile_insertRenderNode(const C_Projectile& projectile, const C_ManagersContext& managersContext, const Context& context)
+{
+    std::vector<RenderNode>& renderNodes = managersContext.entityManager->getRenderNodes();
+
+    //@WIP: flyingHeight = shooter.height + shooter.flyingHeight
+    renderNodes.emplace_back(RenderNode(100, projectile.uniqueId, (float) projectile.collisionRadius));
+
+    sf::Sprite& sprite = renderNodes.back().sprite;
+
+    sprite.setTexture(context.textures->getResource(projectile.textureId));
+    sprite.setScale(projectile.scale, projectile.scale);
+    sprite.setOrigin(sprite.getLocalBounds().width/2.f, sprite.getLocalBounds().height/2.f);
+
+    if (projectile.renderRotation) {
+        sprite.setRotation(-projectile.rotation-projectile.rotationOffset);
+    }
+
+    sprite.setPosition(projectile.pos);
 }

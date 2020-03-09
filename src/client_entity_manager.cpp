@@ -85,27 +85,11 @@ void C_EntityManager::renderUpdate(sf::Time eTime)
     }
 
     for (int i = 0; i < projectiles.firstInvalidIndex(); ++i) {
-        //@WIP: flyingHeight = shooter.height + shooter.flyingHeight
-        m_renderNodes.emplace_back(RenderNode(100, projectiles[i].uniqueId, (float) projectiles[i].collisionRadius));
-
-        sf::Sprite& sprite = m_renderNodes.back().sprite;
-
-        sprite.setTexture(m_context.textures->getResource(projectiles[i].textureId));
-        sprite.setScale(projectiles[i].scale, projectiles[i].scale);
-        sprite.setOrigin(sprite.getLocalBounds().width/2.f, sprite.getLocalBounds().height/2.f);
-        sprite.setPosition(projectiles[i].pos);
+        C_Projectile_insertRenderNode(projectiles[i], managersContext, m_context);
     }
 
     for (int i = 0; i < localProjectiles.firstInvalidIndex(); ++i) {
-        //@WIP: flyingHeight = shooter.height + shooter.flyingHeight
-        m_renderNodes.emplace_back(RenderNode(100, localProjectiles[i].uniqueId, (float) localProjectiles[i].collisionRadius));
-
-        sf::Sprite& sprite = m_renderNodes.back().sprite;
-
-        sprite.setTexture(m_context.textures->getResource(localProjectiles[i].textureId));
-        sprite.setScale(localProjectiles[i].scale, localProjectiles[i].scale);
-        sprite.setOrigin(sprite.getLocalBounds().width/2.f, sprite.getLocalBounds().height/2.f);
-        sprite.setPosition(localProjectiles[i].pos);
+        C_Projectile_insertRenderNode(localProjectiles[i], managersContext, m_context);
     }
 
     //We have to sort all objects together by their height (accounting for flying objects)
@@ -263,13 +247,13 @@ C_Entity* C_EntityManager::createEntity(u8 entityType, u32 uniqueId)
     return entity;
 }
 
-int C_EntityManager::createProjectile(ProjectileType type, const Vector2& pos, float aimAngle, u8 teamId)
+C_Projectile* C_EntityManager::createProjectile(u8 type, const Vector2& pos, float aimAngle, u8 teamId)
 {
     //create locally predicted projectile
     //add it to the locally predicted array
     if (type < 0 || type >= PROJECTILE_MAX_TYPES) {
         std::cout << "EntityManager::createProjectile error - Invalid type" << std::endl;
-        return -1;
+        return nullptr;
     }
 
     u32 uniqueId = localLastUniqueId++;
@@ -282,7 +266,7 @@ int C_EntityManager::createProjectile(ProjectileType type, const Vector2& pos, f
     projectile.uniqueId = uniqueId;
     projectile.teamId = teamId;
 
-    return uniqueId;
+    return &projectile;
 }
 
 //@TODO: Implementation is very similar to method above
@@ -416,7 +400,8 @@ void C_EntityManager::loadEntityData(const JsonParser* jsonParser)
 
     #define DoEntity(class_name, type, json_id) \
         m_entityData[ENTITY_##type] = std::unique_ptr<C_Entity>(new C_##class_name()); \
-        m_entityData[ENTITY_##type]->loadFromJson(ENTITY_##type, *jsonParser->getDocument(json_id), TextureId::type);
+        m_entityData[ENTITY_##type]->setEntityType(ENTITY_##type); \
+        m_entityData[ENTITY_##type]->loadFromJson(*jsonParser->getDocument(json_id), TextureId::type);
     #include "entities.inc"
     #undef DoEntity
 

@@ -50,10 +50,29 @@ void EntityManager::update(sf::Time eTime)
         }
     }
 
-    //@BRANCH_WIP: See how we can remove entities properly in a general way (without abusing delete)
+    //@WIP: See how we can remove entities properly in a general way (without abusing delete)
     //Taking into account that some entities might respawn depending on game mode
 }
 
+Projectile* EntityManager::createProjectile(u8 type, const Vector2& pos, float aimAngle, u8 teamId)
+{
+    if (type < 0 || type >= PROJECTILE_MAX_TYPES) {
+        std::cout << "EntityManager::createProjectile error - Invalid type" << std::endl;
+        return nullptr;
+    }
+
+    u32 uniqueId = _getNewUniqueId();
+    int index = projectiles.addElement(uniqueId);
+
+    Projectile& projectile = projectiles[index];
+
+    Projectile_init(projectile, type, pos, aimAngle);
+
+    projectile.uniqueId = uniqueId;
+    projectile.teamId = teamId;
+
+    return &projectile;
+}
 
 Entity* EntityManager::createEntity(u8 entityType, const Vector2& pos, u8 teamId)
 {
@@ -81,26 +100,6 @@ Entity* EntityManager::createEntity(u8 entityType, const Vector2& pos, u8 teamId
     }
 
     return entity;
-}
-
-int EntityManager::createProjectile(ProjectileType type, const Vector2& pos, float aimAngle, u8 teamId)
-{
-    if (type < 0 || type >= PROJECTILE_MAX_TYPES) {
-        std::cout << "EntityManager::createProjectile error - Invalid type" << std::endl;
-        return -1;
-    }
-
-    u32 uniqueId = _getNewUniqueId();
-    int index = projectiles.addElement(uniqueId);
-
-    Projectile& projectile = projectiles[index];
-
-    Projectile_init(projectile, type, pos, aimAngle);
-
-    projectile.uniqueId = uniqueId;
-    projectile.teamId = teamId;
-
-    return uniqueId;
 }
 
 void EntityManager::takeSnapshot(EntityManager* snapshot) const
@@ -195,7 +194,8 @@ void EntityManager::loadEntityData(const JsonParser* jsonParser)
 
     #define DoEntity(class_name, type, json_id) \
         m_entityData[ENTITY_##type] = std::unique_ptr<Entity>(new class_name()); \
-        m_entityData[ENTITY_##type]->loadFromJson(ENTITY_##type, *jsonParser->getDocument(json_id));
+        m_entityData[ENTITY_##type]->setEntityType(ENTITY_##type); \
+        m_entityData[ENTITY_##type]->loadFromJson(*jsonParser->getDocument(json_id));
     #include "entities.inc"
     #undef DoEntity
 

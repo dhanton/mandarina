@@ -4,11 +4,14 @@
 #include "defines.hpp"
 #include "crcpacket.hpp"
 #include "managers_context.hpp"
+#include "context.hpp"
 #include "json_parser.hpp"
 
 //???
 //@TODO: Projectiles should be encapsulated in a more general class that includes
-//all entities that have no health/abilities/buffs
+//all entities that have no health/abilities/buffs => TouchEntity
+//TouchEntity are lightweight objects that are created and destroyed constantly
+//like projectiles or pickup items
 
 enum ProjectileType {
     #define DoProjectile(projectile_name, json_id) \
@@ -54,15 +57,24 @@ struct _BaseProjectileData
     //distance before the projectile dies automatically
     u16 range;
 
-    u32 shooterUniqueId;
-    
-    //sent if the hit enemy doesn't have vision of the shooter or if it died
-    Vector2 lastShooterPos;
+    float rotation;
+
+    //@WIP: Should this go here or in Projectile struct??
+    //What about most of the data here??
+    //@WIP: Also change how loadFromJson works on projectiles
+    //(do it how it's done for abilities)
+
+    //not all projectiles deal damage
+    // float damage;
+
+    //buff applied on hit (can be BUFF_NONE)
+    //u8 buffAppliedType
 };
 
 struct Projectile : _BaseProjectileData 
 {
     float distanceTraveled;
+    u32 shooterUniqueId;
 
     //for projectiles that don't die when they hit something
     //maybe it's better to have it as a pointer
@@ -79,6 +91,10 @@ struct C_Projectile : _BaseProjectileData
     //if the projectile was locally created
     //this is the input id that was used
     u32 createdInputId;
+
+    //to render each projectile properly
+    float rotationOffset;
+    bool renderRotation;
 };
 
 extern Projectile g_initialProjectileData[PROJECTILE_MAX_TYPES];
@@ -88,6 +104,8 @@ void loadProjectilesFromJson(JsonParser* jsonParser);
 void C_loadProjectilesFromJson(JsonParser* jsonParser);
 
 class Unit;
+
+u8 Projectile_stringToType(const std::string& typeStr);
 
 void Projectile_init(Projectile& projectile, u8 type, const Vector2& pos, float aimAngle);
 void C_Projectile_init(C_Projectile& projectile, u8 type);
@@ -99,6 +117,9 @@ void Projectile_packData(const Projectile& projectile, const Projectile* prevPro
 void C_Projectile_loadFromData(C_Projectile& projectile, CRCPacket& inPacket);
 
 void Projectile_update(Projectile& projectile, sf::Time eTime, const ManagersContext& context);
+
+//clientDelay in ms
+void Projectile_backtrackCollisions(Projectile& projectile, const ManagersContext& context, u16 clientDelay);
 
 //simply update the position of the projectile using its velocity
 void C_Projectile_localUpdate(C_Projectile& projectile, sf::Time eTime, const C_ManagersContext& context);
@@ -122,6 +143,4 @@ void Projectile_onDeath(Projectile& projectile);
 //basic position interpolation
 void C_Projectile_interpolate(C_Projectile& projectile, const C_Projectile* prevProj, const C_Projectile* nextProj, double t, double d);
 
-//@WIP: Projectiles can render custom effects (like the fishing hook that renders a chain to the shooter)
-void Projectile_render(const Projectile& projectile);
-
+void C_Projectile_insertRenderNode(const C_Projectile& projectile, const C_ManagersContext& managersContext, const Context& context);

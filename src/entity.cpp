@@ -96,9 +96,8 @@ bool BaseEntityComponent::canCollide(const BaseEntityComponent& otherEntity) con
     return m_uniqueId != otherEntity.m_uniqueId && m_solid && otherEntity.m_solid;
 }
 
-void BaseEntityComponent::loadFromJson(u8 entityType, const rapidjson::Document& doc)
+void BaseEntityComponent::loadFromJson(const rapidjson::Document& doc)
 {
-    m_type = entityType;
     m_teamId = 0;
 
     if (doc.HasMember("flying_height")) {
@@ -118,9 +117,9 @@ void BaseEntityComponent::loadFromJson(u8 entityType, const rapidjson::Document&
     }
 }
 
-void Entity::loadFromJson(u8 entityType, const rapidjson::Document& doc)
+void Entity::loadFromJson(const rapidjson::Document& doc)
 {
-    BaseEntityComponent::loadFromJson(entityType, doc);
+    BaseEntityComponent::loadFromJson(doc);
 
     m_dead = false;
 }
@@ -145,9 +144,9 @@ bool Entity::isDead() const
     return m_dead;
 }
 
-void C_Entity::loadFromJson(u8 entityType, const rapidjson::Document& doc, u16 textureId)
+void C_Entity::loadFromJson(const rapidjson::Document& doc, u16 textureId)
 {
-    BaseEntityComponent::loadFromJson(entityType, doc);
+    BaseEntityComponent::loadFromJson(doc);
 
     m_textureId = textureId;
 

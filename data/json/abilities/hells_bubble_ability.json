@@ -1,0 +1,6 @@
+{
+    "charges": 3,
+    "cooldown": 3,
+    "next_charge_delay": 1,
+    "projectile": "HELLS_BUBBLE"
+}

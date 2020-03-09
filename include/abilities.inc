@@ -1,6 +1,6 @@
-//AddAbility(ability_name, json_id)
+//AddAbility(class_name, type, json_id)
 
-DoAbility(HELLS_BUBBLE, "hells_bubble_primary_fire")
-DoAbility(HELLS_DART, "hells_dart")
-DoAbility(HELLS_DASH, "hells_dash")
-DoAbility(HELLS_RAIN, "hells_rain")
+DoAbility(SingleShotAbility, HELLS_BUBBLE, "hells_bubble_ability")
+DoAbility(SingleShotAbility, HELLS_DART, "hells_dart_ability")
+//DoAbility(HellsDashAbility, HELLS_DASH, "hells_dash")
+//DoAbility(HellsRainAbility, HELLS_RAIN, "hells_rain")

@@ -71,6 +71,7 @@ int main(int argc, char* argv[])
         textures->loadResource(TEXTURES_PATH + "diablo.png", TextureId::RED_DEMON);
         textures->loadResource(TEXTURES_PATH + "devils_bow.png", TextureId::DEVILS_BOW);
         textures->loadResource(TEXTURES_PATH + "hells_bubble.png", TextureId::HELLS_BUBBLE);
+        textures->loadResource(TEXTURES_PATH + "hells_dart.png", TextureId::HELLS_DART);
 
         context.textures = textures.get();
     }
@@ -85,7 +86,9 @@ int main(int argc, char* argv[])
     context.jsonParser = &jsonParser;
 
     loadWeaponsFromJson(&jsonParser);
-    loadAbilitiesFromJson(&jsonParser);
+
+    //Is main the best place to load abilities?
+    _UnitBase::loadAbilityData(&jsonParser);
 
     SteamNetworkingIPAddr serverAddr;
     serverAddr.ParseString("127.0.0.1:7000");

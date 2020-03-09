@@ -1,8 +1,8 @@
 {
     "scale": 1.0,
-    "movement_speed": 260,
+    "movement_speed": 520,
     "collision_radius": 10,
-    "range": 1000,
+    "range": 900,
     "hit_flags": "ENEMIES",
-    "render_rotation": false
+    "rotation_offset": 135.0
 }

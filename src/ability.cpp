@@ -1,146 +1,132 @@
 #include "ability.hpp"
 
 #include "helper.hpp"
-#include "json_parser.hpp"
+#include "unit.hpp"
 
-RechargeType rechargeTypeFromStr(const std::string& str)
-{
-    if (str == "Cooldown") {
-        return RechargeType::Cooldown;
-    } else if (str == "Passive") {
-        return RechargeType::Passive;
-    } else if (str == "Points") {
-        return RechargeType::Points;
-    }
-
-    return RechargeType::None;
-}
-
-Ability g_abilities[ABILITY_MAX_TYPES];
-
-void _loadAbility(JsonParser* jsonParser, AbilityType type, Ability& ability, const char* json_id)
-{
-    auto* doc = jsonParser->getDocument(json_id);
-
-    ability.type = type;
-    ability.rechargeType = rechargeTypeFromStr((*doc)["recharge_type"].GetString());
-
-    if (ability.rechargeType == RechargeType::Cooldown) {
-        ability.abCooldown.maxCharges = (*doc)["charges"].GetInt();
-        ability.abCooldown.cooldown = (*doc)["cooldown"].GetFloat();
-
-        if (doc->HasMember("charge_rate")) {
-            ability.abCooldown.chargeRate = (*doc)["charge_rate"].GetFloat();
-        } else {
-            ability.abCooldown.chargeRate = 0.f;
-        }
-
-        if (doc->HasMember("starting_charges")) {
-            ability.abCooldown.currentCharges = (*doc)["starting_charges"].GetInt();
-        } else {
-            ability.abCooldown.currentCharges = ability.abCooldown.maxCharges;
-        }
-
-        if (doc->HasMember("starting_cooldown")) {
-            ability.abCooldown.currentCooldown = (*doc)["starting_cooldown"].GetFloat();
-        } else {
-            ability.abCooldown.currentCooldown = 0.f;
-        }
-
-    } else if (ability.rechargeType == RechargeType::Points) {
-        if (doc->HasMember("starting_percentage")) {
-            ability.abPoints.pointPercentage = Helper_clamp((*doc)["starting_percentage"].GetFloat(), 0.f, 1.f);
-        } else {
-            ability.abPoints.pointPercentage = 0.f;
-        }
-
-        if (doc->HasMember("points_multiplier")) {
-            ability.abPoints.pointPercentage = (*doc)["points_multiplier"].GetFloat();
-        } else {
-            ability.abPoints.pointPercentage = 1.f;
-        }
-
-        ability.abPoints.pointsMultiplier = 1.f;
-    }
-}
-
-void loadAbilitiesFromJson(JsonParser* jsonParser)
-{
-    #define DoAbility(ability_name, json_id) \
-        _loadAbility(jsonParser, ABILITY_##ability_name, g_abilities[ABILITY_##ability_name], json_id);
-    #include "abilities.inc"
-    #undef DoAbility
-}
-
-u8 Ability_strToType(const std::string& typeStr)
+u8 Ability::stringToType(const std::string& typeStr)
 {
     if (typeStr == "NONE") return ABILITY_NONE;
 
-    #define DoAbility(ability_name, json_id) \
-        if (typeStr == #ability_name) return ABILITY_##ability_name;
+    #define DoAbility(class_name, type, json_id) \
+        if (typeStr == #type) return ABILITY_##type;
     #include "abilities.inc"
     #undef DoAbility
 
     return ABILITY_NONE;
 }
 
-void Ability_update(Ability& ability, sf::Time eTime)
+u8 Ability::getAbilityType() const
 {
-    float dt = eTime.asSeconds();
+    return m_type;
+}
 
-    switch (ability.rechargeType) 
-    {
-        case RechargeType::Cooldown:
-        {
-            if (ability.abCooldown.currentCharges < ability.abCooldown.maxCharges) {
-                if (ability.abCooldown.currentCooldown != 0.f) {
-                    ability.abCooldown.currentCooldown = std::max(ability.abCooldown.currentCooldown - dt, 0.f);
+void Ability::setAbilityType(u8 abilityType)
+{
+    m_type = abilityType;
+}
 
-                    if (std::fmod(ability.abCooldown.currentCooldown, ability.abCooldown.cooldown) == 0) {
-                        ability.abCooldown.currentCharges++;
-                    }
-                }
+void CooldownAbility::update(sf::Time eTime)
+{
+    if (m_currentCharges < m_maxCharges) {
+        float delta = m_currentCooldown - eTime.asSeconds();
+
+        if (delta <= 0.f) {
+            m_currentCharges++;
+
+            if (m_currentCharges < m_maxCharges) {
+                m_currentCooldown = m_cooldown + delta;
             }
-            break;
+        } else {
+            m_currentCooldown = delta;
         }
+    }
+
+    if (m_currentNextChargeDelay < m_nextChargeDelay) {
+        m_currentNextChargeDelay += eTime.asSeconds();
     }
 }
 
-void Ability_onCallback(Ability& ability)
+bool CooldownAbility::canBeCasted()
 {
-    switch (ability.rechargeType) 
-    {
-        case RechargeType::Cooldown:
-        {
-            if (ability.abCooldown.currentCharges != 0) {
-                ability.abCooldown.currentCharges--;
-                ability.abCooldown.currentCooldown += ability.abCooldown.cooldown;
-            }
-            break;
-        }
+    return m_currentCharges > 0 && m_currentNextChargeDelay >= m_nextChargeDelay;
+}
 
-        case RechargeType::Points:
-        {
-            ability.abPoints.pointPercentage = 0;
-            break;
-        }
+void CooldownAbility::loadFromJson(const rapidjson::Document& doc)
+{
+    m_maxCharges = doc["charges"].GetInt();
+    m_cooldown = doc["cooldown"].GetFloat();
+
+    if (doc.HasMember("next_charge_delay")) {
+        m_nextChargeDelay = doc["next_charge_delay"].GetFloat();
+    } else {
+        m_nextChargeDelay = 0.f;
+    }
+    
+    m_currentNextChargeDelay = 0.f;
+
+    if (doc.HasMember("starting_charges")) {
+        m_currentCharges = doc["starting_charges"].GetInt();
+    } else {
+        m_currentCharges = m_maxCharges;
+    }
+
+    if (doc.HasMember("starting_cooldown")) {
+        m_currentCooldown = doc["starting_cooldown"].GetFloat();
+    } else {
+        m_currentCooldown = 0.f;
     }
 }
 
-bool Ability_canBeCasted(const Ability& ability)
+void CooldownAbility::onCastUpdate()
 {
-    switch (ability.rechargeType) 
-    {
-        case RechargeType::Cooldown:
-        {
-            return ability.abCooldown.currentCharges > 0;
-        }
+    if (m_currentCharges != 0) {
+        m_currentCharges--;
+        m_currentCooldown = m_cooldown;
+        m_currentNextChargeDelay = 0.f;
+    }
+}
 
-        case RechargeType::Points:
-        {
-            return ability.abPoints.pointPercentage >= 1;
-        }
+void RechargeAbility::update(sf::Time eTime)
+{
+
+}
+
+bool RechargeAbility::canBeCasted()
+{
+    return m_percentage >= 1.f;
+}
+
+void RechargeAbility::loadFromJson(const rapidjson::Document& doc)
+{
+    if (doc.HasMember("starting_percentage")) {
+        m_percentage = Helper_clamp(doc["starting_percentage"].GetFloat(), 0.f, 1.f);
+    } else {
+        m_percentage = 0.f;
     }
 
-    return false;
+    if (doc.HasMember("multiplier")) {
+        m_multiplier = doc["multiplier"].GetFloat();
+    } else {
+        m_multiplier = 1.f;
+    }
+}
+
+void RechargeAbility::onCastUpdate()
+{
+    m_percentage = 0.f;
+}
+
+void PassiveAbility::update(sf::Time eTime)
+{
+
+}
+
+bool PassiveAbility::canBeCasted()
+{
+
+}
+
+void PassiveAbility::loadFromJson(const rapidjson::Document& doc)
+{
+
 }

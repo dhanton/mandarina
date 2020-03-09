@@ -13,16 +13,16 @@ void _loadWeapon(JsonParser* jsonParser, Weapon& weapon, const char* json_id, u1
     weapon.textureId = textureId;
 
     //All weapons have a primary fire ability
-    weapon.primaryFire = Ability_strToType((*doc)["primary_fire"].GetString());
+    weapon.primaryFire = Ability::stringToType((*doc)["primary_fire"].GetString());
 
-    //(different from WEAPON_NONE)
-    if (weapon.primaryFire == WEAPON_NONE) {
+    //(different from ABILITY_NONE)
+    if (weapon.primaryFire == ABILITY_NONE) {
         throw std::runtime_error("LoadWeaponsFromJson error - Weapon must have primary fire in file " + std::string(json_id));
     }
 
     //but they might not have a secondary fire
     if (doc->HasMember("secondary_fire")) {
-        weapon.secondaryFire = Ability_strToType((*doc)["secondary_fire"].GetString());
+        weapon.secondaryFire = Ability::stringToType((*doc)["secondary_fire"].GetString());
     } else {
         weapon.secondaryFire = ABILITY_NONE;
     }
@@ -58,10 +58,4 @@ void loadWeaponsFromJson(JsonParser* jsonParser)
         _loadWeapon(jsonParser, g_weaponData[WEAPON_##weapon_name], json_id, TextureId::weapon_name);
     #include "weapons.inc"
     #undef DoWeapon
-}
-
-//Placeholder callback
-void WeaponCallback_devilsBow()
-{
-    printf("Devils bow fired!\n");
 }

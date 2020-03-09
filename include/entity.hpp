@@ -8,23 +8,6 @@
 #include "player_input.hpp"
 #include "json_parser.hpp"
 
-//This is not an ECS
-//An ECS would probably be better but I have no idea how to make one
-//and I don't want to learn right now, I want to make game :) yes
-
-//@BRANCH_WIP
-//We're testing OOP since the previous model was not as cache-friendly
-//for units as we thought (~200 bytes in size vs 64 bytes of cache lines)
-
-//So we're gonna implemente entities as classes now, with functionality and data
-//stored in different classes (we called components)
-
-//In the entity manager we're going to have multiple data structures to store data
-//std::list<std::unique_ptr<Entity>>
-//Bucket<TouchEntity>
-//TouchEntity are lightweight objects that are created and destroyed constantly
-//like projectiles or pickup items
-
 class BaseEntityComponent
 {
 public:
@@ -57,7 +40,7 @@ public:
     bool canCollide(const BaseEntityComponent& otherEntity) const;
 
 protected:
-    void loadFromJson(u8 entityType, const rapidjson::Document& doc);
+    void loadFromJson(const rapidjson::Document& doc);
 
 protected:
     u32 m_uniqueId;
@@ -86,7 +69,7 @@ class Entity : public BaseEntityComponent
 public:
     virtual Entity* clone() const = 0;
 
-    virtual void loadFromJson(u8 entityType, const rapidjson::Document& doc);
+    virtual void loadFromJson(const rapidjson::Document& doc);
 
     virtual void update(sf::Time eTime, const ManagersContext& context) = 0;
     virtual void preUpdate(sf::Time eTime, const ManagersContext& context) = 0;
@@ -114,7 +97,7 @@ class C_Entity : public BaseEntityComponent
 public:
     virtual C_Entity* clone() const = 0;
 
-    virtual void loadFromJson(u8 entityType, const rapidjson::Document& doc, u16 textureId);
+    virtual void loadFromJson(const rapidjson::Document& doc, u16 textureId);
 
     virtual void update(sf::Time eTime, const C_ManagersContext& context) = 0;
     virtual void loadFromData(CRCPacket& inPacket) = 0;

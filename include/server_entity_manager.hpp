@@ -23,9 +23,8 @@ public:
 
     void update(sf::Time eTime);
 
+    Projectile* createProjectile(u8 projectileType, const Vector2& pos, float aimAngle, u8 teamId);
     Entity* createEntity(u8 entityType, const Vector2& pos, u8 teamId);
-
-    int createProjectile(ProjectileType type, const Vector2& pos, float aimAngle, u8 teamId);
 
     void takeSnapshot(EntityManager* snapshot) const;
     void packData(const EntityManager* snapshot, u8 teamId, CRCPacket& outPacket) const;
