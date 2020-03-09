@@ -13,6 +13,8 @@ SingleShotAbility* SingleShotAbility::clone()
 
 void SingleShotAbility::onCast(Unit* caster, const ManagersContext& context, u16 clientDelay)
 {
+    CooldownAbility::onCastUpdate();
+
     Projectile* projectile = nullptr;
 
     ABILITY_CREATE_PROJECTILE(m_projectileType, caster->getPosition(), caster->getAimAngle(), caster->getTeamId())
@@ -22,6 +24,8 @@ void SingleShotAbility::onCast(Unit* caster, const ManagersContext& context, u16
 
 void SingleShotAbility::C_onCast(C_Unit* caster, const C_ManagersContext& context, u32 inputId)
 {
+    CooldownAbility::onCastUpdate();
+
     C_Projectile* projectile = nullptr;
 
     ABILITY_CREATE_PROJECTILE(m_projectileType, caster->getPosition(), caster->getAimAngle(), caster->getTeamId())

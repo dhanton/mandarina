@@ -59,7 +59,8 @@ GameClient::GameClient(const Context& context, const SteamNetworkingIPAddr& endp
     InContext(context),
     NetPeer(&m_gameClientCallbacks, false),
     m_entityManager(context),
-    m_tileMapRenderer(context, &m_tileMap)
+    m_tileMapRenderer(context, &m_tileMap),
+    m_clientCaster(context)
 {
     // C_loadUnitsFromJson(context.jsonParser);
     C_loadProjectilesFromJson(context.jsonParser);
@@ -218,6 +219,7 @@ void GameClient::update(sf::Time eTime)
     }
 
     m_entityManager.update(eTime);
+    m_clientCaster.update(eTime);
 
     CRCPacket outPacket;
     writeLatestSnapshotId(outPacket);
@@ -301,11 +303,22 @@ void GameClient::renderUpdate(sf::Time eTime)
 
 void GameClient::setupNextInterpolation()
 {
+    const u32 controlledEntityId = m_entityManager.controlledEntityUniqueId;
+    const u32 snapshotEntityId = m_interSnapshot_it->entityManager.controlledEntityUniqueId;
+
+    //Update the abilities if the controlled entity changes (also in the first iteration)
+    if (!m_clientCaster.getCaster() || (controlledEntityId != snapshotEntityId)) {
+        //if for some reason controlled entity is not a unit the ClientCaster will
+        //receive nullptr and nothing will change
+        C_Unit* controlledUnit = dynamic_cast<C_Unit*>(m_entityManager.entities.atUniqueId(controlledEntityId));
+        m_clientCaster.setCaster(controlledUnit);
+    }
+
     m_entityManager.copySnapshotData(&m_interSnapshot_it->entityManager, m_interSnapshot_it->latestAppliedInput);
 
     //we need the end position of controlled entity in the server for this snapshot
-    C_Entity* snapshotEntity =  m_interSnapshot_it->entityManager.entities.atUniqueId(m_interSnapshot_it->entityManager.controlledEntityUniqueId);
-    C_Entity* controlledEntity = m_entityManager.entities.atUniqueId(m_entityManager.controlledEntityUniqueId);
+    C_Entity* snapshotEntity =  m_interSnapshot_it->entityManager.entities.atUniqueId(snapshotEntityId);
+    C_Entity* controlledEntity = m_entityManager.entities.atUniqueId(controlledEntityId);
 
     if (snapshotEntity && controlledEntity) {
         checkServerInput(m_interSnapshot_it->latestAppliedInput, snapshotEntity->getPosition(), 
@@ -392,7 +405,7 @@ void GameClient::saveCurrentInput()
 
     //when casting abilities we use the normal entity manager
     //since local entities might be created
-    entity->applyAbilitiesInput(m_currentInput, C_ManagersContext(&m_entityManager, &m_tileMap));
+    m_clientCaster.applyInputs(m_currentInput, C_ManagersContext(&m_entityManager, &m_tileMap));
 
     //send this input
     {

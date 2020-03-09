@@ -323,6 +323,7 @@ void C_Projectile_checkCollisions(C_Projectile& projectile, const C_ManagersCont
     u16 collidingTile = context.tileMap->getCollidingTile(circle);
     if ((collidingTile & (TILE_BLOCK | TILE_WALL)) != 0) {
         projectile.dead = true;
+        return;
     }
 
     for (auto it = context.entityManager->entities.begin(); it != context.entityManager->entities.end(); ++it) {
@@ -333,25 +334,11 @@ void C_Projectile_checkCollisions(C_Projectile& projectile, const C_ManagersCont
             projectile.dead = true;
 
             //We could also reveal the entity if it's locally hidden
+            //(probably not needed)
 
             break;
         }
     }
-
-    //No need to check projectile collisions in the client
-    // for (int i = 0; i < context.entityManager->units.firstInvalidIndex(); ++i) {
-    //     const C_Unit& unit = context.entityManager->units[i];
-    //     unitCircle.center = unit.pos;
-    //     unitCircle.radius = (float) unit.collisionRadius;
-
-    //     if (_BaseProjectile_canHitTeam(projectile, unit.teamId) && circle.intersects(unitCircle)) {
-    //         projectile.dead = true;
-
-    //         //we can also reveal the unit locally if its locally hidden
-
-    //         break;
-    //     }
-    // }
 }
 
 void Projectile_onHit(Projectile& projectile, Unit* unitHit)

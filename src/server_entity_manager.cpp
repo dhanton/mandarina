@@ -180,6 +180,13 @@ void EntityManager::setTileMap(TileMap* tileMap)
     m_tileMap = tileMap;
 }
 
+const Entity* EntityManager::getEntityData(u8 type)
+{
+    if (type >= ENTITY_MAX_TYPES) return nullptr;
+
+    return m_entityData[type].get();
+}
+
 inline u32 EntityManager::_getNewUniqueId()
 {
     return ++m_lastUniqueId;

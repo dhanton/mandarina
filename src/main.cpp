@@ -87,8 +87,7 @@ int main(int argc, char* argv[])
 
     loadWeaponsFromJson(&jsonParser);
 
-    //Is main the best place to load abilities?
-    _UnitBase::loadAbilityData(&jsonParser);
+    CasterComponent::loadAbilityData(&jsonParser);
 
     SteamNetworkingIPAddr serverAddr;
     serverAddr.ParseString("127.0.0.1:7000");

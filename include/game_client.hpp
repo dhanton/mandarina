@@ -12,6 +12,7 @@
 #include "player_input.hpp"
 #include "tilemap_renderer.hpp"
 #include "camera.hpp"
+#include "client_caster.hpp"
 
 class GameClient;
 
@@ -111,4 +112,6 @@ private:
     //the unit can move freely within this radius without the camera moving
     float m_smoothUnitRadius;
     Vector2 m_smoothUnitPos;
+
+    ClientCaster m_clientCaster;
 };

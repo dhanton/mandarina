@@ -62,7 +62,7 @@ void CooldownAbility::loadFromJson(const rapidjson::Document& doc)
         m_nextChargeDelay = 0.f;
     }
     
-    m_currentNextChargeDelay = 0.f;
+    m_currentNextChargeDelay = m_nextChargeDelay;
 
     if (doc.HasMember("starting_charges")) {
         m_currentCharges = doc["starting_charges"].GetInt();

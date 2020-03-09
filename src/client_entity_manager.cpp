@@ -58,6 +58,7 @@ void C_EntityManager::update(sf::Time eTime)
     int i = 0;
 
     while (i < localProjectiles.firstInvalidIndex()) {
+        // C_Projectile_localUpdate(localProjectiles[i], eTime, context);
         C_Projectile_checkCollisions(localProjectiles[i], context);
 
         if (localProjectiles[i].dead) {
@@ -72,7 +73,8 @@ void C_EntityManager::renderUpdate(sf::Time eTime)
 {
     C_ManagersContext managersContext(this, m_tileMap);
 
-    //update local projectiles
+    //we update local projectiles as much as possible (renderUpdate)
+    //but we check their collision only in the normal update
     for (int i = 0; i < localProjectiles.firstInvalidIndex(); ++i) {
         C_Projectile_localUpdate(localProjectiles[i], eTime, managersContext);
     }
@@ -269,9 +271,6 @@ C_Projectile* C_EntityManager::createProjectile(u8 type, const Vector2& pos, flo
     return &projectile;
 }
 
-//@TODO: Implementation is very similar to method above
-//Generalize in one single _copyFromSnapshot_impl method 
-//that can take a packet or just the snapshot
 void C_EntityManager::loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inPacket)
 {
     if (prevSnapshot) {

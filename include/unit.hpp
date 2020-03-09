@@ -2,21 +2,13 @@
 
 #include "entity.hpp"
 #include "ability.hpp"
+#include "caster_component.hpp"
 #include "json_parser.hpp"
 
 class _UnitBase
 {
 public:
     _UnitBase() = default;
-
-    static void loadAbilityData(const JsonParser* jsonParser);
-    
-    //rule of 5 (methods needed because this class has unique_ptr and we want to copy it)
-    ~_UnitBase() = default;
-    _UnitBase(_UnitBase const& other);
-    _UnitBase(_UnitBase && other) = default;
-    _UnitBase& operator=(_UnitBase const& other);
-    _UnitBase& operator=(_UnitBase && other) = default;
 
     float getAimAngle() const;
     void setAimAngle(float aimAngle);
@@ -28,29 +20,24 @@ protected:
     void loadFromJson(const rapidjson::Document& doc);
 
 protected:
-    static std::unique_ptr<Ability> m_abilityData[ABILITY_MAX_TYPES];
-
     float m_aimAngle;
     u8 m_weaponId;
     u16 m_movementSpeed;
-    
-    std::unique_ptr<Ability> m_primaryFire;
-    std::unique_ptr<Ability> m_secondaryFire;
-    std::unique_ptr<Ability> m_altAbility;
-    std::unique_ptr<Ability> m_ultimate;
 
-    //Buffs
+    //Buffs (they probably should be in BuffHolderComponent)
 
 private:
     static bool m_abilitiesLoaded;
 };
 
 class Unit : public Entity, public _UnitBase, public HealthComponent, 
-             public InvisibleComponent, public TrueSightComponent
+             public InvisibleComponent, public TrueSightComponent,
+             public CasterComponent
 {
 private:
     TRUE_SIGHT_COMPONENT()
     INVISIBLE_COMPONENT()
+    CASTER_COMPONENT()
 
 public:
     virtual Unit* clone() const;
@@ -95,7 +82,6 @@ public:
     virtual void updateControlledAngle(float aimAngle);
     
     virtual void applyMovementInput(Vector2& pos, PlayerInput& input, const C_ManagersContext& context, sf::Time dt);
-    virtual void applyAbilitiesInput(const PlayerInput& input, const C_ManagersContext& context);
 
     virtual u16 getControlledMovementSpeed() const;
 
@@ -106,7 +92,6 @@ public:
 private:
     void predictMovementLocally(const Vector2& oldPos, Vector2& newPos, const C_ManagersContext& context) const;
 };
-
 
 // class Hero : public Unit
 // {

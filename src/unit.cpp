@@ -8,9 +8,6 @@
 #include "weapon.hpp"
 #include "collision_manager.hpp"
 
-//all abilities have to be included for loadAbilityData to work
-#include "abilities/single_shot_ability.hpp"
-
 namespace {
 Vector2 _moveCollidingMap_impl(const Vector2& oldPos, Vector2 newPos, float collisionRadius, TileMap* map)
 {
@@ -69,30 +66,6 @@ Vector2 _moveColliding_impl(const Vector2& oldPos, const Vector2& newPos, float 
 
 }
 
-_UnitBase::_UnitBase(_UnitBase const& other):
-    m_primaryFire(other.m_primaryFire ? other.m_primaryFire->clone() : nullptr),
-    m_secondaryFire(other.m_secondaryFire ? other.m_secondaryFire->clone() : nullptr),
-    m_altAbility(other.m_altAbility ? other.m_altAbility->clone() : nullptr),
-    m_ultimate(other.m_ultimate ? other.m_ultimate->clone() : nullptr),
-    m_aimAngle(other.m_aimAngle),
-    m_weaponId(other.m_weaponId),
-    m_movementSpeed(other.m_movementSpeed)
-{
-
-}
-
-_UnitBase& _UnitBase::operator=(_UnitBase const& other)
-{
-    m_primaryFire = std::unique_ptr<Ability>(other.m_primaryFire ? other.m_primaryFire->clone() : nullptr);
-    m_secondaryFire = std::unique_ptr<Ability>(other.m_secondaryFire ? other.m_secondaryFire->clone() : nullptr);
-    m_altAbility = std::unique_ptr<Ability>(other.m_altAbility ? other.m_altAbility->clone() : nullptr);
-    m_ultimate = std::unique_ptr<Ability>(other.m_ultimate ? other.m_ultimate->clone() : nullptr);
-    m_aimAngle = other.m_aimAngle;
-    m_weaponId = other.m_weaponId;
-    m_movementSpeed = other.m_movementSpeed;
-    return *this;
-}
-
 float _UnitBase::getAimAngle() const
 {
     return m_aimAngle;
@@ -118,54 +91,6 @@ void _UnitBase::loadFromJson(const rapidjson::Document& doc)
     m_aimAngle = 0.f;
     m_weaponId = Weapon_stringToType(doc["weapon"].GetString());
     m_movementSpeed = doc["movement_speed"].GetInt();
-
-    const Weapon& weapon = g_weaponData[m_weaponId];
-
-    m_primaryFire = nullptr;
-    m_secondaryFire = nullptr;
-    m_altAbility = nullptr;
-    m_ultimate = nullptr;
-
-    if (weapon.primaryFire != ABILITY_NONE) {
-        m_primaryFire = std::unique_ptr<Ability>(m_abilityData[weapon.primaryFire]->clone());
-    }
-
-    if (weapon.secondaryFire != ABILITY_NONE) {
-        m_secondaryFire = std::unique_ptr<Ability>(m_abilityData[weapon.secondaryFire]->clone());
-    }
-
-    if (doc.HasMember("alt_ability")) {
-        u8 abilityType = Ability::stringToType(doc["alt_ability"].GetString());
-
-        if (abilityType != ABILITY_NONE) {
-            m_altAbility = std::unique_ptr<Ability>(m_abilityData[abilityType]->clone());
-        }
-    }
-
-    if (doc.HasMember("ultimate")) {
-        u8 abilityType = Ability::stringToType(doc["ultimate"].GetString());
-
-        if (abilityType != ABILITY_NONE) {
-            m_ultimate = std::unique_ptr<Ability>(m_abilityData[abilityType]->clone());
-        }
-    }
-}
-
-bool _UnitBase::m_abilitiesLoaded = false;
-std::unique_ptr<Ability> _UnitBase::m_abilityData[ABILITY_MAX_TYPES];
-
-void _UnitBase::loadAbilityData(const JsonParser* jsonParser)
-{
-    if (m_abilitiesLoaded) return;
-
-    #define DoAbility(class_name, type, json_id) \
-        m_abilityData[ABILITY_##type] = std::unique_ptr<Ability>(new class_name()); \
-        m_abilityData[ABILITY_##type]->setAbilityType(ABILITY_##type); \
-        m_abilityData[ABILITY_##type]->loadFromJson(*jsonParser->getDocument(json_id));
-    #include "abilities.inc"
-    #undef DoAbility
-
-    m_abilitiesLoaded = true;
 }
 
 Unit* Unit::clone() const
@@ -179,27 +104,14 @@ void Unit::loadFromJson(const rapidjson::Document& doc)
     _UnitBase::loadFromJson(doc);
     HealthComponent::loadFromJson(doc);
     TrueSightComponent::loadFromJson(doc);
+    CasterComponent::loadFromJson(doc);
 
     m_solid = true;
 }
 
 void Unit::update(sf::Time eTime, const ManagersContext& context)
 {
-    if (m_primaryFire) {
-        m_primaryFire->update(eTime);
-    }
-
-    if (m_secondaryFire) {
-        m_secondaryFire->update(eTime);
-    }
-
-    if (m_altAbility) {
-        m_altAbility->update(eTime);
-    }
-
-    if (m_ultimate) {
-        m_ultimate->update(eTime);
-    }
+    CasterComponent::update(eTime);
 
     Vector2 newPos = m_pos;
 
@@ -356,21 +268,7 @@ void Unit::applyInput(const PlayerInput& input, const ManagersContext& context, 
     
     //We cast abilities before moving so it works like in the client
     //(because in the client inputs don't move the unit instantaneously)
-    if (input.primaryFire && m_primaryFire /**&& m_primaryFire->canBeCasted()**/) {
-        m_primaryFire->onCast(this, context, clientDelay);
-    }
-
-    if (input.secondaryFire && m_secondaryFire && m_secondaryFire->canBeCasted()) {
-        m_secondaryFire->onCast(this, context, clientDelay);
-    }
-
-    if (input.altAbility && m_altAbility && m_altAbility->canBeCasted()) {
-        m_altAbility->onCast(this, context, clientDelay);
-    }
-
-    if (input.ultimate && m_ultimate && m_ultimate->canBeCasted()) {
-        m_ultimate->onCast(this, context, clientDelay);
-    }
+    CasterComponent::applyInput(this, input, context, clientDelay);
     
     bool moved = PlayerInput_repeatAppliedInput(input, newPos, m_movementSpeed);
 
@@ -447,7 +345,6 @@ void C_Unit::loadFromJson(const rapidjson::Document& doc, u16 textureId)
 
     m_solid = true;
 }
-
 
 void C_Unit::update(sf::Time eTime, const C_ManagersContext& context)
 {
@@ -568,30 +465,6 @@ void C_Unit::applyMovementInput(Vector2& pos, PlayerInput& input, const C_Manage
 
     if (moved) {
         predictMovementLocally(oldPos, pos, context);
-    }
-}
-
-void C_Unit::applyAbilitiesInput(const PlayerInput& input, const C_ManagersContext& context)
-{
-    //@WIP
-    //Check if it can be casted
-    //Start reducing the cooldown
-    //If casting fails on server, correct the cooldown in client
-
-    if (input.primaryFire && m_primaryFire /**&& m_primaryFire->canBeCasted()**/) {
-        m_primaryFire->C_onCast(this, context, input.id);
-    }
-
-    if (input.secondaryFire && m_secondaryFire && m_secondaryFire->canBeCasted()) {
-        m_secondaryFire->C_onCast(this, context, input.id);
-    }
-
-    if (input.altAbility && m_altAbility && m_altAbility->canBeCasted()) {
-        m_altAbility->C_onCast(this, context, input.id);
-    }
-
-    if (input.ultimate && m_ultimate && m_ultimate->canBeCasted()) {
-        m_ultimate->C_onCast(this, context, input.id);
     }
 }
 

@@ -34,6 +34,8 @@ public:
     void setCollisionManager(CollisionManager* collisionManager);
     void setTileMap(TileMap* tileMap);
 
+    static const Entity* getEntityData(u8 type);
+
 public:
     // Bucket<Unit> units;
     EntityTable<Entity> entities;
