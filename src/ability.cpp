@@ -104,10 +104,10 @@ void RechargeAbility::loadFromJson(const rapidjson::Document& doc)
         m_percentage = 0.f;
     }
 
-    if (doc.HasMember("multiplier")) {
-        m_multiplier = doc["multiplier"].GetFloat();
+    if (doc.HasMember("recharge_multiplier")) {
+        m_rechargeMultiplier = doc["recharge_multiplier"].GetFloat();
     } else {
-        m_multiplier = 1.f;
+        m_rechargeMultiplier = 1.f;
     }
 }
 

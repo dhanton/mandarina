@@ -230,7 +230,7 @@ u16 HealthComponent::getMaxHealth() const
 
 void HealthComponent::loadFromJson(const rapidjson::Document& doc)
 {
-    m_maxHealth = doc["max_health"].GetInt();
+    m_maxHealth = doc["health"].GetInt();
 
     if (doc.HasMember("starting_health")) {
         m_health = doc["starting_health"].GetInt();

@@ -305,11 +305,12 @@ void GameServer::sendSnapshots()
     for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
         CRCPacket outPacket;
         outPacket << (u8) ClientCommand::Snapshot;
+
+        //@TODO: Should we use delta encoding to send all this data?
+
         outPacket << m_lastSnapshotId;
         outPacket << m_clients[i].snapshotId;
         outPacket << m_clients[i].latestInputId;
-
-        //@TODO: See if this is the best way to send this
         outPacket << m_clients[i].controlledEntityUniqueId;
 
         if (m_clients[i].snapshotId < oldestSnapshotId) {

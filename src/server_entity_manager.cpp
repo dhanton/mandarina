@@ -180,20 +180,15 @@ void EntityManager::setTileMap(TileMap* tileMap)
     m_tileMap = tileMap;
 }
 
+bool EntityManager::m_entitiesJsonLoaded = false;
+std::unique_ptr<Entity> EntityManager::m_entityData[ENTITY_MAX_TYPES];
+
 const Entity* EntityManager::getEntityData(u8 type)
 {
     if (type >= ENTITY_MAX_TYPES) return nullptr;
 
     return m_entityData[type].get();
 }
-
-inline u32 EntityManager::_getNewUniqueId()
-{
-    return ++m_lastUniqueId;
-}
-
-bool EntityManager::m_entitiesJsonLoaded = false;
-std::unique_ptr<Entity> EntityManager::m_entityData[ENTITY_MAX_TYPES];
 
 void EntityManager::loadEntityData(const JsonParser* jsonParser)
 {
@@ -207,4 +202,9 @@ void EntityManager::loadEntityData(const JsonParser* jsonParser)
     #undef DoEntity
 
     m_entitiesJsonLoaded = true;
+}
+
+inline u32 EntityManager::_getNewUniqueId()
+{
+    return ++m_lastUniqueId;
 }

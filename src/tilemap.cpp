@@ -53,6 +53,20 @@ bool TileMap::isContained(u16 tileFlags, const Circlef& circle) const
     return _collidingContained_impl(true, tileFlags, circle, nullptr, nullptr);
 }
 
+bool TileMap::isOutsideMap(const Circlef& circle) const
+{
+    size_t tileSize = m_tileSize * m_tileScale;
+    Vector2i min = {(int) (circle.center.x - circle.radius)/tileSize, (int) (circle.center.y - circle.radius)/tileSize};
+    Vector2i max = {(int) (circle.center.x + circle.radius)/tileSize, (int) (circle.center.y + circle.radius)/tileSize};
+
+    if (min.x < 0 || min.x >= getSize().x) return true;
+    if (min.y < 0 || min.y >= getSize().y) return true;
+    if (max.x < 0 || max.x >= getSize().x) return true;
+    if (max.y < 0 || max.y >= getSize().y) return true;
+
+    return false;
+}
+
 u16 TileMap::getCollidingTile(const Circlef& circle) const
 {
     u16 tile = 0;

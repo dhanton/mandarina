@@ -35,6 +35,7 @@ public:
     void setTileMap(TileMap* tileMap);
 
     static const Entity* getEntityData(u8 type);
+    static void loadEntityData(const JsonParser* jsonParser);
 
 public:
     // Bucket<Unit> units;
@@ -51,6 +52,4 @@ private:
 
     static bool m_entitiesJsonLoaded;
     static std::unique_ptr<Entity> m_entityData[ENTITY_MAX_TYPES];
-
-    static void loadEntityData(const JsonParser* jsonParser);
 };

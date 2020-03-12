@@ -1,4 +1,5 @@
 {
-    "recharge_type": "Points",
-    "points_multiplier": 1.1
+    "recharge_multiplier": 1.1,
+    "bubble_number": 17,
+    "spread_distance": 60
 }

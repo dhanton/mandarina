@@ -405,7 +405,7 @@ void GameClient::saveCurrentInput()
 
     //when casting abilities we use the normal entity manager
     //since local entities might be created
-    m_clientCaster.applyInputs(m_currentInput, C_ManagersContext(&m_entityManager, &m_tileMap));
+    m_clientCaster.applyInputs(m_currentInput, entityPos, C_ManagersContext(&m_entityManager, &m_tileMap));
 
     //send this input
     {

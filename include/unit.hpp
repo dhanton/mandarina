@@ -16,6 +16,8 @@ public:
     u8 getMovementSpeed() const;
     void setMovementSpeed(u8 movementSpeed);
 
+    static Vector2 moveCollidingTilemap_impl(const Vector2& oldPos, Vector2 newPos, float collisionRadius, TileMap* map);
+
 protected:
     void loadFromJson(const rapidjson::Document& doc);
 

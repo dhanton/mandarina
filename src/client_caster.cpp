@@ -14,13 +14,13 @@ void ClientCaster::update(sf::Time eTime)
     m_casterComponent.update(eTime);
 }
 
-void ClientCaster::applyInputs(const PlayerInput& input, const C_ManagersContext& context)
+void ClientCaster::applyInputs(const PlayerInput& input, Vector2& casterPos, const C_ManagersContext& context)
 {
     if (!m_caster) return;
     
     //@WIP: Correct the cooldown in client if casting fails on server
 
-    m_casterComponent.C_applyInput(m_caster, input, context);
+    m_casterComponent.C_applyInput(m_caster, casterPos, input, context);
 }
 
 void ClientCaster::setCaster(C_Unit* caster)
@@ -32,6 +32,9 @@ void ClientCaster::setCaster(C_Unit* caster)
     //BitStream with (primaryFireTypeChanged, ..., primaryFireCasted)
     //If primaryFireCasted == false we reset the cooldown in Client or something like this
     //probably with better accuracy; not just casted, but also some info about charges remaining, etc
+
+    //This is needed for non-local connections (maybe there's a better way?)
+    EntityManager::loadEntityData(m_context.jsonParser);
 
     const Unit* unitData = static_cast<const Unit*>(EntityManager::getEntityData(caster->getEntityType()));
 

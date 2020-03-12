@@ -9,7 +9,7 @@ public:
     ClientCaster(const Context& context);
 
     void update(sf::Time eTime);
-    void applyInputs(const PlayerInput& input, const C_ManagersContext& context);
+    void applyInputs(const PlayerInput& input, Vector2& casterPos, const C_ManagersContext& context);
 
     void setCaster(C_Unit* caster);
     C_Unit* getCaster() const;

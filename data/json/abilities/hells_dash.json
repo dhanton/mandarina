@@ -1,5 +1,5 @@
 {
-    "recharge_type": "Cooldown",
     "charges": 1,
-    "cooldown": 6
+    "cooldown": 6,
+    "dash_range": 240
 }

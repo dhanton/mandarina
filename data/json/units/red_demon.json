@@ -2,7 +2,7 @@
     "weapon": "DEVILS_BOW",
     "alt_ability": "HELLS_DASH",
     "ultimate": "HELLS_RAIN",
-    "max_health": 200,
+    "health": 200,
     "movement_speed": 350,
     "collision_radius": 20,
     "scale": 4

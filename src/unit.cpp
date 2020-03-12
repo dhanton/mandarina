@@ -9,35 +9,6 @@
 #include "collision_manager.hpp"
 
 namespace {
-Vector2 _moveCollidingMap_impl(const Vector2& oldPos, Vector2 newPos, float collisionRadius, TileMap* map)
-{
-    const Vector2 posMovingX = {newPos.x, oldPos.y};
-    const Vector2 posMovingY = {oldPos.x, newPos.y};
-
-    sf::FloatRect collidingTile;
-
-    if (map->getCollidingTileRect(TILE_BLOCK | TILE_WALL, Circlef(posMovingX, collisionRadius), collidingTile)) {
-        //we assume if there's collision there was movement 
-
-        if (oldPos.x > newPos.x) {
-            newPos.x = collidingTile.left + collidingTile.width + collisionRadius;
-
-        } else if (oldPos.x < newPos.x) {
-            newPos.x = collidingTile.left - collisionRadius;
-        }
-    }
-
-    if (map->getCollidingTileRect(TILE_BLOCK | TILE_WALL, Circlef(posMovingY, collisionRadius), collidingTile)) {
-        if (oldPos.y > newPos.y) {
-            newPos.y = collidingTile.top + collidingTile.height + collisionRadius;
-
-        } else if (oldPos.y < newPos.y) {
-            newPos.y = collidingTile.top - collisionRadius;
-        }
-    }
-
-    return newPos;
-}
 
 Vector2 _moveColliding_impl(const Vector2& oldPos, const Vector2& newPos, float collisionRadius, const BaseEntityComponent& collisionEntity)
 {
@@ -84,6 +55,36 @@ u8 _UnitBase::getMovementSpeed() const
 void _UnitBase::setMovementSpeed(u8 movementSpeed)
 {
     m_movementSpeed = movementSpeed;
+}
+
+Vector2 _UnitBase::moveCollidingTilemap_impl(const Vector2& oldPos, Vector2 newPos, float collisionRadius, TileMap* map)
+{
+    const Vector2 posMovingX = {newPos.x, oldPos.y};
+    const Vector2 posMovingY = {oldPos.x, newPos.y};
+
+    sf::FloatRect collidingTile;
+
+    if (map->getCollidingTileRect(TILE_BLOCK | TILE_WALL, Circlef(posMovingX, collisionRadius), collidingTile)) {
+        //we assume if there's collision there was movement 
+
+        if (oldPos.x > newPos.x) {
+            newPos.x = collidingTile.left + collidingTile.width + collisionRadius;
+
+        } else if (oldPos.x < newPos.x) {
+            newPos.x = collidingTile.left - collisionRadius;
+        }
+    }
+
+    if (map->getCollidingTileRect(TILE_BLOCK | TILE_WALL, Circlef(posMovingY, collisionRadius), collidingTile)) {
+        if (oldPos.y > newPos.y) {
+            newPos.y = collidingTile.top + collidingTile.height + collisionRadius;
+
+        } else if (oldPos.y < newPos.y) {
+            newPos.y = collidingTile.top - collisionRadius;
+        }
+    }
+
+    return newPos;
 }
 
 void _UnitBase::loadFromJson(const rapidjson::Document& doc)
@@ -162,9 +163,6 @@ void Unit::update(sf::Time eTime, const ManagersContext& context)
 
         query.Next();
     }
-
-    //@DELETE
-    m_aimAngle += 100 * eTime.asSeconds();
 }
 
 void Unit::preUpdate(sf::Time eTime, const ManagersContext& context)
@@ -260,15 +258,17 @@ void Unit::packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) c
 
 void Unit::applyInput(const PlayerInput& input, const ManagersContext& context, u16 clientDelay)
 {
-     //@TODO: Check flags to see if we can actually move (stunned, rooted, etc)
-
-    Vector2 newPos = m_pos;
+    //@TODO: Check flags to see if we can actually move (stunned, rooted, etc)
 
     m_aimAngle = input.aimAngle;
     
     //We cast abilities before moving so it works like in the client
     //(because in the client inputs don't move the unit instantaneously)
     CasterComponent::applyInput(this, input, context, clientDelay);
+    
+    //we copy the position after applying abilities input 
+    //in case abilities move the unit
+    Vector2 newPos = m_pos;
     
     bool moved = PlayerInput_repeatAppliedInput(input, newPos, m_movementSpeed);
 
@@ -326,7 +326,7 @@ void Unit::moveColliding(Vector2 newPos, const ManagersContext& context, bool fo
         }
     }
 
-    m_pos = _moveCollidingMap_impl(m_pos, newPos, m_collisionRadius, context.tileMap);
+    m_pos = moveCollidingTilemap_impl(m_pos, newPos, m_collisionRadius, context.tileMap);
 
     context.collisionManager->onUpdateUnit(m_uniqueId, m_pos, m_collisionRadius);
 }
@@ -587,5 +587,5 @@ void C_Unit::predictMovementLocally(const Vector2& oldPos, Vector2& newPos, cons
         newPos += _moveColliding_impl(oldPos, newPos, m_collisionRadius, *closestEntity);
     }
 
-    newPos = _moveCollidingMap_impl(oldPos, newPos, m_collisionRadius, context.tileMap);
+    newPos = moveCollidingTilemap_impl(oldPos, newPos, m_collisionRadius, context.tileMap);
 }

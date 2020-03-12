@@ -26,6 +26,7 @@ public:
 
     bool isColliding(u16 tileFlags, const Circlef& circle) const;
     bool isContained(u16 tileFlags, const Circlef& circle) const;
+    bool isOutsideMap(const Circlef& circle) const;
 
     u16 getCollidingTile(const Circlef& circle) const;
 
