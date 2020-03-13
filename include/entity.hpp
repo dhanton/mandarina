@@ -111,6 +111,7 @@ public:
     virtual void updateControlledAngle(float newAngle);
 
     virtual void applyMovementInput(Vector2& pos, PlayerInput& input, const C_ManagersContext& context, sf::Time dt);
+    virtual void reapplyMovementInput(Vector2& pos, PlayerInput& input, const C_ManagersContext& context);
 
     //returns the movement speed of the entity
     virtual u16 getControlledMovementSpeed() const;

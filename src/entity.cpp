@@ -167,6 +167,11 @@ void C_Entity::applyMovementInput(Vector2& pos, PlayerInput& input, const C_Mana
 
 }
 
+void C_Entity::reapplyMovementInput(Vector2& pos, PlayerInput& input, const C_ManagersContext& context)
+{
+
+}
+
 u16 C_Entity::getControlledMovementSpeed() const
 {
     return 0;

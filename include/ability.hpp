@@ -30,7 +30,7 @@ public:
     void setAbilityType(u8 abilityType);
 
     virtual void onCast(Unit* caster, const ManagersContext& context, u16 clientDelay) = 0;
-    virtual void C_onCast(C_Unit* caster, Vector2& pos, const C_ManagersContext& context, u32 inputId) = 0;
+    virtual void C_onCast(C_Unit* caster, Vector2& pos, const C_ManagersContext& context, u32 inputId, bool repeating) = 0;
     virtual void update(sf::Time eTime) = 0;
     virtual bool canBeCasted() = 0;
 

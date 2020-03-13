@@ -82,22 +82,22 @@ void CasterComponent::applyInput(Unit* caster, const PlayerInput& input, const M
     }
 }
 
-void CasterComponent::C_applyInput(C_Unit* caster, Vector2& casterPos, const PlayerInput& input, const C_ManagersContext& context)
+void CasterComponent::C_applyInput(C_Unit* caster, Vector2& casterPos, const PlayerInput& input, const C_ManagersContext& context, bool repeating)
 {
     if (input.primaryFire && m_primaryFire && m_primaryFire->canBeCasted()) {
-        m_primaryFire->C_onCast(caster, casterPos, context, input.id);
+        m_primaryFire->C_onCast(caster, casterPos, context, input.id, repeating);
     }
 
     if (input.secondaryFire && m_secondaryFire && m_secondaryFire->canBeCasted()) {
-        m_secondaryFire->C_onCast(caster, casterPos, context, input.id);
+        m_secondaryFire->C_onCast(caster, casterPos, context, input.id, repeating);
     }
 
     if (input.altAbility && m_altAbility && m_altAbility->canBeCasted()) {
-        m_altAbility->C_onCast(caster, casterPos, context, input.id);
+        m_altAbility->C_onCast(caster, casterPos, context, input.id, repeating);
     }
 
     if (input.ultimate && m_ultimate && m_ultimate->canBeCasted()) {
-        m_ultimate->C_onCast(caster, casterPos, context, input.id);
+        m_ultimate->C_onCast(caster, casterPos, context, input.id, repeating);
     }
 }
 

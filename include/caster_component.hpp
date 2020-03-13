@@ -25,7 +25,8 @@ public:
     //Since this class is not parent of C_Unit, this method has to be called for the controlledEntity only
     //by an interface on GameClient. This makes more sense than having each C_Unit keep track of their abilities.
     //Also in client we don't modify the position of the unit directly but rather casterPos
-    void C_applyInput(C_Unit* caster, Vector2& casterPos, const PlayerInput& input, const C_ManagersContext& context);
+    //If the input is being repeated we don't create new entities, only update the caster's position
+    void C_applyInput(C_Unit* caster, Vector2& casterPos, const PlayerInput& input, const C_ManagersContext& context, bool repeating);
 
     Ability* getPrimaryFire() const;
     Ability* getSecondaryFire() const;

@@ -20,7 +20,15 @@ void ClientCaster::applyInputs(const PlayerInput& input, Vector2& casterPos, con
     
     //@WIP: Correct the cooldown in client if casting fails on server
 
-    m_casterComponent.C_applyInput(m_caster, casterPos, input, context);
+    m_casterComponent.C_applyInput(m_caster, casterPos, input, context, false);
+}
+
+void ClientCaster::reapplyInputs(const PlayerInput& input, Vector2& casterPos, const C_ManagersContext& context)
+{
+    if (!m_caster) return;
+    
+    //call C_applyInput with repeating = true
+    m_casterComponent.C_applyInput(m_caster, casterPos, input, context, true);
 }
 
 void ClientCaster::setCaster(C_Unit* caster)

@@ -468,6 +468,16 @@ void C_Unit::applyMovementInput(Vector2& pos, PlayerInput& input, const C_Manage
     }
 }
 
+void C_Unit::reapplyMovementInput(Vector2& pos, PlayerInput& input, const C_ManagersContext& context)
+{
+    Vector2 oldPos = pos;
+    bool moved = PlayerInput_repeatAppliedInput(input, pos, (float) m_movementSpeed);
+
+    if (moved) {
+        predictMovementLocally(oldPos, pos, context);
+    }
+}
+
 u16 C_Unit::getControlledMovementSpeed() const
 {
     return m_movementSpeed;

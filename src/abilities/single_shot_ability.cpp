@@ -20,8 +20,10 @@ void SingleShotAbility::onCast(Unit* caster, const ManagersContext& context, u16
     ABILITY_BACKTRACK_PROJECTILE(clientDelay)
 }
 
-void SingleShotAbility::C_onCast(C_Unit* caster, Vector2& casterPos, const C_ManagersContext& context, u32 inputId)
+void SingleShotAbility::C_onCast(C_Unit* caster, Vector2& casterPos, const C_ManagersContext& context, u32 inputId, bool repeating)
 {
+    if (repeating) return;
+    
     CooldownAbility::onCastUpdate();
 
     C_Projectile* projectile = nullptr;

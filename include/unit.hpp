@@ -84,6 +84,7 @@ public:
     virtual void updateControlledAngle(float aimAngle);
     
     virtual void applyMovementInput(Vector2& pos, PlayerInput& input, const C_ManagersContext& context, sf::Time dt);
+    virtual void reapplyMovementInput(Vector2& pos, PlayerInput& input, const C_ManagersContext& context);
 
     virtual u16 getControlledMovementSpeed() const;
 

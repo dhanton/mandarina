@@ -25,8 +25,10 @@ void HellsRainAbility::onCast(Unit* caster, const ManagersContext& context, u16 
     }
 }
 
-void HellsRainAbility::C_onCast(C_Unit* caster, Vector2& casterPos, const C_ManagersContext& context, u32 inputId)
+void HellsRainAbility::C_onCast(C_Unit* caster, Vector2& casterPos, const C_ManagersContext& context, u32 inputId, bool repeating)
 {
+    if (repeating) return;
+
     RechargeAbility::onCastUpdate();
 
     C_Projectile* projectile = nullptr;

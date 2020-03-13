@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include "defines.hpp"
 
 double  Helper_lerp(double x0, double x1, double t, double d);
@@ -21,6 +22,9 @@ float Helper_vec2length(const sf::Vector2<T>& vec);
 
 template<typename T>
 sf::Vector2<T> Helper_vec2unitary(const sf::Vector2<T>& vec);
+
+template<typename T>
+std::string Helper_vec2string(const sf::Vector2<T>& vec);
 
 template<typename T>
 bool Helper_pointsCollinear(const sf::Vector2<T>& a, const sf::Vector2<T>& b, const sf::Vector2<T>& c);

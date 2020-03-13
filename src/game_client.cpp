@@ -471,10 +471,25 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
 #endif
 
         Vector2 newPos = endPosition;
+        C_Entity* entity = m_entityManager.entities.atUniqueId(m_entityManager.controlledEntityUniqueId);
+
+        //get the newest entityManager to perform collision better
+        C_ManagersContext context(m_snapshots.empty() ? &m_entityManager : &m_snapshots.back().entityManager, &m_tileMap);
 
         // recalculate all the positions of all the inputs starting from this one
         while (it != m_inputSnapshots.end()) {
-            PlayerInput_repeatAppliedInput(it->input, newPos, movementSpeed);
+            if (entity) {
+                //repeat the input colliding with the map and other entities if possible
+                entity->reapplyMovementInput(newPos, it->input, context);
+
+                //apply only ability inputs that move the unit
+                //@TODO: If the controlledEntity is not the unit this shouldn't be called really
+                m_clientCaster.reapplyInputs(it->input, newPos, context);
+
+            } else {
+                //if there's no entity just repeat the input with no prediction
+                PlayerInput_repeatAppliedInput(it->input, newPos, movementSpeed);
+            }
 
             //try to smoothly correct the input one step at a time
             //(this weird method is the one that gets the best results apparently)
