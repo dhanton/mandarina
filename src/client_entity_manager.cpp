@@ -379,7 +379,7 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
 
         if (renderingEntityData) {
             sf::Text text;
-            text.setPosition(node.sprite.getPosition() - Vector2(20.f, 100.f));
+            text.setPosition(node.sprite.getPosition() + Vector2(40.f, -40.f));
             text.setFillColor(sf::Color::Red);
             text.setFont(m_context.fonts->getResource("test_font"));
             text.setCharacterSize(15);
