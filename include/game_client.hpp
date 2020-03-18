@@ -113,5 +113,5 @@ private:
     float m_smoothUnitRadius;
     Vector2 m_smoothUnitPos;
 
-    ClientCaster m_clientCaster;
+    std::unique_ptr<ClientCaster> m_clientCaster;
 };

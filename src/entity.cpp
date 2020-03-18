@@ -144,7 +144,7 @@ bool Entity::isDead() const
     return m_dead;
 }
 
-void C_Entity::loadFromJson(const rapidjson::Document& doc, u16 textureId)
+void C_Entity::loadFromJson(const rapidjson::Document& doc, u16 textureId, const Context& context)
 {
     BaseEntityComponent::loadFromJson(doc);
 
@@ -187,12 +187,14 @@ void C_Entity::localReveal(C_Entity* entity)
 
 }
 
-void C_Entity::insertRenderNode(const C_ManagersContext& managersContext, const Context& context) const
+void C_Entity::insertRenderNode(const C_ManagersContext& managersContext, const Context& context)
 {
     std::vector<RenderNode>& renderNodes = managersContext.entityManager->getRenderNodes();
-    renderNodes.emplace_back(m_flyingHeight, m_uniqueId, (float) m_collisionRadius);
-    sf::Sprite& sprite = renderNodes.back().sprite;
+    renderNodes.emplace_back(getPosition().y + m_flyingHeight, m_uniqueId);
+    renderNodes.back().usingSprite = true;
 
+    sf::Sprite& sprite = renderNodes.back().sprite;
+    
     sprite.setTexture(context.textures->getResource(m_textureId));
     sprite.setScale(m_scale, m_scale);
     sprite.setOrigin(sprite.getLocalBounds().width/2.f, sprite.getLocalBounds().height/2.f);
@@ -200,6 +202,8 @@ void C_Entity::insertRenderNode(const C_ManagersContext& managersContext, const 
 
 #ifdef MANDARINA_DEBUG
     renderNodes.back().debugDisplayData = std::to_string(m_uniqueId);
+    renderNodes.back().collisionRadius = (float) m_collisionRadius;
+    renderNodes.back().position = getPosition();
 #endif
 }
 

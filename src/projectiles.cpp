@@ -368,7 +368,8 @@ void C_Projectile_insertRenderNode(const C_Projectile& projectile, const C_Manag
     std::vector<RenderNode>& renderNodes = managersContext.entityManager->getRenderNodes();
 
     //@WIP: flyingHeight = shooter.height + shooter.flyingHeight
-    renderNodes.emplace_back(RenderNode(100, projectile.uniqueId, (float) projectile.collisionRadius));
+    renderNodes.emplace_back(100, projectile.uniqueId);
+    renderNodes.back().usingSprite = true;
 
     sf::Sprite& sprite = renderNodes.back().sprite;
 
@@ -381,4 +382,9 @@ void C_Projectile_insertRenderNode(const C_Projectile& projectile, const C_Manag
     }
 
     sprite.setPosition(projectile.pos);
+
+#ifdef MANDARINA_DEBUG
+    renderNodes.back().collisionRadius = (float) projectile.collisionRadius;
+    renderNodes.back().position = projectile.pos;
+#endif
 }

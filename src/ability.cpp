@@ -25,6 +25,26 @@ void Ability::setAbilityType(u8 abilityType)
     m_type = abilityType;
 }
 
+u8 Ability::getIconTextureId() const
+{
+    return m_iconTextureId;
+}
+
+void Ability::setIconTextureId(u8 iconTextureId)
+{
+    m_iconTextureId = iconTextureId;
+}
+
+float Ability::getPercentage() const
+{
+    return 1.f;
+}
+
+u16 Ability::getMaxTime() const
+{
+    return 0;
+}
+
 void CooldownAbility::update(sf::Time eTime)
 {
     if (m_currentCharges < m_maxCharges) {
@@ -35,6 +55,8 @@ void CooldownAbility::update(sf::Time eTime)
 
             if (m_currentCharges < m_maxCharges) {
                 m_currentCooldown = m_cooldown + delta;
+            } else {
+                m_currentCooldown = 0.f;
             }
         } else {
             m_currentCooldown = delta;
@@ -77,6 +99,16 @@ void CooldownAbility::loadFromJson(const rapidjson::Document& doc)
     }
 }
 
+float CooldownAbility::getPercentage() const
+{
+    return 1.f - m_currentCooldown/m_cooldown;
+}
+
+u16 CooldownAbility::getMaxTime() const
+{
+    return static_cast<u16>(m_cooldown);
+}
+
 void CooldownAbility::onCastUpdate()
 {
     if (m_currentCharges != 0) {
@@ -88,7 +120,8 @@ void CooldownAbility::onCastUpdate()
 
 void RechargeAbility::update(sf::Time eTime)
 {
-
+    //default speed is one charge every 3 seconds
+    m_percentage += 0.0033333f * eTime.asSeconds() * m_rechargeMultiplier;
 }
 
 bool RechargeAbility::canBeCasted()
@@ -109,6 +142,11 @@ void RechargeAbility::loadFromJson(const rapidjson::Document& doc)
     } else {
         m_rechargeMultiplier = 1.f;
     }
+}
+
+float RechargeAbility::getPercentage() const
+{
+    return m_percentage;
 }
 
 void RechargeAbility::onCastUpdate()

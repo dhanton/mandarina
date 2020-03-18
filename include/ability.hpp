@@ -29,15 +29,23 @@ public:
     u8 getAbilityType() const;
     void setAbilityType(u8 abilityType);
 
+    u8 getIconTextureId() const;
+    void setIconTextureId(u8 iconTextureId);
+
     virtual void onCast(Unit* caster, const ManagersContext& context, u16 clientDelay) = 0;
     virtual void C_onCast(C_Unit* caster, Vector2& pos, const C_ManagersContext& context, u32 inputId, bool repeating) = 0;
     virtual void update(sf::Time eTime) = 0;
     virtual bool canBeCasted() = 0;
 
+    //these are used to properly render UI
+    virtual float getPercentage() const;
+    virtual u16 getMaxTime() const;
+
     virtual void loadFromJson(const rapidjson::Document& doc) = 0;
 
 private:
     u8 m_type;
+    u8 m_iconTextureId;
 };
 
 class CooldownAbility : public Ability
@@ -45,6 +53,9 @@ class CooldownAbility : public Ability
 public:
     virtual void update(sf::Time eTime);
     virtual bool canBeCasted();
+
+    virtual float getPercentage() const;
+    virtual u16 getMaxTime() const;
 
     virtual void loadFromJson(const rapidjson::Document& doc);
 
@@ -66,6 +77,7 @@ class RechargeAbility : public Ability
 public:
     virtual void update(sf::Time eTime);
     virtual bool canBeCasted();
+    virtual float getPercentage() const;
 
     virtual void loadFromJson(const rapidjson::Document& doc);
 

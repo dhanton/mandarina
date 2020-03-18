@@ -73,7 +73,7 @@ private:
 public:
     virtual C_Unit* clone() const;
 
-    virtual void loadFromJson(const rapidjson::Document& doc, u16 textureId);
+    virtual void loadFromJson(const rapidjson::Document& doc, u16 textureId, const Context& context);
 
     virtual void update(sf::Time eTime, const C_ManagersContext& context);
     virtual void loadFromData(CRCPacket& inPacket);
@@ -90,7 +90,7 @@ public:
 
     virtual void updateLocallyVisible(const C_ManagersContext& context);
     virtual void localReveal(C_Entity* unit);
-    virtual void insertRenderNode(const C_ManagersContext& managersContext, const Context& context) const;
+    virtual void insertRenderNode(const C_ManagersContext& managersContext, const Context& context);
 
 private:
     void predictMovementLocally(const Vector2& oldPos, Vector2& newPos, const C_ManagersContext& context) const;

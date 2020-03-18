@@ -1,6 +1,7 @@
 #pragma once
 
 #include "caster_component.hpp"
+#include "ability_ui.hpp"
 
 //This class keeps track of the 
 class ClientCaster : public sf::Drawable, public InContext
@@ -26,10 +27,16 @@ private:
         void setSecondaryFire(Ability* ability);
         void setAltAbility(Ability* ability);
         void setUltimate(Ability* ability);
+
+        bool isValid() const;
     private:
         u8 _casterComponent_weaponId() const;
     };
 
     DummyCaster m_casterComponent;
     C_Unit* m_caster;
+
+    AbilityUI m_secondaryUI;
+    AbilityUI m_altAbilityUI;
+    AbilityUI m_ultimateUI;
 };

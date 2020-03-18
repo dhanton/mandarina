@@ -3,6 +3,7 @@
 #include "weapon.hpp"
 #include "unit.hpp"
 #include "json_parser.hpp"
+#include "texture_ids.hpp"
 
 //all abilities have to be included for loadAbilityData to work
 #include "abilities/single_shot_ability.hpp"
@@ -19,6 +20,7 @@ void CasterComponent::loadAbilityData(const JsonParser* jsonParser)
     #define DoAbility(class_name, type, json_id) \
         m_abilityData[ABILITY_##type] = std::unique_ptr<Ability>(new class_name()); \
         m_abilityData[ABILITY_##type]->setAbilityType(ABILITY_##type); \
+        m_abilityData[ABILITY_##type]->setIconTextureId(TextureId::ICON_##type); \
         m_abilityData[ABILITY_##type]->loadFromJson(*jsonParser->getDocument(json_id));
     #include "abilities.inc"
     #undef DoAbility

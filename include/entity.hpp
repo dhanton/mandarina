@@ -97,7 +97,7 @@ class C_Entity : public BaseEntityComponent
 public:
     virtual C_Entity* clone() const = 0;
 
-    virtual void loadFromJson(const rapidjson::Document& doc, u16 textureId);
+    virtual void loadFromJson(const rapidjson::Document& doc, u16 textureId, const Context& context);
 
     virtual void update(sf::Time eTime, const C_ManagersContext& context) = 0;
     virtual void loadFromData(CRCPacket& inPacket) = 0;
@@ -119,7 +119,7 @@ public:
     virtual void updateLocallyVisible(const C_ManagersContext& context);
     virtual void localReveal(C_Entity* entity);
 
-    virtual void insertRenderNode(const C_ManagersContext& managersContext, const Context& context) const;
+    virtual void insertRenderNode(const C_ManagersContext& managersContext, const Context& context);
 
 protected:
     u16 m_textureId;

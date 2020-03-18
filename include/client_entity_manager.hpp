@@ -14,21 +14,32 @@
 #include "unit.hpp"
 
 struct RenderNode {
+    //the RenderNode can have ownership of the drawabale
     sf::Sprite sprite;
 
-    //used to render debug collision shapes
-    float collisionRadius;
+    //or it can be delegated somewhere else
+    const sf::Drawable* drawable;
+
+    //flag that's true if the node has ownership of its drawable
+    bool usingSprite;
 
     //all these parameters are used to sort the entities
-    float flyingHeight;
+    float height;
     u32 uniqueId;
     int manualFilter;
 
 #ifdef MANDARINA_DEBUG
-    std::string debugDisplayData; 
+    std::string debugDisplayData;
+
+    //Used to properly position text and debug collision shapes
+    //(since sf::Drawable doesn't store position)
+    Vector2 position;
+
+    //used to render debug collision shapes
+    float collisionRadius;
 #endif
 
-    RenderNode(float flyingHeight, u32 uniqueId, float collisionRadius);
+    RenderNode(float height, u32 uniqueId);
 
     inline bool operator<(const RenderNode& other);
 };
@@ -87,5 +98,5 @@ private:
     static bool m_entitiesJsonLoaded;
     static std::unique_ptr<C_Entity> m_entityData[ENTITY_MAX_TYPES];
 
-    static void loadEntityData(const JsonParser* jsonParser);
+    static void loadEntityData(const Context& context);
 };

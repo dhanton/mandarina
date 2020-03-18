@@ -59,8 +59,7 @@ GameClient::GameClient(const Context& context, const SteamNetworkingIPAddr& endp
     InContext(context),
     NetPeer(&m_gameClientCallbacks, false),
     m_entityManager(context),
-    m_tileMapRenderer(context, &m_tileMap),
-    m_clientCaster(context)
+    m_tileMapRenderer(context, &m_tileMap)
 {
     // C_loadUnitsFromJson(context.jsonParser);
     C_loadProjectilesFromJson(context.jsonParser);
@@ -107,8 +106,8 @@ GameClient::~GameClient()
 
 void GameClient::mainLoop(bool& running)
 {
-    // sf::RenderWindow window{{960, 640}, "Mandarina Prototype", sf::Style::Fullscreen};
-    sf::RenderWindow window{{960, 640}, "Mandarina Prototype", sf::Style::Titlebar | sf::Style::Close};
+    sf::RenderWindow window{{960, 640}, "Mandarina Prototype", sf::Style::Fullscreen};
+    // sf::RenderWindow window{{960, 640}, "Mandarina Prototype", sf::Style::Titlebar | sf::Style::Close};
     
     sf::View view = window.getDefaultView();
     view.zoom(m_camera.getZoom());
@@ -116,6 +115,10 @@ void GameClient::mainLoop(bool& running)
 
     m_context.window = &window;
     m_context.view = &view;
+
+    //clientCaster is a pointer because we need to pass it the updated Context (with window and view)
+    //so it's construction must be here
+    m_clientCaster = std::unique_ptr<ClientCaster>(new ClientCaster(m_context));
 
     m_camera.setView(&view);
 
@@ -187,6 +190,9 @@ void GameClient::mainLoop(bool& running)
             //draw the canvas to the window
             sf::Sprite sprite(m_canvas.getTexture());
             window.draw(sprite);
+
+            //draw UI elements
+            window.draw(*m_clientCaster);
         }
 
         window.display();
@@ -219,7 +225,7 @@ void GameClient::update(sf::Time eTime)
     }
 
     m_entityManager.update(eTime);
-    m_clientCaster.update(eTime);
+    m_clientCaster->update(eTime);
 
     CRCPacket outPacket;
     writeLatestSnapshotId(outPacket);
@@ -307,11 +313,11 @@ void GameClient::setupNextInterpolation()
     const u32 snapshotEntityId = m_interSnapshot_it->entityManager.controlledEntityUniqueId;
 
     //Update the abilities if the controlled entity changes (also in the first iteration)
-    if (!m_clientCaster.getCaster() || (controlledEntityId != snapshotEntityId)) {
+    if (!m_clientCaster->getCaster() || (controlledEntityId != snapshotEntityId)) {
         //if for some reason controlled entity is not a unit the ClientCaster will
         //receive nullptr and nothing will change
         C_Unit* controlledUnit = dynamic_cast<C_Unit*>(m_entityManager.entities.atUniqueId(controlledEntityId));
-        m_clientCaster.setCaster(controlledUnit);
+        m_clientCaster->setCaster(controlledUnit);
     }
 
     m_entityManager.copySnapshotData(&m_interSnapshot_it->entityManager, m_interSnapshot_it->latestAppliedInput);
@@ -405,7 +411,7 @@ void GameClient::saveCurrentInput()
 
     //when casting abilities we use the normal entity manager
     //since local entities might be created
-    m_clientCaster.applyInputs(m_currentInput, entityPos, C_ManagersContext(&m_entityManager, &m_tileMap));
+    m_clientCaster->applyInputs(m_currentInput, entityPos, C_ManagersContext(&m_entityManager, &m_tileMap));
 
     //send this input
     {
@@ -484,7 +490,7 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
 
                 //apply only ability inputs that move the unit
                 //@TODO: If the controlledEntity is not the unit this shouldn't be called really
-                m_clientCaster.reapplyInputs(it->input, newPos, context);
+                m_clientCaster->reapplyInputs(it->input, newPos, context);
 
             } else {
                 //if there's no entity just repeat the input with no prediction

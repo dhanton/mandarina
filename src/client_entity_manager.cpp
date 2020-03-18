@@ -7,21 +7,20 @@
 #include "tilemap.hpp"
 #include "texture_ids.hpp"
 
-RenderNode::RenderNode(float flyingHeight, u32 uniqueId, float collisionRadius)
+RenderNode::RenderNode(float height, u32 uniqueId)
 {
-    this->flyingHeight = flyingHeight;
+    this->height = height;
     this->uniqueId = uniqueId;
-    this->collisionRadius = collisionRadius;
+
+    usingSprite = false;
+    drawable = nullptr;
 
     manualFilter = 0;
 }
 
 inline bool RenderNode::operator<(const RenderNode& other) 
 {
-    float height = sprite.getPosition().y + flyingHeight;
-    float otherHeight = other.sprite.getPosition().y + other.flyingHeight;
-
-    if (height == otherHeight) {
+    if (height == other.height) {
         if (uniqueId == other.uniqueId) {
             return manualFilter < other.manualFilter;
         }
@@ -29,13 +28,13 @@ inline bool RenderNode::operator<(const RenderNode& other)
         return uniqueId < other.uniqueId;
     }
 
-    return height < otherHeight;
+    return height < other.height;
 }
 
 C_EntityManager::C_EntityManager(const Context& context, sf::Time worldTime):
     InContext(context)
 {
-    loadEntityData(context.jsonParser);
+    loadEntityData(context);
 
     localLastUniqueId = 0;
     controlledEntityUniqueId = 0;
@@ -363,7 +362,11 @@ std::vector<RenderNode>& C_EntityManager::getRenderNodes()
 void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     for (const auto& node : m_renderNodes) {
-        target.draw(node.sprite, states);
+        if (node.usingSprite) {
+            target.draw(node.sprite, states);
+        } else {
+            target.draw(*node.drawable, states);
+        }
 
 #ifdef MANDARINA_DEBUG
         if (renderingDebug) {
@@ -373,13 +376,13 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
             shape.setFillColor(sf::Color(255, 0, 0, 80));
             shape.setOutlineColor(sf::Color::Red);
             shape.setOutlineThickness(1.5f);
-            shape.setPosition(node.sprite.getPosition());
+            shape.setPosition(node.position);
             target.draw(shape, states);
         }
 
         if (renderingEntityData) {
             sf::Text text;
-            text.setPosition(node.sprite.getPosition() + Vector2(40.f, -40.f));
+            text.setPosition(node.position + Vector2(40.f, -40.f));
             text.setFillColor(sf::Color::Red);
             text.setFont(m_context.fonts->getResource("test_font"));
             text.setCharacterSize(15);
@@ -393,14 +396,14 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
 bool C_EntityManager::m_entitiesJsonLoaded = false;
 std::unique_ptr<C_Entity> C_EntityManager::m_entityData[ENTITY_MAX_TYPES];
 
-void C_EntityManager::loadEntityData(const JsonParser* jsonParser)
+void C_EntityManager::loadEntityData(const Context& context)
 {
     if (m_entitiesJsonLoaded) return;
 
     #define DoEntity(class_name, type, json_id) \
         m_entityData[ENTITY_##type] = std::unique_ptr<C_Entity>(new C_##class_name()); \
         m_entityData[ENTITY_##type]->setEntityType(ENTITY_##type); \
-        m_entityData[ENTITY_##type]->loadFromJson(*jsonParser->getDocument(json_id), TextureId::type);
+        m_entityData[ENTITY_##type]->loadFromJson(*(context.jsonParser->getDocument(json_id)), TextureId::type, context);
     #include "entities.inc"
     #undef DoEntity
 

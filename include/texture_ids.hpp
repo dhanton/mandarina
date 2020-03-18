@@ -27,5 +27,11 @@ namespace TextureId
             projectile_name,
         #include "projectiles.inc"
         #undef DoProjectile
+
+        //textures used by abilities (icons)
+        #define DoAbility(class_name, type, json_id) \
+            ICON_##type,
+        #include "abilities.inc"
+        #undef DoAbility
     };
 }

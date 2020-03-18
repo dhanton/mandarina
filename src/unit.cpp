@@ -336,9 +336,9 @@ C_Unit* C_Unit::clone() const
     return new C_Unit(*this);
 }
 
-void C_Unit::loadFromJson(const rapidjson::Document& doc, u16 textureId)
+void C_Unit::loadFromJson(const rapidjson::Document& doc, u16 textureId, const Context& context)
 {
-    C_Entity::loadFromJson(doc, textureId);
+    C_Entity::loadFromJson(doc, textureId, context);
     _UnitBase::loadFromJson(doc);
     HealthComponent::loadFromJson(doc);
     TrueSightComponent::loadFromJson(doc);
@@ -500,7 +500,7 @@ void C_Unit::localReveal(C_Entity* entity)
     }
 }
 
-void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Context& context) const
+void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Context& context)
 {
     bool renderingLocallyHidden = managersContext.entityManager->renderingLocallyHidden;
 
@@ -511,7 +511,6 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
 #endif
 
     std::vector<RenderNode>& renderNodes = managersContext.entityManager->getRenderNodes();
-
     C_Entity::insertRenderNode(managersContext, context);
 
     sf::Sprite& sprite = renderNodes.back().sprite;
@@ -539,7 +538,8 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
 
     //setup the weapon node if equipped
     if (m_weaponId != WEAPON_NONE) {
-        renderNodes.emplace_back(RenderNode(m_flyingHeight, m_uniqueId, (float) m_collisionRadius));
+        renderNodes.emplace_back(getPosition().y + m_flyingHeight, m_uniqueId);
+        renderNodes.back().usingSprite = true;
 
         const Weapon& weapon = g_weaponData[m_weaponId];
         sf::Sprite& weaponSprite = renderNodes.back().sprite;
@@ -556,6 +556,13 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
         } else {
             renderNodes.back().manualFilter = 1;
         }
+
+#ifdef MANDARINA_DEBUG
+        //weapons don't need to draw collision debug circle
+        //but we do it so it's rendered above the unit
+        renderNodes.back().collisionRadius = (float) m_collisionRadius;
+        renderNodes.back().position = getPosition();
+#endif
     }
 
 #ifdef MANDARINA_DEBUG
