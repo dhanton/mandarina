@@ -15,10 +15,10 @@ const float AbilityUI::m_boxScale = 0.19f;
 const float AbilityUI::m_boxBoundingSize = AbilityUI::m_boxScale * 512.f;
 const float AbilityUI::m_circleBoundingSize = AbilityUI::m_circleScale * 512.f;
 const u8 AbilityUI::m_alphaColor = 190;
-const sf::Color AbilityUI::m_cooldownColor = sf::Color(255, 126, 0);
-const sf::Color AbilityUI::m_readyColor = sf::Color(0, 210, 255);
-const sf::Color AbilityUI::m_dimGreyColor = sf::Color(169, 169, 169, AbilityUI::m_alphaColor);
-const sf::Color AbilityUI::m_greyColor = sf::Color(169, 169, 169, 255);
+const sf::Color AbilityUI::cooldownColor = sf::Color(255, 126, 0);
+const sf::Color AbilityUI::readyColor = sf::Color(0, 210, 255);
+const sf::Color AbilityUI::dimGreyColor = sf::Color(169, 169, 169, AbilityUI::m_alphaColor);
+const sf::Color AbilityUI::greyColor = sf::Color(169, 169, 169, 255);
 
 AbilityUI::AbilityUI(const Context& context):
     InContext(context)
@@ -101,8 +101,8 @@ void AbilityUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
                 const Vector2 boxCenter = m_pos + Vector2(m_boxBoundingSize, m_boxBoundingSize)/2.f;
 
                 sf::Text timeText;
-                timeText.setFont(m_context.fonts->getResource("test_font"));
-                timeText.setCharacterSize(60);
+                timeText.setFont(m_context.fonts->getResource("keep_calm_font"));
+                timeText.setCharacterSize(45);
                 timeText.setString(std::to_string(number));
                 timeText.setFillColor(sf::Color::White);
                 timeText.setOrigin(timeText.getLocalBounds().width/2.f + timeText.getLocalBounds().left, 
@@ -111,7 +111,7 @@ void AbilityUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
                 timeText.setOutlineThickness(2.f);
                 timeText.setPosition(boxCenter);
 
-                sf::Color cdColor = m_cooldownColor;
+                sf::Color cdColor = cooldownColor;
                 cdColor.a = m_alphaColor;
 
                 sf::RectangleShape cdShape;
@@ -119,7 +119,7 @@ void AbilityUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
                 cdShape.setSize({m_boxBoundingSize * m_percentage, m_boxBoundingSize});
                 cdShape.setPosition(sprite.getPosition());
 
-                sprite.setColor(m_dimGreyColor);
+                sprite.setColor(dimGreyColor);
 
                 target.draw(sprite, states);
                 target.draw(cdShape, states);
@@ -131,16 +131,18 @@ void AbilityUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
             sf::RectangleShape hotkeyShape;
             hotkeyShape.setSize({m_boxBoundingSize, 25.f});
             hotkeyShape.setPosition(m_pos + Vector2(0.f, m_boxBoundingSize + 10.f));
-            hotkeyShape.setFillColor(m_greyColor);
+            hotkeyShape.setFillColor(greyColor);
 
             sf::Text hotkeyText;
-            hotkeyText.setFont(m_context.fonts->getResource("test_font"));
-            hotkeyText.setCharacterSize(20);
+            hotkeyText.setFont(m_context.fonts->getResource("keep_calm_font"));
+            hotkeyText.setCharacterSize(16);
             hotkeyText.setString(m_hotkey);
             hotkeyText.setFillColor(sf::Color::White);
             hotkeyText.setOutlineColor(sf::Color::Black);
             hotkeyText.setOutlineThickness(2.f);
-            hotkeyText.setPosition(hotkeyShape.getPosition() + Vector2(hotkeyShape.getLocalBounds().width/2.f - hotkeyText.getLocalBounds().width/2.f, 0.f));
+            hotkeyText.setOrigin(hotkeyText.getLocalBounds().width/2.f + hotkeyText.getLocalBounds().left, 
+                                   hotkeyText.getLocalBounds().height/2.f + hotkeyText.getLocalBounds().top);
+            hotkeyText.setPosition(hotkeyShape.getPosition() + hotkeyShape.getSize()/2.f);
             
             target.draw(hotkeyShape, states);
             target.draw(hotkeyText, states);
@@ -163,15 +165,15 @@ void AbilityUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
                 sf::Color color = circle.getFillColor();
                 color.a = m_alphaColor + 40;
                 circle.setFillColor(color);
-                circle.setOutlineColor(m_readyColor);
+                circle.setOutlineColor(readyColor);
 
                 target.draw(circle, states);
 
             } else {
 
                 sf::Text percentageText;
-                percentageText.setFont(m_context.fonts->getResource("test_font"));
-                percentageText.setCharacterSize(80);
+                percentageText.setFont(m_context.fonts->getResource("keep_calm_font"));
+                percentageText.setCharacterSize(60);
                 percentageText.setString(std::to_string(int(m_percentage * 100.f)));
                 percentageText.setFillColor(sf::Color::White);
                 percentageText.setOrigin(percentageText.getLocalBounds().width/2.f + percentageText.getLocalBounds().left, 
@@ -181,18 +183,17 @@ void AbilityUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
                 percentageText.setPosition(circleCenter);
 
                 sf::Text totalText;
-                totalText.setFont(m_context.fonts->getResource("test_font"));
-                totalText.setCharacterSize(20);
-                //test_font doesn't have a proper % character so we use /100
-                totalText.setString("/100");
+                totalText.setFont(m_context.fonts->getResource("keep_calm_font"));
+                totalText.setCharacterSize(23);
+                totalText.setString("%");
                 totalText.setFillColor(sf::Color::White);
                 totalText.setOutlineColor(sf::Color::Black);
                 totalText.setOutlineThickness(2.f);
                 totalText.setPosition(circleCenter.x + percentageText.getLocalBounds().width/2.f + 5.f, 
                                       circleCenter.y + percentageText.getLocalBounds().height/2.f - totalText.getLocalBounds().height - 5.f);
 
-                circle.setOutlineColor(m_cooldownColor);
-                circle.setFillColor(m_dimGreyColor);
+                circle.setOutlineColor(cooldownColor);
+                circle.setFillColor(dimGreyColor);
                 
                 target.draw(circle, states);
                 target.draw(percentageText, states);
@@ -205,11 +206,11 @@ void AbilityUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
             hotkeyShape.setRadius(25.f);
             hotkeyShape.setOrigin({hotkeyShape.getRadius(), hotkeyShape.getRadius()});
             hotkeyShape.setPosition(circleHotkeyPos);
-            hotkeyShape.setFillColor(m_greyColor);
+            hotkeyShape.setFillColor(greyColor);
 
             sf::Text hotkeyText;
-            hotkeyText.setFont(m_context.fonts->getResource("test_font"));
-            hotkeyText.setCharacterSize(30);
+            hotkeyText.setFont(m_context.fonts->getResource("keep_calm_font"));
+            hotkeyText.setCharacterSize(26);
             hotkeyText.setString(m_hotkey);
             hotkeyText.setFillColor(sf::Color::White);
             hotkeyText.setOutlineColor(sf::Color::Black);

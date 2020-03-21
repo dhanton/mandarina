@@ -106,8 +106,8 @@ GameClient::~GameClient()
 
 void GameClient::mainLoop(bool& running)
 {
-    sf::RenderWindow window{{960, 640}, "Mandarina Prototype", sf::Style::Fullscreen};
-    // sf::RenderWindow window{{960, 640}, "Mandarina Prototype", sf::Style::Titlebar | sf::Style::Close};
+    // sf::RenderWindow window{{1080, 720}, "Mandarina Prototype", sf::Style::Fullscreen};
+    sf::RenderWindow window{{1080, 720}, "Mandarina Prototype", sf::Style::Titlebar | sf::Style::Close};
     
     sf::View view = window.getDefaultView();
     view.zoom(m_camera.getZoom());
@@ -182,6 +182,7 @@ void GameClient::mainLoop(bool& running)
             m_canvas.clear();
 
             m_tileMapRenderer.renderBeforeEntities(m_canvas);
+            m_entityManager.renderingEntitiesUI = false;
             m_canvas.draw(m_entityManager);
             m_tileMapRenderer.renderAfterEntities(m_canvas);
 
@@ -190,6 +191,10 @@ void GameClient::mainLoop(bool& running)
             //draw the canvas to the window
             sf::Sprite sprite(m_canvas.getTexture());
             window.draw(sprite);
+
+            //draw entity UIs
+            m_entityManager.renderingEntitiesUI = true;
+            window.draw(m_entityManager);
 
             //draw UI elements
             window.draw(*m_clientCaster);
@@ -317,7 +322,11 @@ void GameClient::setupNextInterpolation()
         //if for some reason controlled entity is not a unit the ClientCaster will
         //receive nullptr and nothing will change
         C_Unit* controlledUnit = dynamic_cast<C_Unit*>(m_entityManager.entities.atUniqueId(controlledEntityId));
-        m_clientCaster->setCaster(controlledUnit);
+        
+        if (controlledUnit) {
+            m_clientCaster->setCaster(controlledUnit);
+            controlledUnit->getUnitUI()->setClientCaster(m_clientCaster.get());
+        }
     }
 
     m_entityManager.copySnapshotData(&m_interSnapshot_it->entityManager, m_interSnapshot_it->latestAppliedInput);

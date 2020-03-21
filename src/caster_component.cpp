@@ -39,7 +39,7 @@ CasterComponent::CasterComponent(CasterComponent const& other):
 
 CasterComponent& CasterComponent::operator=(CasterComponent const& other)
 {
-    m_primaryFire = std::unique_ptr<Ability>(other.m_primaryFire ? other.m_primaryFire->clone() : nullptr);
+    m_primaryFire = std::unique_ptr<CooldownAbility>(other.m_primaryFire ? other.m_primaryFire->clone() : nullptr);
     m_secondaryFire = std::unique_ptr<Ability>(other.m_secondaryFire ? other.m_secondaryFire->clone() : nullptr);
     m_altAbility = std::unique_ptr<Ability>(other.m_altAbility ? other.m_altAbility->clone() : nullptr);
     m_ultimate = std::unique_ptr<Ability>(other.m_ultimate ? other.m_ultimate->clone() : nullptr);
@@ -103,7 +103,7 @@ void CasterComponent::C_applyInput(C_Unit* caster, Vector2& casterPos, const Pla
     }
 }
 
-Ability* CasterComponent::getPrimaryFire() const
+CooldownAbility* CasterComponent::getPrimaryFire() const
 {
     return m_primaryFire.get();
 }
@@ -134,7 +134,8 @@ void CasterComponent::loadFromJson(const rapidjson::Document& doc)
     m_ultimate = nullptr;
 
     if (weapon.primaryFire != ABILITY_NONE) {
-        m_primaryFire = std::unique_ptr<Ability>(m_abilityData[weapon.primaryFire]->clone());
+        //this cast will fail if ability is not a CooldownAbility (but all primary fires are)
+        m_primaryFire = std::unique_ptr<CooldownAbility>(static_cast<CooldownAbility*>(m_abilityData[weapon.primaryFire]->clone()));
     }
 
     if (weapon.secondaryFire != ABILITY_NONE) {

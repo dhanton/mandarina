@@ -4,6 +4,7 @@
 #include "ability.hpp"
 #include "caster_component.hpp"
 #include "json_parser.hpp"
+#include "unit_ui.hpp"
 
 class _UnitBase
 {
@@ -43,6 +44,7 @@ private:
 
 public:
     virtual Unit* clone() const;
+    virtual ~Unit() = default;
     
     virtual void loadFromJson(const rapidjson::Document& doc);
 
@@ -92,8 +94,13 @@ public:
     virtual void localReveal(C_Entity* unit);
     virtual void insertRenderNode(const C_ManagersContext& managersContext, const Context& context);
 
+    UnitUI* getUnitUI();
+    const UnitUI* getUnitUI() const;
+
 private:
     void predictMovementLocally(const Vector2& oldPos, Vector2& newPos, const C_ManagersContext& context) const;
+
+    UnitUI m_ui;
 };
 
 // class Hero : public Unit

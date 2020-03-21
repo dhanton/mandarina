@@ -16,6 +16,9 @@ public:
     void setCaster(C_Unit* caster);
     C_Unit* getCaster() const;
 
+    //needed by controlled unit to render its UI
+    const CooldownAbility* getPrimaryFire() const;
+
 private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const;
 
@@ -23,7 +26,7 @@ private:
     //Even though we're not going to use it (used only by CasterComponent::loadFromJson)
     class DummyCaster : public CasterComponent {
     public:
-        void setPrimaryFire(Ability* ability);
+        void setPrimaryFire(CooldownAbility* ability);
         void setSecondaryFire(Ability* ability);
         void setAltAbility(Ability* ability);
         void setUltimate(Ability* ability);

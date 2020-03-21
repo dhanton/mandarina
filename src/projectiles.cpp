@@ -353,7 +353,8 @@ void Projectile_onHit(Projectile& projectile, Unit* unitHit)
     //They apply a buff                        => projectile.buffAppliedType
     //(implement some sort of friction for units as well)
 
-    std::cout << "Hit some unit!" << std::endl;
+    //TEMPORARY
+    unitHit->dealDamage(50, nullptr);
 }
 
 void C_Projectile_interpolate(C_Projectile& projectile, const C_Projectile* prevProj, const C_Projectile* nextProj, double t, double d)
@@ -367,8 +368,8 @@ void C_Projectile_insertRenderNode(const C_Projectile& projectile, const C_Manag
 {
     std::vector<RenderNode>& renderNodes = managersContext.entityManager->getRenderNodes();
 
-    //@WIP: flyingHeight = shooter.height + shooter.flyingHeight
-    renderNodes.emplace_back(100, projectile.uniqueId);
+    //@WIP: use flyingHeight = shooter.height + shooter.flyingHeight instead of 100
+    renderNodes.emplace_back(projectile.pos.y + 100, projectile.uniqueId);
     renderNodes.back().usingSprite = true;
 
     sf::Sprite& sprite = renderNodes.back().sprite;

@@ -99,6 +99,26 @@ void CooldownAbility::loadFromJson(const rapidjson::Document& doc)
     }
 }
 
+u8 CooldownAbility::getMaxCharges() const
+{
+    return m_maxCharges;
+}
+
+u8 CooldownAbility::getCurrentCharges() const
+{
+    return m_currentCharges;
+}
+
+float CooldownAbility::getCooldown() const
+{
+    return m_cooldown;
+}
+
+float CooldownAbility::getCurrentCooldown() const
+{
+    return m_currentCooldown;
+}
+
 float CooldownAbility::getPercentage() const
 {
     return 1.f - m_currentCooldown/m_cooldown;
@@ -113,8 +133,11 @@ void CooldownAbility::onCastUpdate()
 {
     if (m_currentCharges != 0) {
         m_currentCharges--;
-        m_currentCooldown = m_cooldown;
         m_currentNextChargeDelay = 0.f;
+        
+        if (m_currentCooldown == 0.f) {
+            m_currentCooldown = m_cooldown;
+        }
     }
 }
 

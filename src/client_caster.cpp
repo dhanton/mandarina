@@ -85,7 +85,7 @@ void ClientCaster::setCaster(C_Unit* caster)
     m_ultimateUI.setPosition({windowSize.x/2.f - m_ultimateUI.getBoundingSize().x/2.f, windowSize.y - m_ultimateUI.getBoundingSize().y - 2.5f*yPadding});
 
     //@TODO: Use user-defined hotkeys
-    m_secondaryUI.setHotkey("LMOUSE");
+    m_secondaryUI.setHotkey("RMOUSE");
     m_altAbilityUI.setHotkey("LSHIFT");
     m_ultimateUI.setHotkey("Q");
 
@@ -95,6 +95,11 @@ void ClientCaster::setCaster(C_Unit* caster)
 C_Unit* ClientCaster::getCaster() const
 {
     return m_caster;
+}
+
+const CooldownAbility* ClientCaster::getPrimaryFire() const
+{
+    return m_casterComponent.getPrimaryFire();
 }
 
 void ClientCaster::draw(sf::RenderTarget& target, sf::RenderStates states) const
@@ -111,9 +116,9 @@ void ClientCaster::draw(sf::RenderTarget& target, sf::RenderStates states) const
     target.setView(previousView);
 }
 
-void ClientCaster::DummyCaster::setPrimaryFire(Ability* ability)
+void ClientCaster::DummyCaster::setPrimaryFire(CooldownAbility* ability)
 {
-    m_primaryFire = std::unique_ptr<Ability>(ability);
+    m_primaryFire = std::unique_ptr<CooldownAbility>(ability);
 }
 
 void ClientCaster::DummyCaster::setSecondaryFire(Ability* ability)

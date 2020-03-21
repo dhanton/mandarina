@@ -38,6 +38,7 @@ public:
     virtual bool canBeCasted() = 0;
 
     //these are used to properly render UI
+    //we should probably remove them when we add the option to have recharge abilites as alt ability or secondary fire
     virtual float getPercentage() const;
     virtual u16 getMaxTime() const;
 
@@ -51,6 +52,8 @@ private:
 class CooldownAbility : public Ability
 {
 public:
+    virtual CooldownAbility* clone() = 0;
+
     virtual void update(sf::Time eTime);
     virtual bool canBeCasted();
 
@@ -58,6 +61,11 @@ public:
     virtual u16 getMaxTime() const;
 
     virtual void loadFromJson(const rapidjson::Document& doc);
+
+    u8 getMaxCharges() const;
+    u8 getCurrentCharges() const;
+    float getCooldown() const;
+    float getCurrentCooldown() const;
 
 protected:
     void onCastUpdate();
@@ -75,6 +83,8 @@ private:
 class RechargeAbility : public Ability
 {
 public:
+    virtual RechargeAbility* clone() = 0;
+
     virtual void update(sf::Time eTime);
     virtual bool canBeCasted();
     virtual float getPercentage() const;
@@ -96,6 +106,8 @@ private:
 class PassiveAbility : public Ability
 {
 public:
+    virtual PassiveAbility* clone() = 0;
+
     virtual void update(sf::Time eTime);
     virtual bool canBeCasted();
 

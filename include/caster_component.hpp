@@ -2,8 +2,9 @@
 
 #include <SFML/Graphics/Drawable.hpp>
 #include "context.hpp"
-#include "entity.hpp"
 #include "ability.hpp"
+#include "component.hpp"
+#include "player_input.hpp"
 
 class CasterComponent
 {
@@ -13,7 +14,7 @@ public:
     CasterComponent() = default;
 
     //rule of 5 (methods needed because this class has unique_ptr and we want to copy it)
-    ~CasterComponent() = default;
+    virtual ~CasterComponent() = default;
     CasterComponent(CasterComponent const& other);
     CasterComponent(CasterComponent && other) = default;
     CasterComponent& operator=(CasterComponent const& other);
@@ -28,7 +29,7 @@ public:
     //If the input is being repeated we don't create new entities, only update the caster's position
     void C_applyInput(C_Unit* caster, Vector2& casterPos, const PlayerInput& input, const C_ManagersContext& context, bool repeating);
 
-    Ability* getPrimaryFire() const;
+    CooldownAbility* getPrimaryFire() const;
     Ability* getSecondaryFire() const;
     Ability* getAltAbility() const;
     Ability* getUltimate() const;
@@ -36,7 +37,7 @@ public:
 protected:
     void loadFromJson(const rapidjson::Document& doc);
 
-    std::unique_ptr<Ability> m_primaryFire;
+    std::unique_ptr<CooldownAbility> m_primaryFire;
     std::unique_ptr<Ability> m_secondaryFire;
     std::unique_ptr<Ability> m_altAbility;
     std::unique_ptr<Ability> m_ultimate;

@@ -7,6 +7,7 @@
 #include "crcpacket.hpp"
 #include "player_input.hpp"
 #include "json_parser.hpp"
+#include "component.hpp"
 
 class BaseEntityComponent
 {
@@ -69,6 +70,9 @@ class Entity : public BaseEntityComponent
 public:
     virtual Entity* clone() const = 0;
 
+    //a virtual destructor is required to properly destroy unique_ptrs
+    virtual ~Entity() = default;
+
     virtual void loadFromJson(const rapidjson::Document& doc);
 
     virtual void update(sf::Time eTime, const ManagersContext& context) = 0;
@@ -129,21 +133,6 @@ protected:
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////// COMPONENTS //////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-//These macros are used to generate getters for required fields that the component needs
-//and that are stored in another class (usually the child or another component)
-#define COMP_CROSS_VIRTUAL(comp_name, var_type, var_name) \
-    virtual var_type _##comp_name##_##var_name() const = 0;
-
-#define COMP_CROSS_VARIABLE(comp_name, var_type, var_name) \
-    virtual var_type _##comp_name##_##var_name() const {return m_##var_name;}
-
-#define COMP_CROSS_VARIABLE_PUBLIC(comp_name, var_type, var_name) \
-    virtual var_type _##comp_name##_##var_name() const {return ##var_name;}
-
-//@BRANCH_WIP: Maybe we can create a MACRO to set some flags in child classes to 
-//check which components an entity has so we don't have to use dynamic_cast
-//Is it needed? Is dynamic cast that slow??
 
 class HealthComponent
 {

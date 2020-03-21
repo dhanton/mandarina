@@ -69,6 +69,7 @@ public:
     void setTileMap(TileMap* tileMap);
 
     std::vector<RenderNode>& getRenderNodes();
+    std::vector<RenderNode>& getUIRenderNodes();
 
 public:
     EntityTable<C_Entity> entities;
@@ -82,18 +83,20 @@ public:
 
     TileMap* m_tileMap;
 
+#ifdef MANDARINA_DEBUG
     //true if rendering collision shapes and other debug stuff
     bool renderingDebug;
-
     bool renderingLocallyHidden;
-
     bool renderingEntityData;
+#endif
 
+    bool renderingEntitiesUI;
 
 private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const;
     
     std::vector<RenderNode> m_renderNodes;
+    std::vector<RenderNode> m_uiRenderNodes;
 
     static bool m_entitiesJsonLoaded;
     static std::unique_ptr<C_Entity> m_entityData[ENTITY_MAX_TYPES];

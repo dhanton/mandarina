@@ -439,8 +439,11 @@ void C_Unit::copySnapshotData(const C_Entity* snapshotEntity, bool isControlled)
 {
     Vector2 pos = getPosition();
     float aimAngle = getAimAngle();
+    UnitUI ui = m_ui;
 
     *this = *(static_cast<const C_Unit*>(snapshotEntity));
+
+    m_ui = ui;
 
     if (isControlled) {
         //this is not really needed since the controlled entity position is
@@ -536,6 +539,19 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
         sprite.setColor(color);
     }
 
+    std::vector<RenderNode>& uiRenderNodes = managersContext.entityManager->getUIRenderNodes();
+
+    //add unit UI
+    if (!m_ui.getUnit()) {
+        m_ui.setUnit(this);
+        m_ui.setFonts(context.fonts);
+        m_ui.setIsAlly(m_teamId == managersContext.entityManager->controlledEntityTeamId);
+    }
+
+    uiRenderNodes.emplace_back(getPosition().y, m_uniqueId);
+    uiRenderNodes.back().usingSprite = false;
+    uiRenderNodes.back().drawable = &m_ui;
+
     //setup the weapon node if equipped
     if (m_weaponId != WEAPON_NONE) {
         renderNodes.emplace_back(getPosition().y + m_flyingHeight, m_uniqueId);
@@ -571,6 +587,16 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
     dataString += "Team:" + std::to_string(m_teamId) + "\n";
     dataString += "ForceSent:" + std::to_string(isForceSent()) + "\n";
 #endif
+}
+
+UnitUI* C_Unit::getUnitUI()
+{
+    return &m_ui;
+}
+
+const UnitUI* C_Unit::getUnitUI() const
+{
+    return &m_ui;
 }
 
 void C_Unit::predictMovementLocally(const Vector2& oldPos, Vector2& newPos, const C_ManagersContext& context) const

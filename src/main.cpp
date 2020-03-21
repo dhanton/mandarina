@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
     }
 
     FontLoader fonts;
-    fonts.loadResource(FONTS_PATH + "Hacen Tunisia.ttf", "test_font");
+    fonts.loadResource(FONTS_PATH + "Keep Calm.ttf", "keep_calm_font");
     context.fonts = &fonts;
 
     JsonParser jsonParser;

@@ -39,9 +39,14 @@ C_EntityManager::C_EntityManager(const Context& context, sf::Time worldTime):
     localLastUniqueId = 0;
     controlledEntityUniqueId = 0;
     controlledEntityTeamId = 0;
+
+#ifdef MANDARINA_DEBUG
     renderingDebug = false;
     renderingLocallyHidden = false;
     renderingEntityData = false;
+#endif
+
+    renderingEntitiesUI = false;
 }
 
 C_EntityManager::C_EntityManager():
@@ -80,6 +85,7 @@ void C_EntityManager::renderUpdate(sf::Time eTime)
 
     //Add the appropiate render nodes
     m_renderNodes.clear();
+    m_uiRenderNodes.clear();
 
     for (auto it = entities.begin(); it != entities.end(); ++it) {
         it->insertRenderNode(managersContext, m_context);
@@ -99,6 +105,7 @@ void C_EntityManager::renderUpdate(sf::Time eTime)
 
     //sort them by height so they're displayed properly
     std::sort(m_renderNodes.begin(), m_renderNodes.end());
+    std::sort(m_uiRenderNodes.begin(), m_uiRenderNodes.end());
 }
 
 void C_EntityManager::performInterpolation(const C_EntityManager* prevSnapshot, const C_EntityManager* nextSnapshot, double elapsedTime, double totalTime)
@@ -359,37 +366,53 @@ std::vector<RenderNode>& C_EntityManager::getRenderNodes()
     return m_renderNodes;
 }
 
+std::vector<RenderNode>& C_EntityManager::getUIRenderNodes()
+{
+    return m_uiRenderNodes;
+}
+
 void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
-    for (const auto& node : m_renderNodes) {
-        if (node.usingSprite) {
-            target.draw(node.sprite, states);
-        } else {
-            target.draw(*node.drawable, states);
+    if (renderingEntitiesUI) {
+        for (const auto& node : m_uiRenderNodes) {
+            if (node.usingSprite) {
+                target.draw(node.sprite, states);
+            } else {
+                target.draw(*node.drawable, states);
+            }
         }
+
+    } else {
+        for (const auto& node : m_renderNodes) {
+            if (node.usingSprite) {
+                target.draw(node.sprite, states);
+            } else {
+                target.draw(*node.drawable, states);
+            }
 
 #ifdef MANDARINA_DEBUG
-        if (renderingDebug) {
-            sf::CircleShape shape;
-            shape.setRadius(node.collisionRadius);
-            shape.setOrigin(shape.getRadius(), shape.getRadius());
-            shape.setFillColor(sf::Color(255, 0, 0, 80));
-            shape.setOutlineColor(sf::Color::Red);
-            shape.setOutlineThickness(1.5f);
-            shape.setPosition(node.position);
-            target.draw(shape, states);
-        }
+            if (renderingDebug) {
+                sf::CircleShape shape;
+                shape.setRadius(node.collisionRadius);
+                shape.setOrigin(shape.getRadius(), shape.getRadius());
+                shape.setFillColor(sf::Color(255, 0, 0, 80));
+                shape.setOutlineColor(sf::Color::Red);
+                shape.setOutlineThickness(1.5f);
+                shape.setPosition(node.position);
+                target.draw(shape, states);
+            }
 
-        if (renderingEntityData) {
-            sf::Text text;
-            text.setPosition(node.position + Vector2(40.f, -40.f));
-            text.setFillColor(sf::Color::Red);
-            text.setFont(m_context.fonts->getResource("test_font"));
-            text.setCharacterSize(15);
-            text.setString(node.debugDisplayData);
-            target.draw(text, states);
-        }
+            if (renderingEntityData) {
+                sf::Text text;
+                text.setPosition(node.position + Vector2(40.f, -40.f));
+                text.setFillColor(sf::Color::Red);
+                text.setFont(m_context.fonts->getResource("keep_calm_font"));
+                text.setCharacterSize(15);
+                text.setString(node.debugDisplayData);
+                target.draw(text, states);
+            }
 #endif
+        }
     }
 }
 

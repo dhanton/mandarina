@@ -14,6 +14,11 @@ public:
         BOX
     };
 
+    static const sf::Color cooldownColor;
+    static const sf::Color readyColor;
+    static const sf::Color dimGreyColor;
+    static const sf::Color greyColor;
+
 public:
     AbilityUI(const Context& context);
 
@@ -49,8 +54,4 @@ private:
     static const float m_boxBoundingSize;
     static const float m_circleBoundingSize;
     static const u8 m_alphaColor;
-    static const sf::Color m_cooldownColor;
-    static const sf::Color m_readyColor;
-    static const sf::Color m_dimGreyColor;
-    static const sf::Color m_greyColor;
 };
