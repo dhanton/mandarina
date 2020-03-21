@@ -505,9 +505,8 @@ void C_Unit::localReveal(C_Entity* entity)
 
 void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Context& context)
 {
-    bool renderingLocallyHidden = managersContext.entityManager->renderingLocallyHidden;
-
 #ifdef MANDARINA_DEBUG
+        bool renderingLocallyHidden = managersContext.entityManager->renderingLocallyHidden;
         if (!renderingLocallyHidden && m_locallyHidden && m_forceSent) return;
 #else
         if (m_locallyHidden && m_forceSent) return;
@@ -532,9 +531,11 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
         sf::Color color = sprite.getColor();
         color.a = 150.f;
 
+#ifdef MANDARINA_DEBUG
         if (m_locallyHidden && renderingLocallyHidden) {
             color.r += 100.f;    
         }
+#endif
 
         sprite.setColor(color);
     }
