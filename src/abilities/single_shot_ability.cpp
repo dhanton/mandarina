@@ -4,7 +4,7 @@
 #include "server_entity_manager.hpp"
 #include "client_entity_manager.hpp"
 
-SingleShotAbility* SingleShotAbility::clone()
+SingleShotAbility* SingleShotAbility::clone() const
 {
     return new SingleShotAbility(*this);
 }

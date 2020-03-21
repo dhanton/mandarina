@@ -5,7 +5,7 @@
 #include "server_entity_manager.hpp"
 #include "helper.hpp"
 
-HellsRainAbility* HellsRainAbility::clone()
+HellsRainAbility* HellsRainAbility::clone() const
 {
     return new HellsRainAbility(*this);
 }

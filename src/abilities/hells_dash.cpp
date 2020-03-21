@@ -4,7 +4,7 @@
 #include "unit.hpp"
 #include "tilemap.hpp"
 
-HellsDashAbility* HellsDashAbility::clone()
+HellsDashAbility* HellsDashAbility::clone() const
 {
     return new HellsDashAbility(*this);
 }
