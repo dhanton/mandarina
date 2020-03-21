@@ -380,6 +380,18 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
             } else {
                 target.draw(*node.drawable, states);
             }
+
+#ifdef MANDARINA_DEBUG
+            if (renderingEntityData) {
+                sf::Text text;
+                text.setPosition(node.position + Vector2(40.f, -40.f));
+                text.setFillColor(sf::Color::Red);
+                text.setFont(m_context.fonts->getResource("keep_calm_font"));
+                text.setCharacterSize(11);
+                text.setString(node.debugDisplayData);
+                target.draw(text, states);
+            }
+#endif
         }
 
     } else {
@@ -400,16 +412,6 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
                 shape.setOutlineThickness(1.5f);
                 shape.setPosition(node.position);
                 target.draw(shape, states);
-            }
-
-            if (renderingEntityData) {
-                sf::Text text;
-                text.setPosition(node.position + Vector2(40.f, -40.f));
-                text.setFillColor(sf::Color::Red);
-                text.setFont(m_context.fonts->getResource("keep_calm_font"));
-                text.setCharacterSize(15);
-                text.setString(node.debugDisplayData);
-                target.draw(text, states);
             }
 #endif
         }

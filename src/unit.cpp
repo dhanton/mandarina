@@ -553,6 +553,14 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
     uiRenderNodes.back().usingSprite = false;
     uiRenderNodes.back().drawable = &m_ui;
 
+#ifdef MANDARINA_DEBUG
+    uiRenderNodes.back().position = getPosition();
+    std::string& dataString = uiRenderNodes.back().debugDisplayData;
+    dataString += std::to_string(m_uniqueId) + "\n";
+    dataString += "Team: " + std::to_string(m_teamId) + "\n";
+    dataString += "ForceSent: " + std::to_string(isForceSent()) + "\n";
+#endif
+
     //setup the weapon node if equipped
     if (m_weaponId != WEAPON_NONE) {
         renderNodes.emplace_back(getPosition().y + m_flyingHeight, m_uniqueId);
@@ -581,13 +589,6 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
         renderNodes.back().position = getPosition();
 #endif
     }
-
-#ifdef MANDARINA_DEBUG
-    std::string& dataString = renderNodes.back().debugDisplayData;
-    dataString += std::to_string(m_uniqueId) + "\n";
-    dataString += "Team:" + std::to_string(m_teamId) + "\n";
-    dataString += "ForceSent:" + std::to_string(isForceSent()) + "\n";
-#endif
 }
 
 UnitUI* C_Unit::getUnitUI()
