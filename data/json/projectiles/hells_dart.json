@@ -4,5 +4,6 @@
     "collision_radius": 10,
     "range": 900,
     "hit_flags": "ENEMIES",
-    "rotation_offset": 135.0
+    "rotation_offset": 135.0,
+    "buff_applied": "HELLS_DART_ROOT"
 }

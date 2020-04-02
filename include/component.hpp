@@ -11,6 +11,6 @@
 #define COMP_CROSS_VARIABLE_PUBLIC(comp_name, var_type, var_name) \
     virtual var_type _##comp_name##_##var_name() const {return ##var_name;}
 
-//@BRANCH_WIP: Maybe we can create a MACRO to set some flags in child classes to 
+//@WIP: Maybe we can create a MACRO to set some flags in child classes to 
 //check which components an entity has so we don't have to use dynamic_cast
 //Is it needed? Is dynamic cast that slow??

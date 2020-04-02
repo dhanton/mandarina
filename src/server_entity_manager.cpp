@@ -52,6 +52,8 @@ void EntityManager::update(sf::Time eTime)
 
     //@WIP: See how we can remove entities properly in a general way (without abusing delete)
     //Taking into account that some entities might respawn depending on game mode
+    //for entities that respawn (heroes) it's probably best to just move them to some other list
+    //so the pointer is still kept alive
 }
 
 Projectile* EntityManager::createProjectile(u8 type, const Vector2& pos, float aimAngle, u8 teamId)
@@ -93,7 +95,7 @@ Entity* EntityManager::createEntity(u8 entityType, const Vector2& pos, u8 teamId
     entities.addEntity(entity);
 
     //if the entity is initially solid, add it to the quadtree
-    //@BRANCH_WIP: Maybe some quadtree entities start not being solid?
+    //@WIP: Maybe some quadtree entities start not being solid?
     if (entity->isSolid()) {
         m_collisionManager->onInsertEntity(uniqueId, pos, entity->getCollisionRadius());
         entity->onQuadtreeInserted(ManagersContext(this, m_collisionManager, m_tileMap));

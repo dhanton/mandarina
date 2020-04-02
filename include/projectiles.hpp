@@ -8,10 +8,13 @@
 #include "json_parser.hpp"
 
 //???
-//@TODO: Projectiles should be encapsulated in a more general class that includes
-//all entities that have no health/abilities/buffs => TouchEntity
+//@TODO: Projectiles should be encapsulated in a more general class
 //TouchEntity are lightweight objects that are created and destroyed constantly
 //like projectiles or pickup items
+//This type of elements all use the same data and as such can be put into the same Bucket
+
+class Entity;
+class Unit;
 
 enum ProjectileType {
     #define DoProjectile(projectile_name, json_id) \
@@ -58,29 +61,24 @@ struct _BaseProjectileData
     u16 range;
 
     float rotation;
-
-    //@WIP: Should this go here or in Projectile struct??
-    //What about most of the data here??
-    //@WIP: Also change how loadFromJson works on projectiles
-    //(do it how it's done for abilities)
-
-    //not all projectiles deal damage
-    // float damage;
-
-    //buff applied on hit (can be BUFF_NONE)
-    //u8 buffAppliedType
 };
 
 struct Projectile : _BaseProjectileData 
 {
     float distanceTraveled;
-    u32 shooterUniqueId;
+    Entity* shooter;
+
+    u8 buffAppliedType;
+    u16 damage;
+
+    //in milliseconds
+    u16 revealTime;
+    bool shouldReveal;
 
     //for projectiles that don't die when they hit something
     //maybe it's better to have it as a pointer
     // std::unordered_set<u32> hitUnits; (something like this)
-
-    //onHit callback
+    //(they should be entities)
 };
 
 struct C_Projectile : _BaseProjectileData 
@@ -102,8 +100,6 @@ extern C_Projectile g_initialCProjectileData[PROJECTILE_MAX_TYPES];
 
 void loadProjectilesFromJson(JsonParser* jsonParser);
 void C_loadProjectilesFromJson(JsonParser* jsonParser);
-
-class Unit;
 
 u8 Projectile_stringToType(const std::string& typeStr);
 

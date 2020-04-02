@@ -15,29 +15,22 @@
 Projectile g_initialProjectileData[PROJECTILE_MAX_TYPES];
 C_Projectile g_initialCProjectileData[PROJECTILE_MAX_TYPES];
 
-bool _BaseProjectile_loadFromJson(JsonParser* jsonParser, ProjectileType type, const char* filename, _BaseProjectileData& projectile)
+void _BaseProjectile_loadFromJson(const rapidjson::Document& doc, ProjectileType type, _BaseProjectileData& projectile)
 {
-    auto* doc = jsonParser->getDocument(filename);
-
-    if (doc == nullptr) {
-        std::cout << "_BaseProjectile_loadFromJson error - Invalid json filename " << filename << std::endl;
-        return false;
-    }
-
     projectile.type = type;
 
     projectile.dead = false;
-    projectile.collisionRadius = (*doc)["collision_radius"].GetInt();
-    projectile.movementSpeed = (*doc)["movement_speed"].GetInt();
-    projectile.range = (*doc)["range"].GetInt();
+    projectile.collisionRadius = doc["collision_radius"].GetInt();
+    projectile.movementSpeed = doc["movement_speed"].GetInt();
+    projectile.range = doc["range"].GetInt();
 
-    if (doc->HasMember("destroys_tiles")) {
-        projectile.destroysTiles = (*doc)["destroys_tiles"].GetBool();
+    if (doc.HasMember("destroys_tiles")) {
+        projectile.destroysTiles = doc["destroys_tiles"].GetBool();
     } else {
         projectile.destroysTiles = false;
     }
 
-    std::string hitFlags_str = (*doc)["hit_flags"].GetString();
+    std::string hitFlags_str = doc["hit_flags"].GetString();
 
     if (hitFlags_str == "BOTH") {
         projectile.hitFlags = HitFlags::Both;
@@ -48,8 +41,6 @@ bool _BaseProjectile_loadFromJson(JsonParser* jsonParser, ProjectileType type, c
     } else {
         projectile.hitFlags = 0;
     }
-
-    return true;
 }
 
 void _BaseProjectile_angleInit(_BaseProjectileData& projectile, const Vector2& pos, float aimAngle)
@@ -67,48 +58,67 @@ bool _BaseProjectile_canHitTeam(const _BaseProjectileData& projectile, u8 teamId
            (teamId != projectile.teamId && (projectile.hitFlags & HitFlags::Enemies) != 0);
 }
 
-void _Projectile_loadFromJson(JsonParser* jsonParser, ProjectileType type, const char* filename, Projectile& projectile)
+void _Projectile_loadFromJson(const rapidjson::Document& doc, ProjectileType type, Projectile& projectile)
 {
-    bool result = _BaseProjectile_loadFromJson(jsonParser, type, filename, projectile);
+    _BaseProjectile_loadFromJson(doc, type, projectile);
 
-    if (result) {
-        projectile.distanceTraveled = 0.f;
+    projectile.distanceTraveled = 0.f;
+
+    if (doc.HasMember("damage")) {
+        projectile.damage = doc["damage"].GetUint();
+    } else {
+        projectile.damage = 0;
+    }
+
+    if (doc.HasMember("buff_applied")) {
+        projectile.buffAppliedType = Buff::stringToType(doc["buff_applied"].GetString());
+    } else {
+        projectile.buffAppliedType = BUFF_NONE;
+    }
+    
+    if (doc.HasMember("reveal_time")) {
+        projectile.revealTime = doc["reveal_time"].GetFloat() * 1000.f;
+    } else {
+        //this will apply the deafult reveal time
+        projectile.revealTime = 0;
+    }
+
+    if (doc.HasMember("should_reveal")) {
+        projectile.shouldReveal = doc["should_reveal"].GetBool();
+    } else {
+        projectile.shouldReveal = true;
     }
 }
 
-void _C_Projectile_loadFromJson(JsonParser* jsonParser, ProjectileType type, const char* filename, C_Projectile& projectile, u16 textureId)
+void _C_Projectile_loadFromJson(const rapidjson::Document& doc, ProjectileType type, C_Projectile& projectile, u16 textureId)
 {
-    bool result = _BaseProjectile_loadFromJson(jsonParser, type, filename, projectile);
+    _BaseProjectile_loadFromJson(doc, type, projectile);
 
-    if (result) {
-        projectile.textureId = textureId;
+    projectile.textureId = textureId;
 
-        auto* doc = jsonParser->getDocument(filename);
+    if (doc.HasMember("scale")) {
+        projectile.scale = doc["scale"].GetFloat();
+    } else {
+        projectile.scale = 1.f;
+    }
 
-        if (doc->HasMember("scale")) {
-            projectile.scale = (*doc)["scale"].GetFloat();
-        } else {
-            projectile.scale = 1.f;
-        }
+    if (doc.HasMember("rotation_offset")) {
+        projectile.rotationOffset = doc["rotation_offset"].GetFloat();
+    } else {
+        projectile.rotationOffset = 0.f;
+    }
 
-        if (doc->HasMember("rotation_offset")) {
-            projectile.rotationOffset = (*doc)["rotation_offset"].GetFloat();
-        } else {
-            projectile.rotationOffset = 0.f;
-        }
-
-        if (doc->HasMember("render_rotation")) {
-            projectile.renderRotation = (*doc)["render_rotation"].GetBool();
-        } else {
-            projectile.renderRotation = true;
-        }
+    if (doc.HasMember("render_rotation")) {
+        projectile.renderRotation = doc["render_rotation"].GetBool();
+    } else {
+        projectile.renderRotation = true;
     }
 }
 
 void loadProjectilesFromJson(JsonParser* jsonParser)
 {
     #define DoProjectile(projectile_name, json_filename) \
-        _Projectile_loadFromJson(jsonParser, PROJECTILE_##projectile_name, json_filename, g_initialProjectileData[PROJECTILE_##projectile_name]);
+        _Projectile_loadFromJson(*jsonParser->getDocument(json_filename), PROJECTILE_##projectile_name, g_initialProjectileData[PROJECTILE_##projectile_name]);
     
     #include "projectiles.inc"
     #undef DoProjectile
@@ -117,7 +127,7 @@ void loadProjectilesFromJson(JsonParser* jsonParser)
 void C_loadProjectilesFromJson(JsonParser* jsonParser)
 {
     #define DoProjectile(projectile_name, json_filename) \
-        _C_Projectile_loadFromJson(jsonParser, PROJECTILE_##projectile_name, json_filename, g_initialCProjectileData[PROJECTILE_##projectile_name], TextureId::projectile_name);
+        _C_Projectile_loadFromJson(*jsonParser->getDocument(json_filename), PROJECTILE_##projectile_name, g_initialCProjectileData[PROJECTILE_##projectile_name], TextureId::projectile_name);
     
     #include "projectiles.inc"
     #undef DoProjectile
@@ -344,23 +354,26 @@ void C_Projectile_checkCollisions(C_Projectile& projectile, const C_ManagersCont
 
 void Projectile_onHit(Projectile& projectile, Unit* unitHit)
 {
-    //if the unit shooter unit is dead
-    //then we need the damage stored somewhere else
-
-    //@WIP
-    //Projectiles apply a certain force on hit => projectile.hitForce
+    //@TODO: Should projectiles apply a certain force on hit => projectile.hitForce
     //(implement some sort of friction for units as well)
-    //They also reveal the unit for ~2 seconds => projectile.revealTime
-    //(default reveal is given by json file)
-    //They deal damage                         => projectile.damage
-    //They apply a buff                        => projectile.buffAppliedType
 
-    //@TEMPORARY @DELETE @TESTING
-    unitHit->takeDamage(50, nullptr);
-    unitHit->addBuff(BUFF_HELLS_DART_ROOT);
-    RevealBuff* revealBuff = static_cast<RevealBuff*>(unitHit->addBuff(BUFF_STANDARD_REVEAL));
-    revealBuff->revealForTeam(0);
-    revealBuff->setDuration(2.5f);
+    //deal damage
+    unitHit->takeDamage(projectile.damage, projectile.shooter);
+
+    //reveal the unit hit
+    if (projectile.shouldReveal && projectile.shooter) {
+        RevealBuff* revealBuff = static_cast<RevealBuff*>(unitHit->addBuff(BUFF_STANDARD_REVEAL));
+        revealBuff->revealForTeam(projectile.shooter->getTeamId());
+
+        if (projectile.revealTime != 0) {
+            revealBuff->setDuration((float) projectile.revealTime / 1000.f);
+        }
+    }
+
+    //apply buff
+    if (projectile.buffAppliedType != BUFF_NONE) {
+        unitHit->addBuff(projectile.buffAppliedType);
+    }
 }
 
 void C_Projectile_interpolate(C_Projectile& projectile, const C_Projectile* prevProj, const C_Projectile* nextProj, double t, double d)

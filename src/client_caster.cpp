@@ -46,7 +46,7 @@ void ClientCaster::setCaster(C_Unit* caster)
 {
     if (!caster) return;
 
-    //@WIP: If we want to implement a hero that changes abilities dynamically, we have
+    //@TODO: If we want to implement a hero that changes abilities dynamically, we have
     //to send ability type from Server instead of using EntityType like we do here
     //BitStream with (primaryFireTypeChanged, ..., primaryFireCasted)
     //If primaryFireCasted == false we reset the cooldown in Client or something like this

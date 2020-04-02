@@ -42,7 +42,7 @@ Buff* BuffHolderComponent::addBuff(u8 buffType)
     if (!m_buffsLoaded) return nullptr;
     if (buffType >= BUFF_MAX_TYPES) return nullptr;
 
-    //@WIP: We need some sort of setting to remove old buffs with the same name in some cases
+    //@TODO: We need some sort of setting to remove old buffs with the same name in some cases
     //(look at platano for reference)
 
     m_buffs.emplace_back(m_buffData[buffType]->clone());

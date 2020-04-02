@@ -134,6 +134,8 @@ void Unit::update(sf::Time eTime, const ManagersContext& context)
         }
     }
 
+    //@DELETE (this type of movement probably shouldn't be cancelled by status)
+    if (m_status.canMove())
     newPos += m_vel * eTime.asSeconds();
     //other required movement (like dragged movement, forces and friction, etc)
 
@@ -541,7 +543,7 @@ void C_Unit::updateLocallyVisible(const C_ManagersContext& context)
 
 void C_Unit::localReveal(C_Entity* entity)
 {
-    //@TODO: We should actually reveal C_InvisibleComponent entities
+    //@WIP: We should actually reveal C_InvisibleComponent entities
     C_Unit* unit = dynamic_cast<C_Unit*>(entity);
 
     if (unit) {

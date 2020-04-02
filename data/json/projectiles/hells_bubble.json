@@ -4,5 +4,6 @@
     "collision_radius": 10,
     "range": 1000,
     "hit_flags": "ENEMIES",
-    "render_rotation": false
+    "render_rotation": false,
+    "damage": 100
 }

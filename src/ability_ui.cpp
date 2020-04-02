@@ -6,8 +6,6 @@
 #include <SFML/Graphics/RectangleShape.hpp>
 #include "helper.hpp"
 
-//@DELETE
-#include <iostream>
 
 //icons are 512x512 pixels
 const float AbilityUI::m_circleScale = 0.23f;

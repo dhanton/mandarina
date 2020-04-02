@@ -28,6 +28,18 @@ bool Status::canCast() const
     return !stunned && !silenced;
 }
 
+u8 Buff::stringToType(const std::string& typeStr)
+{
+    if (typeStr == "NONE") return BUFF_NONE;
+
+    #define DoBuff(class_name, type, json_id) \
+        if (typeStr == #type) return BUFF_##type;
+    #include "buffs.inc"
+    #undef DoBuff
+
+    return BUFF_NONE;
+}
+
 void Buff::loadFromJson(const rapidjson::Document& doc)
 {
     m_dead = false;

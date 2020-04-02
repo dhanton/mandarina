@@ -4,7 +4,7 @@
 
 #include "defines.hpp"
 
-//@TODO: Maybe use this for entities
+//@TODO: Maybe use this for projectiles (or TouchEntity)
 //and the other one for snapshots
 
 template<typename T> 

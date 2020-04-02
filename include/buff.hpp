@@ -44,6 +44,8 @@ class Ability;
 class Buff
 {
 public:
+    static u8 stringToType(const std::string& typeStr);
+
     virtual Buff* clone() const = 0;
 
     virtual void loadFromJson(const rapidjson::Document& doc);
