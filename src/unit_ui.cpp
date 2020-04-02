@@ -2,9 +2,11 @@
 
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Graphics/Text.hpp>
+#include <SFML/Graphics/Sprite.hpp>
 #include "unit.hpp"
 #include "client_caster.hpp"
 #include "context.hpp"
+#include "texture_ids.hpp"
 
 const Vector2 UnitUI::m_barSize = Vector2(80.f, 16.f);
 
@@ -38,11 +40,52 @@ void UnitUI::setFonts(const FontLoader* fonts)
     m_fonts = fonts;
 }
 
+void UnitUI::setTextureLoader(const TextureLoader* textures)
+{
+    m_textures = textures;
+}
+
 void UnitUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     if (!m_unit) return;
 
     const float yOffset = m_clientCaster ? -50.f : -30.f;
+
+    //draw status icons
+    sf::Sprite statusSprite;
+    float statusXOffset = 5.f;
+    statusSprite.setPosition(m_unit->getPosition() - m_barSize/2.f + Vector2(0.f, yOffset - 30.f - m_unit->getCollisionRadius()));
+
+    //@TODO: This code is not flexible (hard to add new status)
+    //It's also not done in chronological order, which could be confusing
+    if (m_unit->getStatus().stunned) {
+        statusSprite.setTexture(m_textures->getResource(TextureId::STUNNED));
+        target.draw(statusSprite, states);
+    }
+
+    if (m_unit->getStatus().silenced) {
+        statusSprite.setPosition(statusSprite.getPosition() + Vector2(statusSprite.getLocalBounds().width  + statusXOffset, 0.f));
+        statusSprite.setTexture(m_textures->getResource(TextureId::SILENCED));
+        target.draw(statusSprite, states);
+    }
+
+    if (m_unit->getStatus().disarmed) {
+        statusSprite.setPosition(statusSprite.getPosition() + Vector2(statusSprite.getLocalBounds().width  + statusXOffset, 0.f));
+        statusSprite.setTexture(m_textures->getResource(TextureId::DISARMED));
+        target.draw(statusSprite, states);
+    }
+
+    if (m_unit->getStatus().rooted) {
+        statusSprite.setPosition(statusSprite.getPosition() + Vector2(statusSprite.getLocalBounds().width  + statusXOffset, 0.f));
+        statusSprite.setTexture(m_textures->getResource(TextureId::ROOTED));
+        target.draw(statusSprite, states);
+    }
+
+    if (m_unit->getStatus().slowed) {
+        statusSprite.setPosition(statusSprite.getPosition() + Vector2(statusSprite.getLocalBounds().width  + statusXOffset, 0.f));
+        statusSprite.setTexture(m_textures->getResource(TextureId::SLOWED));
+        target.draw(statusSprite, states);
+    }
 
     //draw health bar
     sf::RectangleShape background;

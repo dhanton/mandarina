@@ -70,6 +70,13 @@ int main(int argc, char* argv[])
         //@TODO: Load textures automatically
 
         textures->loadResource(TEXTURES_PATH + "test_tileset.png", TextureId::TEST_TILESET);
+
+        textures->loadResource(TEXTURES_PATH + "stunned.png", TextureId::STUNNED);
+        textures->loadResource(TEXTURES_PATH + "silenced.png", TextureId::SILENCED);
+        textures->loadResource(TEXTURES_PATH + "disarmed.png", TextureId::DISARMED);
+        textures->loadResource(TEXTURES_PATH + "rooted.png", TextureId::ROOTED);
+        textures->loadResource(TEXTURES_PATH + "slowed.png", TextureId::SLOWED);
+
         textures->loadResource(TEXTURES_PATH + "diablo.png", TextureId::RED_DEMON);
         textures->loadResource(TEXTURES_PATH + "devils_bow.png", TextureId::DEVILS_BOW);
         textures->loadResource(TEXTURES_PATH + "hells_bubble.png", TextureId::HELLS_BUBBLE);
@@ -95,6 +102,7 @@ int main(int argc, char* argv[])
     loadWeaponsFromJson(&jsonParser);
 
     CasterComponent::loadAbilityData(&jsonParser);
+    BuffHolderComponent::loadBuffData(&jsonParser);
 
     SteamNetworkingIPAddr serverAddr;
     serverAddr.ParseString("127.0.0.1:7000");

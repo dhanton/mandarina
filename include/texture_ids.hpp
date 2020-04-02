@@ -10,6 +10,13 @@ namespace TextureId
     enum _TextureId {
         TEST_TILESET,
 
+        //textures used to display buffs in client
+        STUNNED,
+        SILENCED,
+        DISARMED,
+        ROOTED,
+        SLOWED,
+
         //textures used by entities
         #define DoEntity(class_name, type, json_id) \
             type,

@@ -10,6 +10,7 @@
 #include "bit_stream.hpp"
 #include "unit.hpp"
 #include "texture_ids.hpp"
+#include "buffs/reveal_buff.hpp"
 
 Projectile g_initialProjectileData[PROJECTILE_MAX_TYPES];
 C_Projectile g_initialCProjectileData[PROJECTILE_MAX_TYPES];
@@ -348,13 +349,18 @@ void Projectile_onHit(Projectile& projectile, Unit* unitHit)
 
     //@WIP
     //Projectiles apply a certain force on hit => projectile.hitForce
+    //(implement some sort of friction for units as well)
     //They also reveal the unit for ~2 seconds => projectile.revealTime
+    //(default reveal is given by json file)
     //They deal damage                         => projectile.damage
     //They apply a buff                        => projectile.buffAppliedType
-    //(implement some sort of friction for units as well)
 
-    //TEMPORARY
-    unitHit->dealDamage(50, nullptr);
+    //@TEMPORARY @DELETE @TESTING
+    unitHit->takeDamage(50, nullptr);
+    unitHit->addBuff(BUFF_HELLS_DART_ROOT);
+    RevealBuff* revealBuff = static_cast<RevealBuff*>(unitHit->addBuff(BUFF_STANDARD_REVEAL));
+    revealBuff->revealForTeam(0);
+    revealBuff->setDuration(2.5f);
 }
 
 void C_Projectile_interpolate(C_Projectile& projectile, const C_Projectile* prevProj, const C_Projectile* nextProj, double t, double d)

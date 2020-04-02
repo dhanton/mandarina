@@ -18,6 +18,7 @@ public:
     
     void setIsAlly(bool isAlly);
     void setFonts(const FontLoader* fonts);
+    void setTextureLoader(const TextureLoader* textures);
 
 private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const;
@@ -25,6 +26,7 @@ private:
     const C_Unit* m_unit;
     const ClientCaster* m_clientCaster;
     const FontLoader* m_fonts;
+    const TextureLoader* m_textures;
     
     bool m_isAlly;
 

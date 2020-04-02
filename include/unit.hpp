@@ -1,10 +1,11 @@
 #pragma once
 
+#include <list>
 #include "entity.hpp"
-#include "ability.hpp"
 #include "caster_component.hpp"
 #include "json_parser.hpp"
 #include "unit_ui.hpp"
+#include "buff_holder_component.hpp"
 
 class _UnitBase
 {
@@ -17,6 +18,9 @@ public:
     u8 getMovementSpeed() const;
     void setMovementSpeed(u8 movementSpeed);
 
+    Status& getStatus();
+    const Status& getStatus() const;
+
     static Vector2 moveCollidingTilemap_impl(const Vector2& oldPos, Vector2 newPos, float collisionRadius, TileMap* map);
 
 protected:
@@ -27,7 +31,7 @@ protected:
     u8 m_weaponId;
     u16 m_movementSpeed;
 
-    //Buffs (they probably should be in BuffHolderComponent)
+    Status m_status;
 
 private:
     static bool m_abilitiesLoaded;
@@ -35,7 +39,7 @@ private:
 
 class Unit : public Entity, public _UnitBase, public HealthComponent, 
              public InvisibleComponent, public TrueSightComponent,
-             public CasterComponent
+             public CasterComponent, public BuffHolderComponent
 {
 private:
     TRUE_SIGHT_COMPONENT()
@@ -53,6 +57,9 @@ public:
     virtual void postUpdate(sf::Time eTime, const ManagersContext& context);
     virtual void packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) const;
 
+    virtual void onTakeDamage(u16 damage, Entity* source);
+    virtual void onBeHealed(u16 amount, Entity* source);
+
     virtual void applyInput(const PlayerInput& input, const ManagersContext& context, u16 clientDelay);
 
     virtual bool shouldSendToTeam(u8 teamId) const;
@@ -65,12 +72,12 @@ private:
 
 struct RenderNode;
 
-class C_Unit : public C_Entity, public _UnitBase, public HealthComponent, 
-               public InvisibleComponent, public TrueSightComponent
+class C_Unit : public C_Entity, public _UnitBase, public HealthComponent,
+               public TrueSightComponent
 {
 private:
     TRUE_SIGHT_COMPONENT()
-    INVISIBLE_COMPONENT()
+    BUFF_HOLDER_COMPONENT()
 
 public:
     virtual C_Unit* clone() const;
@@ -97,14 +104,18 @@ public:
     UnitUI* getUnitUI();
     const UnitUI* getUnitUI() const;
 
+    bool isLocallyHidden() const;
+    void setLocallyHidden(bool locallyHidden);
+    bool isServerRevealed() const;
+    void setServerRevealed(bool serverHidden);
+    bool shouldBeHiddenFrom(const C_Unit& unit) const;
+
 private:
     void predictMovementLocally(const Vector2& oldPos, Vector2& newPos, const C_ManagersContext& context) const;
 
     UnitUI m_ui;
-};
 
-// class Hero : public Unit
-// {
-//     //abilities and ultimate
-//     //some sort of xp system/power system
-// };
+    bool m_locallyHidden;
+    bool m_serverRevealed;
+    bool m_invisible;
+};

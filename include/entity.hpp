@@ -137,11 +137,11 @@ protected:
 class HealthComponent
 {
 public:
-    void dealDamage(u16 damage, Entity* source);
-    void heal(u16 amount, Entity* source);
+    void takeDamage(u16 damage, Entity* source);
+    void beHealed(u16 amount, Entity* source);
 
-    virtual void onDealDamage(u16 damage, Entity* source);
-    virtual void onHeal(u16 amount, Entity* source);
+    virtual void onTakeDamage(u16 damage, Entity* source);
+    virtual void onBeHealed(u16 amount, Entity* source);
 
     u16 getHealth() const;
     u16 getMaxHealth() const;
@@ -192,6 +192,7 @@ public:
 
     void resetInvisibleFlags();
     void markToSend(u8 teamId);
+    void markToSendCloser(u8 teamId);
     void reveal(u8 teamId);
 
     void setInvisible(bool invisible);
@@ -200,17 +201,9 @@ public:
 
     bool isRevealedForTeam(u8 teamId) const;
     bool isMarkedToSendForTeam(u8 teamId) const;
+    bool isMarkedToSendCloserForTeam(u8 teamId) const;
     bool isVisibleForTeam(u8 teamId) const;
     bool shouldBeHiddenFrom(TrueSightComponent& otherEntity) const;
-
-    bool isLocallyHidden() const;
-    void setLocallyHidden(bool locallyHidden);
-    bool isForceSent() const;
-    void setForceSent(bool forceSent);
-
-protected:
-    bool m_locallyHidden;
-    bool m_forceSent;
 
 private:
     //stores if the entity is visible for each team (max 64 teams)
@@ -220,6 +213,10 @@ private:
     //(even if they're hidden for that team)
     //this is to make reveals smooth in client
     u64 m_teamSentFlags;
+
+    //used to tell the client if the entity is being revealed by any other method
+    //that is not close proximity
+    u64 m_teamSentCloserFlags;
 
     bool m_invisible;
 
@@ -234,3 +231,9 @@ private:
     COMP_CROSS_VARIABLE(invisible, u8, teamId) \
     COMP_CROSS_VARIABLE(invisible, bool, inBush) \
     COMP_CROSS_VARIABLE(invisible, Vector2, pos)
+
+//@TODO: Move client invisible behaviour here
+// class C_InvisibleComponent
+// {
+
+// };

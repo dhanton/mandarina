@@ -68,7 +68,7 @@ void CooldownAbility::update(sf::Time eTime)
     }
 }
 
-bool CooldownAbility::canBeCasted()
+bool CooldownAbility::canBeCasted(const Status& status) const
 {
     return m_currentCharges > 0 && m_currentNextChargeDelay >= m_nextChargeDelay;
 }
@@ -147,7 +147,7 @@ void RechargeAbility::update(sf::Time eTime)
     m_percentage += 0.0033333f * eTime.asSeconds() * m_rechargeMultiplier;
 }
 
-bool RechargeAbility::canBeCasted()
+bool RechargeAbility::canBeCasted(const Status& status) const
 {
     return m_percentage >= 1.f;
 }
@@ -182,7 +182,7 @@ void PassiveAbility::update(sf::Time eTime)
 
 }
 
-bool PassiveAbility::canBeCasted()
+bool PassiveAbility::canBeCasted(const Status& status) const
 {
 
 }

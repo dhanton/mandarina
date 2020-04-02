@@ -22,6 +22,8 @@ public:
 private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const;
 
+    CanCast_ExtraFlags getExtraFlags() const;
+
     //We need to overwrite the method below for the class to work
     //Even though we're not going to use it (used only by CasterComponent::loadFromJson)
     class DummyCaster : public CasterComponent {

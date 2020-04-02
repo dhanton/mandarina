@@ -4,6 +4,7 @@
 #include "managers_context.hpp"
 #include "json_parser.hpp"
 #include "defines.hpp"
+#include "buff.hpp"
 
 class Unit;
 class C_Unit;
@@ -35,7 +36,10 @@ public:
     virtual void onCast(Unit* caster, const ManagersContext& context, u16 clientDelay) = 0;
     virtual void C_onCast(C_Unit* caster, Vector2& pos, const C_ManagersContext& context, u32 inputId, bool repeating) = 0;
     virtual void update(sf::Time eTime) = 0;
-    virtual bool canBeCasted() = 0;
+    
+    //casting should depend only on internals of ability and the status of the unit
+    //(both of which are displayed in client, which is important)
+    virtual bool canBeCasted(const Status& status) const = 0;
 
     //these are used to properly render UI
     //we should probably remove them when we add the option to have recharge abilites as alt ability or secondary fire
@@ -55,7 +59,7 @@ public:
     virtual CooldownAbility* clone() const = 0;
 
     virtual void update(sf::Time eTime);
-    virtual bool canBeCasted();
+    virtual bool canBeCasted(const Status& status) const;
 
     virtual float getPercentage() const;
     virtual u16 getMaxTime() const;
@@ -86,7 +90,8 @@ public:
     virtual RechargeAbility* clone() const = 0;
 
     virtual void update(sf::Time eTime);
-    virtual bool canBeCasted();
+    virtual bool canBeCasted(const Status& status) const;
+
     virtual float getPercentage() const;
 
     virtual void loadFromJson(const rapidjson::Document& doc);
@@ -109,7 +114,7 @@ public:
     virtual PassiveAbility* clone() const = 0;
 
     virtual void update(sf::Time eTime);
-    virtual bool canBeCasted();
+    virtual bool canBeCasted(const Status& status) const;
 
     virtual void loadFromJson(const rapidjson::Document& doc);
 

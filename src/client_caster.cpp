@@ -31,7 +31,7 @@ void ClientCaster::applyInputs(const PlayerInput& input, Vector2& casterPos, con
     
     //@WIP: Correct the cooldown in client if casting fails on server
 
-    m_casterComponent.C_applyInput(m_caster, casterPos, input, context, false);
+    m_casterComponent.C_applyInput(m_caster, casterPos, input, context, false, getExtraFlags());
 }
 
 void ClientCaster::reapplyInputs(const PlayerInput& input, Vector2& casterPos, const C_ManagersContext& context)
@@ -39,7 +39,7 @@ void ClientCaster::reapplyInputs(const PlayerInput& input, Vector2& casterPos, c
     if (!m_caster) return;
     
     //call C_applyInput with repeating = true
-    m_casterComponent.C_applyInput(m_caster, casterPos, input, context, true);
+    m_casterComponent.C_applyInput(m_caster, casterPos, input, context, true, getExtraFlags());
 }
 
 void ClientCaster::setCaster(C_Unit* caster)
@@ -114,6 +114,20 @@ void ClientCaster::draw(sf::RenderTarget& target, sf::RenderStates states) const
     target.draw(m_ultimateUI, states);
 
     target.setView(previousView);
+}
+
+CanCast_ExtraFlags ClientCaster::getExtraFlags() const
+{
+    CanCast_ExtraFlags extraFlags;
+    
+    if (m_caster) {
+        extraFlags.primaryFire = m_caster->getStatus().canAttack();
+        extraFlags.secondaryFire = m_caster->getStatus().canCast();
+        extraFlags.altAbility = m_caster->getStatus().canCast();
+        extraFlags.ultimate = m_caster->getStatus().canCast();
+    }
+
+    return extraFlags;
 }
 
 void ClientCaster::DummyCaster::setPrimaryFire(CooldownAbility* ability)

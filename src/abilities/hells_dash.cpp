@@ -9,6 +9,11 @@ HellsDashAbility* HellsDashAbility::clone() const
     return new HellsDashAbility(*this);
 }
 
+bool HellsDashAbility::canBeCasted(const Status& status) const
+{
+    return !status.rooted && CooldownAbility::canBeCasted(status);
+}
+
 void HellsDashAbility::onCast(Unit* caster, const ManagersContext& context, u16 clientDelay)
 {
     CooldownAbility::onCastUpdate();

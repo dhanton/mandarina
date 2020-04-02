@@ -7,6 +7,8 @@ class HellsDashAbility : public CooldownAbility
 public:
     HellsDashAbility* clone() const;
 
+    bool canBeCasted(const Status& status) const;
+
     void onCast(Unit* caster, const ManagersContext& context, u16 clientDelay);
     void C_onCast(C_Unit* caster, Vector2& casterPos, const C_ManagersContext& context, u32 inputId, bool repeating);
 

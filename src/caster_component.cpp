@@ -65,40 +65,40 @@ void CasterComponent::update(sf::Time eTime)
     }
 }
 
-void CasterComponent::applyInput(Unit* caster, const PlayerInput& input, const ManagersContext& context, u16 clientDelay)
+void CasterComponent::applyInput(Unit* caster, const PlayerInput& input, const ManagersContext& context, u16 clientDelay, const CanCast_ExtraFlags& extraFlags)
 {
-    if (input.primaryFire && m_primaryFire && m_primaryFire->canBeCasted()) {
+    if (input.primaryFire && extraFlags.primaryFire && m_primaryFire && m_primaryFire->canBeCasted(caster->getStatus())) {
         m_primaryFire->onCast(caster, context, clientDelay);
     }
 
-    if (input.secondaryFire && m_secondaryFire && m_secondaryFire->canBeCasted()) {
+    if (input.secondaryFire && extraFlags.secondaryFire && m_secondaryFire && m_secondaryFire->canBeCasted(caster->getStatus())) {
         m_secondaryFire->onCast(caster, context, clientDelay);
     }
 
-    if (input.altAbility && m_altAbility && m_altAbility->canBeCasted()) {
+    if (input.altAbility && extraFlags.altAbility && m_altAbility && m_altAbility->canBeCasted(caster->getStatus())) {
         m_altAbility->onCast(caster, context, clientDelay);
     }
 
-    if (input.ultimate && m_ultimate && m_ultimate->canBeCasted()) {
+    if (input.ultimate && extraFlags.ultimate && m_ultimate && m_ultimate->canBeCasted(caster->getStatus())) {
         m_ultimate->onCast(caster, context, clientDelay);
     }
 }
 
-void CasterComponent::C_applyInput(C_Unit* caster, Vector2& casterPos, const PlayerInput& input, const C_ManagersContext& context, bool repeating)
+void CasterComponent::C_applyInput(C_Unit* caster, Vector2& casterPos, const PlayerInput& input, const C_ManagersContext& context, bool repeating, const CanCast_ExtraFlags& extraFlags)
 {
-    if (input.primaryFire && m_primaryFire && m_primaryFire->canBeCasted()) {
+    if (input.primaryFire && extraFlags.primaryFire && m_primaryFire && m_primaryFire->canBeCasted(caster->getStatus())) {
         m_primaryFire->C_onCast(caster, casterPos, context, input.id, repeating);
     }
 
-    if (input.secondaryFire && m_secondaryFire && m_secondaryFire->canBeCasted()) {
+    if (input.secondaryFire && extraFlags.secondaryFire && m_secondaryFire && m_secondaryFire->canBeCasted(caster->getStatus())) {
         m_secondaryFire->C_onCast(caster, casterPos, context, input.id, repeating);
     }
 
-    if (input.altAbility && m_altAbility && m_altAbility->canBeCasted()) {
+    if (input.altAbility && extraFlags.altAbility && m_altAbility && m_altAbility->canBeCasted(caster->getStatus())) {
         m_altAbility->C_onCast(caster, casterPos, context, input.id, repeating);
     }
 
-    if (input.ultimate && m_ultimate && m_ultimate->canBeCasted()) {
+    if (input.ultimate && extraFlags.ultimate && m_ultimate && m_ultimate->canBeCasted(caster->getStatus())) {
         m_ultimate->C_onCast(caster, casterPos, context, input.id, repeating);
     }
 }

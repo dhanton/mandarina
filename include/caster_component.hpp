@@ -1,10 +1,18 @@
 #pragma once
 
-#include <SFML/Graphics/Drawable.hpp>
 #include "context.hpp"
 #include "ability.hpp"
 #include "component.hpp"
 #include "player_input.hpp"
+
+//Used to tell the Caster extra conditions for each ability
+struct CanCast_ExtraFlags 
+{
+    bool primaryFire = true;
+    bool secondaryFire = true;
+    bool altAbility = true;
+    bool ultimate = true;
+};
 
 class CasterComponent
 {
@@ -21,13 +29,13 @@ public:
     CasterComponent& operator=(CasterComponent && other) = default;
 
     void update(sf::Time eTime);
-    void applyInput(Unit* caster, const PlayerInput& input, const ManagersContext& context, u16 clientDelay);
+    void applyInput(Unit* caster, const PlayerInput& input, const ManagersContext& context, u16 clientDelay, const CanCast_ExtraFlags& extraFlags);
 
     //Since this class is not parent of C_Unit, this method has to be called for the controlledEntity only
     //by an interface on GameClient. This makes more sense than having each C_Unit keep track of their abilities.
     //Also in client we don't modify the position of the unit directly but rather casterPos
     //If the input is being repeated we don't create new entities, only update the caster's position
-    void C_applyInput(C_Unit* caster, Vector2& casterPos, const PlayerInput& input, const C_ManagersContext& context, bool repeating);
+    void C_applyInput(C_Unit* caster, Vector2& casterPos, const PlayerInput& input, const C_ManagersContext& context, bool repeating, const CanCast_ExtraFlags& extraFlags);
 
     CooldownAbility* getPrimaryFire() const;
     Ability* getSecondaryFire() const;

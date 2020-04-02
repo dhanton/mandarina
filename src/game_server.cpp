@@ -138,7 +138,7 @@ GameServer::GameServer(const Context& context, int playersNeeded):
     m_tileMap.loadFromFile(MAPS_PATH + m_tileMapFilename + "." + MAP_FILENAME_EXT);
     
     //@DELETE (TESTING)
-    m_entityManager.createEntity(ENTITY_RED_DEMON, Vector2(1550.f, 800.f), 1);
+    m_entityManager.createEntity(ENTITY_RED_DEMON, Vector2(1400.f, 1450.f), 1);
     for (int i = 0; i < 100; ++i) {
         m_entityManager.createEntity(ENTITY_RED_DEMON, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), rand()%2);
     }

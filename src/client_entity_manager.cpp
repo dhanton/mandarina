@@ -230,9 +230,6 @@ void C_EntityManager::updateRevealedUnits()
         if (it->getTeamId() != controlledEntityTeamId) continue;
 
         for (auto it2 = entities.begin(); it2 != entities.end(); ++it2) {
-            //entities revealed have to be of other teams
-            if (it2->getTeamId() == controlledEntityTeamId) continue;
-
             it->localReveal(&it2);
         }
     }

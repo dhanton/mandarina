@@ -207,22 +207,24 @@ void C_Entity::insertRenderNode(const C_ManagersContext& managersContext, const 
 #endif
 }
 
-void HealthComponent::dealDamage(u16 damage, Entity* source)
+void HealthComponent::takeDamage(u16 damage, Entity* source)
 {
     m_health = std::max((int) m_health - (int) damage, 0);
+    onTakeDamage(damage, source);
 }
 
-void HealthComponent::heal(u16 amount, Entity* source)
+void HealthComponent::beHealed(u16 amount, Entity* source)
 {
     m_health = std::min((int) m_health + (int) amount, (int) m_maxHealth);
+    onBeHealed(amount, source);
 }
 
-void HealthComponent::onDealDamage(u16 damage, Entity* source)
+void HealthComponent::onTakeDamage(u16 damage, Entity* source)
 {
 
 }
 
-void HealthComponent::onHeal(u16 amount, Entity* source)
+void HealthComponent::onBeHealed(u16 amount, Entity* source)
 {
 
 }
@@ -271,10 +273,8 @@ void TrueSightComponent::loadFromJson(const rapidjson::Document& doc)
 
 InvisibleComponent::InvisibleComponent()
 {
-    m_locallyHidden = false;
-    m_forceSent = false;
-    m_visionFlags = 0;
-    m_teamSentFlags = 0;
+    resetInvisibleFlags();
+
     m_invisible = false;
 }
 
@@ -282,11 +282,17 @@ void InvisibleComponent::resetInvisibleFlags()
 {
     m_visionFlags = 0;
     m_teamSentFlags = 0;
+    m_teamSentCloserFlags = 0;
 }
 
 void InvisibleComponent::markToSend(u8 teamId)
 {
     m_teamSentFlags |= (1 << teamId);
+}
+
+void InvisibleComponent::markToSendCloser(u8 teamId)
+{
+    m_teamSentCloserFlags |= (1 << teamId);
 }
 
 void InvisibleComponent::reveal(u8 teamId)
@@ -319,6 +325,11 @@ bool InvisibleComponent::isMarkedToSendForTeam(u8 teamId) const
     return (m_teamSentFlags & (1 << teamId));
 }
 
+bool InvisibleComponent::isMarkedToSendCloserForTeam(u8 teamId) const
+{
+    return (m_teamSentCloserFlags & (1 << teamId));
+}
+
 bool InvisibleComponent::isVisibleForTeam(u8 teamId) const
 {
     if (_invisible_teamId() == teamId || !isInvisibleOrBush()) {
@@ -337,24 +348,4 @@ bool InvisibleComponent::shouldBeHiddenFrom(TrueSightComponent& otherEntity) con
     } else {
         return _invisible_inBush() ? !otherEntity._trueSight_inBush() : false;
     }
-}
-
-bool InvisibleComponent::isLocallyHidden() const
-{
-    return m_locallyHidden;
-}
-
-void InvisibleComponent::setLocallyHidden(bool locallyHidden)
-{
-    m_locallyHidden = locallyHidden;
-}
-
-bool InvisibleComponent::isForceSent() const
-{
-    return m_forceSent;
-}
-
-void InvisibleComponent::setForceSent(bool forceSent)
-{
-    m_forceSent = forceSent;
 }

@@ -57,6 +57,16 @@ void _UnitBase::setMovementSpeed(u8 movementSpeed)
     m_movementSpeed = movementSpeed;
 }
 
+Status& _UnitBase::getStatus()
+{
+    return m_status;
+}
+
+const Status& _UnitBase::getStatus() const
+{
+    return m_status;
+}
+
 Vector2 _UnitBase::moveCollidingTilemap_impl(const Vector2& oldPos, Vector2 newPos, float collisionRadius, TileMap* map)
 {
     const Vector2 posMovingX = {newPos.x, oldPos.y};
@@ -155,6 +165,9 @@ void Unit::update(sf::Time eTime, const ManagersContext& context)
             if (!invisComp->shouldBeHiddenFrom(*this)) {
                 //if the unit is inside true sight radius, reveal it
                 invisComp->reveal(m_teamId);
+
+                //we mark it inside the smaller circle
+                invisComp->markToSendCloser(m_teamId);
             }
 
             //we mark it to send since it's inside the bigger circle
@@ -163,11 +176,18 @@ void Unit::update(sf::Time eTime, const ManagersContext& context)
 
         query.Next();
     }
+
+    BuffHolderComponent::onUpdate(eTime);
 }
 
 void Unit::preUpdate(sf::Time eTime, const ManagersContext& context)
 {
+    //reset parameters
     resetInvisibleFlags();
+    m_status.preUpdate();
+
+    //update parameters using buffs
+    BuffHolderComponent::onPreUpdate(eTime);
 }
 
 void Unit::postUpdate(sf::Time eTime, const ManagersContext& context)
@@ -177,14 +197,17 @@ void Unit::postUpdate(sf::Time eTime, const ManagersContext& context)
 
 void Unit::packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) const
 {
-    // UnitStatus_packData(status, teamId, outPacket);
-
     const Unit* prevUnit = static_cast<const Unit*>(prevEntity);
 
     BitStream mainBits;
     
     mainBits.pushBit(isInvisible());
     mainBits.pushBit(isSolid());
+    mainBits.pushBit(m_status.stunned);
+    mainBits.pushBit(m_status.silenced);
+    mainBits.pushBit(m_status.disarmed);
+    mainBits.pushBit(m_status.rooted);
+    mainBits.pushBit(m_status.slowed);
 
     bool posXChanged = !prevUnit || m_pos.x != prevUnit->getPosition().x;
     mainBits.pushBit(posXChanged);
@@ -210,8 +233,8 @@ void Unit::packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) c
     bool collisionRadiusChanged = !prevUnit || m_collisionRadius != prevUnit->getCollisionRadius();
     mainBits.pushBit(collisionRadiusChanged);
 
-    //units mark to send are never visible
-    mainBits.pushBit(isMarkedToSendForTeam(teamId));
+    //tell the client if the unit is being revealed by some other method that's not close proximity
+    mainBits.pushBit(isRevealedForTeam(teamId) && !isMarkedToSendCloserForTeam(teamId));
 
     //send the flags
     u8 byte1 = mainBits.popByte();
@@ -256,24 +279,40 @@ void Unit::packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) c
     }
 }
 
+void Unit::onTakeDamage(u16 damage, Entity* source)
+{
+    BuffHolderComponent::onTakeDamage(damage, source);
+}
+
+void Unit::onBeHealed(u16 amount, Entity* source)
+{
+    BuffHolderComponent::onBeHealed(amount, source);
+}
+
 void Unit::applyInput(const PlayerInput& input, const ManagersContext& context, u16 clientDelay)
 {
-    //@TODO: Check flags to see if we can actually move (stunned, rooted, etc)
-
     m_aimAngle = input.aimAngle;
-    
+
+    CanCast_ExtraFlags extraFlags;
+    extraFlags.primaryFire = m_status.canAttack();
+    extraFlags.secondaryFire = m_status.canCast();
+    extraFlags.altAbility = m_status.canCast();
+    extraFlags.ultimate = m_status.canCast();
+
     //We cast abilities before moving so it works like in the client
     //(because in the client inputs don't move the unit instantaneously)
-    CasterComponent::applyInput(this, input, context, clientDelay);
-    
-    //we copy the position after applying abilities input 
-    //in case abilities move the unit
-    Vector2 newPos = m_pos;
-    
-    bool moved = PlayerInput_repeatAppliedInput(input, newPos, m_movementSpeed);
+    CasterComponent::applyInput(this, input, context, clientDelay, extraFlags);
 
-    if (moved) {
-        moveColliding(newPos, context);
+    if (m_status.canMove()) {
+        //we copy the position after applying abilities input 
+        //in case abilities move the unit
+        Vector2 newPos = m_pos;
+        
+        bool moved = PlayerInput_repeatAppliedInput(input, newPos, m_movementSpeed);
+
+        if (moved) {
+            moveColliding(newPos, context);
+        }
     }
 }
 
@@ -344,6 +383,9 @@ void C_Unit::loadFromJson(const rapidjson::Document& doc, u16 textureId, const C
     TrueSightComponent::loadFromJson(doc);
 
     m_solid = true;
+    m_locallyHidden = false;
+    m_serverRevealed = true;
+    m_invisible = false;
 }
 
 void C_Unit::update(sf::Time eTime, const C_ManagersContext& context)
@@ -353,8 +395,6 @@ void C_Unit::update(sf::Time eTime, const C_ManagersContext& context)
 
 void C_Unit::loadFromData(CRCPacket& inPacket)
 {
-    // C_UnitStatus_loadFromData(unit.status, inPacket);
-
     BitStream mainBits;
 
     u8 byte;
@@ -363,8 +403,13 @@ void C_Unit::loadFromData(CRCPacket& inPacket)
     inPacket >> byte;
     mainBits.pushByte(byte);
 
-    setInvisible(mainBits.popBit());
+    m_invisible = mainBits.popBit();
     setSolid(mainBits.popBit());
+    m_status.stunned = mainBits.popBit();
+    m_status.silenced = mainBits.popBit();
+    m_status.disarmed = mainBits.popBit();
+    m_status.rooted = mainBits.popBit();
+    m_status.slowed = mainBits.popBit();
 
     bool posXChanged = mainBits.popBit();
     bool posYChanged = mainBits.popBit();
@@ -374,7 +419,7 @@ void C_Unit::loadFromData(CRCPacket& inPacket)
     bool healthChanged = mainBits.popBit();
     bool aimAngleChanged = mainBits.popBit();
     bool collisionRadiusChanged = mainBits.popBit();
-    setForceSent(mainBits.popBit());
+    setServerRevealed(mainBits.popBit());
 
     if (posXChanged) {
         inPacket >> m_pos.x;
@@ -461,7 +506,7 @@ void C_Unit::updateControlledAngle(float aimAngle)
 
 void C_Unit::applyMovementInput(Vector2& pos, PlayerInput& input, const C_ManagersContext& context, sf::Time dt)
 {
-     //@TODO: Check flags to see if we can actually move (stunned, rooted, etc)
+    if (!m_status.canMove()) return;
 
     Vector2 oldPos = pos;
     bool moved = PlayerInput_applyInput(input, pos, (float) m_movementSpeed, dt);
@@ -473,6 +518,8 @@ void C_Unit::applyMovementInput(Vector2& pos, PlayerInput& input, const C_Manage
 
 void C_Unit::reapplyMovementInput(Vector2& pos, PlayerInput& input, const C_ManagersContext& context)
 {
+    if (!m_status.canMove()) return;
+    
     Vector2 oldPos = pos;
     bool moved = PlayerInput_repeatAppliedInput(input, pos, (float) m_movementSpeed);
 
@@ -489,16 +536,17 @@ u16 C_Unit::getControlledMovementSpeed() const
 void C_Unit::updateLocallyVisible(const C_ManagersContext& context)
 {
     m_inBush = context.tileMap->isColliding(TILE_BUSH, Circlef(m_pos, (float) m_collisionRadius));
-    m_locallyHidden = isInvisibleOrBush();
+    m_locallyHidden = m_inBush || m_invisible;
 }
 
 void C_Unit::localReveal(C_Entity* entity)
 {
-    InvisibleComponent* invisComp = dynamic_cast<InvisibleComponent*>(entity);
+    //@TODO: We should actually reveal C_InvisibleComponent entities
+    C_Unit* unit = dynamic_cast<C_Unit*>(entity);
 
-    if (invisComp) {
-        if (invisComp->isLocallyHidden() && !invisComp->shouldBeHiddenFrom(*this)) {
-            invisComp->setLocallyHidden(false);
+    if (unit) {
+        if (unit->isLocallyHidden() && !unit->shouldBeHiddenFrom(*this)) {
+            unit->setLocallyHidden(false);
         }
     }
 }
@@ -507,9 +555,9 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
 {
 #ifdef MANDARINA_DEBUG
         bool renderingLocallyHidden = managersContext.entityManager->renderingLocallyHidden;
-        if (!renderingLocallyHidden && m_locallyHidden && m_forceSent) return;
+        if (!renderingLocallyHidden && m_locallyHidden && !m_serverRevealed) return;
 #else
-        if (m_locallyHidden && m_forceSent) return;
+        if (m_locallyHidden && !m_serverRevealed) return;
 #endif
 
     std::vector<RenderNode>& renderNodes = managersContext.entityManager->getRenderNodes();
@@ -527,7 +575,7 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
     //flip the sprite depending on aimAngle
     sprite.setScale(mirrored * m_scale, m_scale);
 
-    if (isInvisibleOrBush()) {
+    if (m_inBush || m_invisible) {
         sf::Color color = sprite.getColor();
         color.a = 150.f;
 
@@ -546,6 +594,7 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
     if (!m_ui.getUnit()) {
         m_ui.setUnit(this);
         m_ui.setFonts(context.fonts);
+        m_ui.setTextureLoader(context.textures);
         m_ui.setIsAlly(m_teamId == managersContext.entityManager->controlledEntityTeamId);
     }
 
@@ -558,7 +607,8 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
     std::string& dataString = uiRenderNodes.back().debugDisplayData;
     dataString += std::to_string(m_uniqueId) + "\n";
     dataString += "Team: " + std::to_string(m_teamId) + "\n";
-    dataString += "ForceSent: " + std::to_string(isForceSent()) + "\n";
+    dataString += "ServerRevealed: " + std::to_string(isServerRevealed()) + "\n";
+    dataString += "LocallyHidden: " + std::to_string(m_locallyHidden) + "\n";
 #endif
 
     //setup the weapon node if equipped
@@ -599,6 +649,37 @@ UnitUI* C_Unit::getUnitUI()
 const UnitUI* C_Unit::getUnitUI() const
 {
     return &m_ui;
+}
+
+bool C_Unit::isLocallyHidden() const
+{
+    return m_locallyHidden;
+}
+
+void C_Unit::setLocallyHidden(bool locallyHidden)
+{
+    m_locallyHidden = locallyHidden;
+}
+
+bool C_Unit::isServerRevealed() const
+{
+    return m_serverRevealed;
+}
+
+void C_Unit::setServerRevealed(bool serverRevealed)
+{
+    m_serverRevealed = serverRevealed;
+}
+
+bool C_Unit::shouldBeHiddenFrom(const C_Unit& unit) const
+{
+    if (m_teamId == unit.m_teamId) {
+        return false;
+    } else if (Helper_vec2length(m_pos - unit.m_pos) >= unit.getTrueSightRadius()) {
+        return true;
+    } else {
+        return m_inBush ? !unit.m_inBush : false;
+    }
 }
 
 void C_Unit::predictMovementLocally(const Vector2& oldPos, Vector2& newPos, const C_ManagersContext& context) const
