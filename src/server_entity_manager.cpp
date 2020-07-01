@@ -133,7 +133,7 @@ void EntityManager::takeSnapshot(EntityManager* snapshot) const
     projectiles.copyValidDataTo(snapshot->projectiles);
 }
 
-void EntityManager::packData(const EntityManager* snapshot, u8 teamId, CRCPacket& outPacket) const
+void EntityManager::packData(const EntityManager* snapshot, u8 teamId, u32 controlledEntityUniqueId, CRCPacket& outPacket) const
 {
     u16 unitsToSend = 0;
 
@@ -163,7 +163,7 @@ void EntityManager::packData(const EntityManager* snapshot, u8 teamId, CRCPacket
             prevEntity = nullptr;
         }
 
-        it->packData(prevEntity, teamId, outPacket);
+        it->packData(prevEntity, teamId, controlledEntityUniqueId, outPacket);
     }
 
     //We're assuming here all projectiles are visible (which is true?)

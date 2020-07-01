@@ -23,7 +23,7 @@ public:
     Entity* createEntity(u8 entityType, const Vector2& pos, u8 teamId, u32 forcedUniqueId = 0);
 
     void takeSnapshot(EntityManager* snapshot) const;
-    void packData(const EntityManager* snapshot, u8 teamId, CRCPacket& outPacket) const;
+    void packData(const EntityManager* snapshot, u8 teamId, u32 controlledEntityUniqueId, CRCPacket& outPacket) const;
 
     void allocateAll();
 

@@ -6,6 +6,7 @@
 #include "json_parser.hpp"
 #include "unit_ui.hpp"
 #include "buff_holder_component.hpp"
+#include "caster_snapshot.hpp"
 
 class _UnitBase
 {
@@ -59,7 +60,7 @@ public:
     virtual void update(sf::Time eTime, const ManagersContext& context);
     virtual void preUpdate(sf::Time eTime, const ManagersContext& context);
     virtual void postUpdate(sf::Time eTime, const ManagersContext& context);
-    virtual void packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) const;
+    virtual void packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUniqueId, CRCPacket& outPacket) const;
 
     virtual void onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId);
     virtual void onBeHealed(u16 amount, Entity* source);
@@ -92,7 +93,7 @@ public:
     virtual void loadFromJson(const rapidjson::Document& doc, u16 textureId, const Context& context);
 
     virtual void update(sf::Time eTime, const C_ManagersContext& context);
-    virtual void loadFromData(CRCPacket& inPacket);
+    virtual void loadFromData(u32 controlledEntityUniqueId, CRCPacket& inPacket, CasterSnapshot& casterSnapshot);
     virtual void interpolate(const C_Entity* prevEntity, const C_Entity* nextEntity, double t, double d, bool isControlled);
 
     virtual void copySnapshotData(const C_Entity* snapshotEntity, bool isControlled);

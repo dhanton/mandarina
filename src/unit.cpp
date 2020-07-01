@@ -222,7 +222,7 @@ void Unit::postUpdate(sf::Time eTime, const ManagersContext& context)
 
 }
 
-void Unit::packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) const
+void Unit::packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUniqueId, CRCPacket& outPacket) const
 {
     const Unit* prevUnit = static_cast<const Unit*>(prevEntity);
 
@@ -303,6 +303,13 @@ void Unit::packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) c
     
     if (collisionRadiusChanged) {
         outPacket << m_collisionRadius;
+    }
+
+    if (m_uniqueId == controlledEntityUniqueId) {
+        m_primaryFire->packData(outPacket);
+        m_secondaryFire->packData(outPacket);
+        m_altAbility->packData(outPacket);
+        m_ultimate->packData(outPacket);
     }
 }
 
@@ -422,7 +429,7 @@ void C_Unit::update(sf::Time eTime, const C_ManagersContext& context)
 
 }
 
-void C_Unit::loadFromData(CRCPacket& inPacket)
+void C_Unit::loadFromData(u32 controlledEntityUniqueId, CRCPacket& inPacket, CasterSnapshot& casterSnapshot)
 {
     BitStream mainBits;
 
@@ -482,6 +489,10 @@ void C_Unit::loadFromData(CRCPacket& inPacket)
 
     if (collisionRadiusChanged) {
         inPacket >> m_collisionRadius;
+    }
+
+    if (m_uniqueId == controlledEntityUniqueId) {
+        casterSnapshot.loadFromData(inPacket);
     }
 }
 

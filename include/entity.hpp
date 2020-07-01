@@ -8,6 +8,7 @@
 #include "player_input.hpp"
 #include "json_parser.hpp"
 #include "component.hpp"
+#include "caster_snapshot.hpp"
 
 class BaseEntityComponent
 {
@@ -78,7 +79,7 @@ public:
     virtual void update(sf::Time eTime, const ManagersContext& context) = 0;
     virtual void preUpdate(sf::Time eTime, const ManagersContext& context) = 0;
     virtual void postUpdate(sf::Time eTime, const ManagersContext& context) = 0;
-    virtual void packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) const = 0;
+    virtual void packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUniqueId, CRCPacket& outPacket) const = 0;
 
     virtual bool shouldSendToTeam(u8 teamId) const;
 
@@ -104,7 +105,7 @@ public:
     virtual void loadFromJson(const rapidjson::Document& doc, u16 textureId, const Context& context);
 
     virtual void update(sf::Time eTime, const C_ManagersContext& context) = 0;
-    virtual void loadFromData(CRCPacket& inPacket) = 0;
+    virtual void loadFromData(u32 controlledEntityUniqueId, CRCPacket& inPacket, CasterSnapshot& casterSnapshot) = 0;
     virtual void interpolate(const C_Entity* prevEntity, const C_Entity* nextEntity, double t, double d, bool isControlled) = 0;
     
     //Setup for the next interpolation

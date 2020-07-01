@@ -41,10 +41,17 @@ public:
     //(both of which are displayed in client, which is important)
     virtual bool canBeCasted(const Status& status) const = 0;
 
+    virtual void applyServerCorrection(float diff);
+
+    virtual u16 takeSnapshot() const;
+    void packData(CRCPacket& outPacket) const;
+
     //these are used to properly render UI
     //we should probably remove them when we add the option to have recharge abilites as alt ability or secondary fire
     virtual float getPercentage() const;
     virtual u16 getMaxTime() const;
+
+    virtual float getTotalPercentage() const;
 
     //Abilities can add buffs to their casters when the caster is created
     //This can be used for triggers like: passive abilities, recharged when damage dealt, etc
@@ -68,8 +75,14 @@ public:
     virtual void update(sf::Time eTime, GameMode* gameMode);
     virtual bool canBeCasted(const Status& status) const;
 
+    virtual void applyServerCorrection(float diff);
+
+    virtual u16 takeSnapshot() const;
+
     virtual float getPercentage() const;
     virtual u16 getMaxTime() const;
+
+    virtual float getTotalPercentage() const;
 
     virtual void loadFromJson(const rapidjson::Document& doc);
 
@@ -99,8 +112,14 @@ public:
     virtual void update(sf::Time eTime, GameMode* gameMode);
     virtual bool canBeCasted(const Status& status) const;
 
+    virtual void applyServerCorrection(float diff);
+
+    virtual u16 takeSnapshot() const;
+
     virtual float getPercentage() const;
     virtual void addToPercentage(float amount);
+
+    virtual float getTotalPercentage() const;
 
     virtual void addBuffsToCaster(Unit* unit, const ManagersContext& context);
 

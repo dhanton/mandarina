@@ -342,12 +342,12 @@ void GameClient::setupNextInterpolation()
     m_entityManager.copySnapshotData(&m_interSnapshot_it->entityManager, m_interSnapshot_it->latestAppliedInput);
 
     //we need the end position of controlled entity in the server for this snapshot
-    C_Entity* snapshotEntity =  m_interSnapshot_it->entityManager.entities.atUniqueId(snapshotEntityId);
+    C_Entity* snapshotEntity = m_interSnapshot_it->entityManager.entities.atUniqueId(snapshotEntityId);
     C_Entity* controlledEntity = m_entityManager.entities.atUniqueId(controlledEntityId);
 
     if (snapshotEntity && controlledEntity) {
         checkServerInput(m_interSnapshot_it->latestAppliedInput, snapshotEntity->getPosition(), 
-                         controlledEntity->getControlledMovementSpeed());
+                         controlledEntity->getControlledMovementSpeed(), m_interSnapshot_it->caster);
     }
 }
 
@@ -444,6 +444,7 @@ void GameClient::saveCurrentInput()
     m_inputSnapshots.back().input = m_currentInput;
     m_inputSnapshots.back().endPosition = entityPos;
     m_inputSnapshots.back().forceSnap = false;
+    m_inputSnapshots.back().caster = m_clientCaster->takeSnapshot();
 
     //reset input timer
     m_currentInput.timeApplied = sf::Time::Zero;
@@ -452,7 +453,7 @@ void GameClient::saveCurrentInput()
     m_currentInput.id++;
 }
 
-void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 movementSpeed)
+void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 movementSpeed, const CasterSnapshot& casterSnapshot)
 {
     if (inputId == 0) {
         if (!m_inputSnapshots.empty()) {
@@ -481,7 +482,10 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
     //if there's no input, that means it was already checked
     if (it == m_inputSnapshots.end()) return;
 
+    //Correct the position
+
     Vector2 predictedEndPos = it->endPosition;
+    CasterSnapshot predictedCaster = it->caster;
 
     //we want to leave at least two inputs to interpolate properly
     if (m_inputSnapshots.size() > 2) {
@@ -540,6 +544,26 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
             }
 
             it = std::next(it);
+        }
+    }
+
+    //Correct the abilities
+    if (predictedCaster.valid) {
+        float delta = 0.015;
+        CasterSnapshot diffSnapshot = casterSnapshot.getDiff(predictedCaster, delta);
+
+        if (!diffSnapshot.isAllZero()) {
+            while (it != m_inputSnapshots.end()) {
+                it->caster.primaryPercentage += diffSnapshot.primaryPercentage;
+                it->caster.secondaryPercentage += diffSnapshot.secondaryPercentage;
+                it->caster.altPercentage += diffSnapshot.altPercentage;
+                it->caster.ultimatePercentage += diffSnapshot.ultimatePercentage;
+
+                it = std::next(it);
+            }
+
+            //Update ClientCaster using the diffSnapshot
+            m_clientCaster->applyServerCorrection(diffSnapshot);
         }
     }
 }
@@ -601,10 +625,10 @@ void GameClient::handleCommand(u8 command, CRCPacket& packet)
 
             Snapshot& snapshot = m_snapshots.back();
             snapshot.id = snapshotId;
-            snapshot.entityManager.loadFromData(prevEntityManager, packet);
+            snapshot.entityManager.setControlledEntityUniqueId(controlledEntityUniqueId);
+            snapshot.entityManager.loadFromData(prevEntityManager, packet, snapshot.caster);
             snapshot.worldTime = m_worldTime;
             snapshot.latestAppliedInput = appliedPlayerInputId;
-            snapshot.entityManager.setControlledEntityUniqueId(controlledEntityUniqueId);
 
             removeOldSnapshots(prevSnapshotId);
 

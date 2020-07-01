@@ -45,6 +45,44 @@ void ClientCaster::reapplyInputs(const PlayerInput& input, Vector2& casterPos, c
     m_casterComponent.C_applyInput(m_caster, casterPos, input, context, true, getExtraFlags());
 }
 
+CasterSnapshot ClientCaster::takeSnapshot() const
+{
+    CasterSnapshot snapshot;
+
+    if (m_casterComponent.isValid()) {
+        snapshot.primaryPercentage = m_casterComponent.getPrimaryFire()->getTotalPercentage();
+        snapshot.secondaryPercentage = m_casterComponent.getSecondaryFire()->getTotalPercentage();
+        snapshot.altPercentage = m_casterComponent.getAltAbility()->getTotalPercentage();
+        snapshot.ultimatePercentage = m_casterComponent.getUltimate()->getTotalPercentage();
+
+    } else {
+        snapshot.valid = false;
+    }
+
+    return snapshot;
+}
+
+void ClientCaster::applyServerCorrection(const CasterSnapshot& diffSnapshot)
+{
+    if (m_casterComponent.isValid()) {
+        if (diffSnapshot.primaryPercentage != 0.f) {
+            m_casterComponent.getPrimaryFire()->applyServerCorrection(diffSnapshot.primaryPercentage);
+        }
+
+        if (diffSnapshot.secondaryPercentage != 0.f) {
+            m_casterComponent.getSecondaryFire()->applyServerCorrection(diffSnapshot.secondaryPercentage);
+        }
+
+        if (diffSnapshot.altPercentage != 0.f) {
+            m_casterComponent.getAltAbility()->applyServerCorrection(diffSnapshot.altPercentage);
+        }
+
+        if (diffSnapshot.ultimatePercentage != 0.f) {
+            m_casterComponent.getUltimate()->applyServerCorrection(diffSnapshot.ultimatePercentage);
+        }
+    }
+}
+
 void ClientCaster::setCaster(C_Unit* caster, GameMode* gameMode)
 {
     if (!caster) return;

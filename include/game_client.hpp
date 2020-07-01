@@ -13,6 +13,7 @@
 #include "tilemap_renderer.hpp"
 #include "camera.hpp"
 #include "client_caster.hpp"
+#include "caster_snapshot.hpp"
 
 class GameClient;
 
@@ -37,12 +38,16 @@ public:
         sf::Time worldTime;
 
         u32 latestAppliedInput = 0;
+
+        CasterSnapshot caster;
     };
 
     struct InputSnapshot {
         PlayerInput input;
         Vector2 endPosition;
         bool forceSnap;
+
+        CasterSnapshot caster;
     };
 
 public:
@@ -65,7 +70,7 @@ public:
     void saveCurrentInput();
 
     //check server input was correct and redo all inputs otherwise
-    void checkServerInput(u32 inputId, const Vector2& endPosition, u16 movementSpeed);
+    void checkServerInput(u32 inputId, const Vector2& endPosition, u16 movementSpeed, const CasterSnapshot& casterSnapshot);
 
     void processPacket(HSteamNetConnection connectionId, CRCPacket& packet);
     void handleCommand(u8 command, CRCPacket& packet);

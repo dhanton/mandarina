@@ -77,3 +77,12 @@ float Helper_angleFrom16bit(u16 angle)
     return (static_cast<float>(angle)/static_cast<float>(0xffff)) * 360.f;
 }
 
+u16 Helper_percentageTo16bit(float percentage)
+{
+    return std::floor(percentage * static_cast<float>(0xffff));
+}
+
+float Helper_percentageFrom16bit(u16 percentage)
+{
+    return (static_cast<float>(percentage)/static_cast<float>(0xffff));
+}

@@ -374,7 +374,7 @@ void GameServer::sendSnapshots()
 
         u8 teamId = (m_clients[i].heroDead ? m_clients[i].spectatingTeamId : m_clients[i].teamId);
 
-        m_entityManager.packData(snapshotManager, teamId, outPacket);
+        m_entityManager.packData(snapshotManager, teamId, m_clients[i].controlledEntityUniqueId, outPacket);
 
         sendPacket(outPacket, m_clients[i].connectionId, false);
     }

@@ -17,6 +17,9 @@ float Helper_degToRad(float rad);
 u16   Helper_angleTo16bit(float angle);
 float Helper_angleFrom16bit(u16 angle);
 
+u16   Helper_percentageTo16bit(float percentage);
+float Helper_percentageFrom16bit(u16 percentage);
+
 template<typename T>
 float Helper_vec2length(const sf::Vector2<T>& vec);
 

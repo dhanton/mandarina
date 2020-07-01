@@ -275,12 +275,8 @@ C_Projectile* C_EntityManager::createProjectile(u8 type, const Vector2& pos, flo
     return &projectile;
 }
 
-void C_EntityManager::loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inPacket)
+void C_EntityManager::loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inPacket, CasterSnapshot& casterSnapshot)
 {
-    if (prevSnapshot) {
-        m_controlledEntityUniqueId = prevSnapshot->getControlledEntityUniqueId();
-    }
-
     //number of units
     u16 entityNumber;
     inPacket >> entityNumber;
@@ -315,7 +311,7 @@ void C_EntityManager::loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inP
         }
 
         //in both cases it has to be loaded from packet
-        entity->loadFromData(inPacket);
+        entity->loadFromData(getControlledEntityUniqueId(), inPacket, casterSnapshot);
     }
 
     u16 projectileNumber;

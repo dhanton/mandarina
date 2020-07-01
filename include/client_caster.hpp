@@ -2,8 +2,8 @@
 
 #include "caster_component.hpp"
 #include "ability_ui.hpp"
+#include "caster_snapshot.hpp"
 
-//This class keeps track of the 
 class ClientCaster : public sf::Drawable, public InContext
 {
 public:
@@ -12,6 +12,9 @@ public:
     void update(sf::Time eTime, GameMode* gameMode);
     void applyInputs(const PlayerInput& input, Vector2& casterPos, const C_ManagersContext& context);
     void reapplyInputs(const PlayerInput& input, Vector2& casterPos, const C_ManagersContext& context);
+
+    CasterSnapshot takeSnapshot() const;
+    void applyServerCorrection(const CasterSnapshot& diffSnapshot);
 
     void setCaster(C_Unit* caster, GameMode* gameMode);
     void forceCasterUpdate();

@@ -36,6 +36,21 @@ void Ability::setIconTextureId(u8 iconTextureId)
     m_iconTextureId = iconTextureId;
 }
 
+void Ability::applyServerCorrection(float diff)
+{
+
+}
+
+u16 Ability::takeSnapshot() const
+{
+    return 0;
+}
+
+void Ability::packData(CRCPacket& outPacket) const
+{
+    outPacket << takeSnapshot();
+}
+
 float Ability::getPercentage() const
 {
     return 1.f;
@@ -44,6 +59,11 @@ float Ability::getPercentage() const
 u16 Ability::getMaxTime() const
 {
     return 0;
+}
+
+float Ability::getTotalPercentage() const
+{
+    return 1.f;
 }
 
 bool Ability::areBuffsAdded() const
@@ -93,6 +113,20 @@ void CooldownAbility::update(sf::Time eTime, GameMode* gameMode)
 bool CooldownAbility::canBeCasted(const Status& status) const
 {
     return m_currentCharges > 0 && m_currentNextChargeDelay >= m_nextChargeDelay;
+}
+
+void CooldownAbility::applyServerCorrection(float diff)
+{
+    int chargeDiff = diff * static_cast<float>(m_maxCharges);
+    float percentageDiff = diff - static_cast<float>(chargeDiff);
+
+    m_currentCharges += chargeDiff;
+    m_currentCooldown -= m_cooldown * percentageDiff;
+}
+
+u16 CooldownAbility::takeSnapshot() const
+{
+    return Helper_percentageTo16bit(getTotalPercentage());
 }
 
 void CooldownAbility::loadFromJson(const rapidjson::Document& doc)
@@ -153,6 +187,11 @@ u16 CooldownAbility::getMaxTime() const
     return static_cast<u16>(m_cooldown);
 }
 
+float CooldownAbility::getTotalPercentage() const
+{
+    return (1.f - m_currentCooldown/m_cooldown)/static_cast<float>(m_maxCharges) + static_cast<float>(m_currentCharges)/static_cast<float>(m_maxCharges);
+}
+
 void CooldownAbility::onCastUpdate()
 {
     if (m_currentCharges != 0) {
@@ -175,12 +214,22 @@ void RechargeAbility::update(sf::Time eTime, GameMode* gameMode)
     }
 
     //default speed is one charge every 3 seconds
-    m_percentage += 0.0033333f * eTime.asSeconds() * m_timeRechargeMultiplier * globalTimeMultiplier;
+    addToPercentage(0.0033333f * eTime.asSeconds() * m_timeRechargeMultiplier * globalTimeMultiplier);
 }
 
 bool RechargeAbility::canBeCasted(const Status& status) const
 {
     return m_percentage >= 1.f;
+}
+
+void RechargeAbility::applyServerCorrection(float diff)
+{
+    m_percentage += diff;
+}
+
+u16 RechargeAbility::takeSnapshot() const
+{
+    return Helper_percentageTo16bit(getTotalPercentage());
 }
 
 void RechargeAbility::loadFromJson(const rapidjson::Document& doc)
@@ -213,7 +262,12 @@ float RechargeAbility::getPercentage() const
 
 void RechargeAbility::addToPercentage(float amount)
 {
-    m_percentage += amount;
+    m_percentage = std::min(1.f, m_percentage + amount);
+}
+
+float RechargeAbility::getTotalPercentage() const
+{
+    return m_percentage;
 }
 
 void RechargeAbility::addBuffsToCaster(Unit* unit, const ManagersContext& context)
