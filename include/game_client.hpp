@@ -42,6 +42,7 @@ public:
     struct InputSnapshot {
         PlayerInput input;
         Vector2 endPosition;
+        bool forceSnap;
     };
 
 public:
@@ -73,6 +74,9 @@ public:
     void writeLatestSnapshotId(CRCPacket& packet);
 
     Snapshot* findSnapshotById(u32 snapshotId);
+
+private:
+    void loadMap(const std::string& filename);
 
 private:
     GameClientCallbacks m_gameClientCallbacks;
@@ -107,6 +111,8 @@ private:
     TileMapRenderer m_tileMapRenderer;
     TileMap m_tileMap;
 
+    std::unique_ptr<GameMode> m_gameMode;
+
     Camera m_camera;
 
     //the unit can move freely within this radius without the camera moving
@@ -114,4 +120,7 @@ private:
     Vector2 m_smoothUnitPos;
 
     std::unique_ptr<ClientCaster> m_clientCaster;
+
+    bool m_forceFullSnapshotUpdate;
+    bool m_fullUpdateReceived;
 };

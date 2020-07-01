@@ -45,8 +45,12 @@ void Bucket<T>::removeElement(u32 uniqueId)
 
     if (index != -1) {
         m_firstInvalidIndex--;
-        m_hashTable[m_elements[m_firstInvalidIndex].uniqueId] = index;
-        std::swap(m_elements[index], m_elements[m_firstInvalidIndex]);
+
+        if (index != m_firstInvalidIndex) {            
+            m_hashTable[m_elements[m_firstInvalidIndex].uniqueId] = index;
+            std::swap(m_elements[index], m_elements[m_firstInvalidIndex]);
+        }
+
         m_hashTable.erase(uniqueId);
 
     } else {
@@ -159,4 +163,11 @@ const T* Bucket<T>::atUniqueId(u32 uniqueId) const
         return &m_elements[index];
     }
     return nullptr;
+}
+
+template<typename T>
+void Bucket<T>::clear()
+{
+    m_firstInvalidIndex = 0;
+    m_hashTable.clear();
 }

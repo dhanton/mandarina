@@ -7,6 +7,7 @@
 #include "server_entity_manager.hpp"
 #include "weapon.hpp"
 #include "collision_manager.hpp"
+#include "game_mode.hpp"
 
 namespace {
 
@@ -101,7 +102,7 @@ void _UnitBase::loadFromJson(const rapidjson::Document& doc)
 {
     m_aimAngle = 0.f;
     m_weaponId = Weapon_stringToType(doc["weapon"].GetString());
-    m_movementSpeed = doc["movement_speed"].GetInt();
+    m_movementSpeed = doc["movement_speed"].GetUint();
 }
 
 Unit* Unit::clone() const
@@ -122,25 +123,49 @@ void Unit::loadFromJson(const rapidjson::Document& doc)
 
 void Unit::update(sf::Time eTime, const ManagersContext& context)
 {
-    CasterComponent::update(eTime);
+    if (!m_dead && m_health == 0) {
+        m_dead = true;
 
-    Vector2 newPos = m_pos;
+        //m_dead is passed as a reference in these two functions
+        //(so that buffs can prevent a unit from dying)
+        onDeath(m_dead);
 
-    //@DELETE
-    //move all units of team 1 randomly (player is team 0)
-    if (m_teamId == 1) {
-        if (m_vel == Vector2()) {
-            m_vel = Vector2(rand() % 200 - 100.f, rand() % 200 - 100.f);
+        if (m_dead && context.gameMode) {
+            //@WIP: Put this only on Hero::update (Hero = Unit + death/respawn + XP + name)
+            context.gameMode->onHeroDeath(this, m_dead);
+        }
+
+        if (m_dead) {
+            u32 killerUniqueId = getLatestDamageDealer();
+            Entity* entity = context.entityManager->entities.atUniqueId(killerUniqueId);
+
+            if (entity) {
+                Unit* unit = dynamic_cast<Unit*>(entity);
+
+                if (unit) {
+                    unit->onEntityKill(this);
+                }
+            }
         }
     }
 
-    //@DELETE (this type of movement probably shouldn't be cancelled by status)
-    if (m_status.canMove())
-    newPos += m_vel * eTime.asSeconds();
-    //other required movement (like dragged movement, forces and friction, etc)
+    if (m_dead) return;
 
-    if (newPos != m_pos) {
-        moveColliding(newPos, context);
+    //some abilities add buffs to the unit when created
+    //areBuffsAdded is checked individually just in case abilities change or something like that
+    if (!m_primaryFire->areBuffsAdded()) m_primaryFire->addBuffsToCaster(this, context);
+    if (!m_secondaryFire->areBuffsAdded()) m_secondaryFire->addBuffsToCaster(this, context);
+    if (!m_altAbility->areBuffsAdded()) m_altAbility->addBuffsToCaster(this, context);
+    if (!m_ultimate->areBuffsAdded()) m_ultimate->addBuffsToCaster(this, context);
+
+    CasterComponent::update(eTime, context.gameMode);
+
+    //it's important to check every update in case the unit has moved using abilities or something else instead of input
+    if (m_pos != m_prevPos || m_collisionRadius != m_prevCollisionRadius) {
+        context.collisionManager->onUpdateEntity(m_uniqueId, m_pos, m_collisionRadius);
+
+        m_prevPos = m_pos;
+        m_prevCollisionRadius = m_collisionRadius;
     }
 
     m_inBush = context.tileMap->isColliding(TILE_BUSH, Circlef(m_pos, m_collisionRadius));
@@ -154,7 +179,7 @@ void Unit::update(sf::Time eTime, const ManagersContext& context)
         Entity* revealedEntity = context.entityManager->entities.atUniqueId(query.GetCurrent()->uniqueId);
 
         //we don't need to reveal units of the same team
-        if (revealedEntity->getTeamId() == m_teamId) {
+        if (!revealedEntity || revealedEntity->getTeamId() == m_teamId) {
             query.Next();
             continue;
         }
@@ -281,14 +306,16 @@ void Unit::packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) c
     }
 }
 
-void Unit::onTakeDamage(u16 damage, Entity* source)
+void Unit::onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId)
 {
-    BuffHolderComponent::onTakeDamage(damage, source);
+    BuffHolderComponent::onTakeDamage(damage, source, uniqueId, teamId);
+    HealthComponent::onTakeDamage(damage, source, uniqueId, teamId);
 }
 
 void Unit::onBeHealed(u16 amount, Entity* source)
 {
     BuffHolderComponent::onBeHealed(amount, source);
+    HealthComponent::onBeHealed(amount, source);
 }
 
 void Unit::applyInput(const PlayerInput& input, const ManagersContext& context, u16 clientDelay)
@@ -369,7 +396,7 @@ void Unit::moveColliding(Vector2 newPos, const ManagersContext& context, bool fo
 
     m_pos = moveCollidingTilemap_impl(m_pos, newPos, m_collisionRadius, context.tileMap);
 
-    context.collisionManager->onUpdateUnit(m_uniqueId, m_pos, m_collisionRadius);
+    context.collisionManager->onUpdateEntity(m_uniqueId, m_pos, m_collisionRadius);
 }
 
 C_Unit* C_Unit::clone() const
@@ -597,7 +624,13 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
         m_ui.setUnit(this);
         m_ui.setFonts(context.fonts);
         m_ui.setTextureLoader(context.textures);
-        m_ui.setIsAlly(m_teamId == managersContext.entityManager->controlledEntityTeamId);
+    }
+
+    //isAlly can change if the client changes the team its spectating
+    bool isAlly = (m_teamId == managersContext.entityManager->getLocalTeamId());
+
+    if (!m_ui.getUnit() || isAlly != m_ui.getIsAlly()) {
+        m_ui.setIsAlly(m_teamId == managersContext.entityManager->getLocalTeamId());
     }
 
     uiRenderNodes.emplace_back(getPosition().y, m_uniqueId);
@@ -609,8 +642,9 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
     std::string& dataString = uiRenderNodes.back().debugDisplayData;
     dataString += std::to_string(m_uniqueId) + "\n";
     dataString += "Team: " + std::to_string(m_teamId) + "\n";
-    dataString += "ServerRevealed: " + std::to_string(isServerRevealed()) + "\n";
-    dataString += "LocallyHidden: " + std::to_string(m_locallyHidden) + "\n";
+    // dataString += "ServerRevealed: " + std::to_string(isServerRevealed()) + "\n";
+    // dataString += "LocallyHidden: " + std::to_string(m_locallyHidden) + "\n";
+    dataString += "Is Solid: " + std::to_string(m_solid) + "\n";
 #endif
 
     //setup the weapon node if equipped

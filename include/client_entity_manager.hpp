@@ -68,6 +68,21 @@ public:
 
     void setTileMap(TileMap* tileMap);
 
+    u8 getLocalTeamId() const;
+    u32 getLocalUniqueId() const;
+
+    u8 getControlledEntityTeamId() const;
+    void setControlledEntityTeamId(u8 teamId);
+
+    u32 getControlledEntityUniqueId() const;
+    void setControlledEntityUniqueId(u32 uniqueId);
+
+    void setSpectatingEntityTeamId(u8 teamId);
+    void setSpectatingEntityUniqueId(u32 uniqueId);
+
+    bool isHeroDead() const;
+    void setHeroDead(bool heroDead);
+
     std::vector<RenderNode>& getRenderNodes();
     std::vector<RenderNode>& getUIRenderNodes();
 
@@ -77,9 +92,6 @@ public:
 
     Bucket<C_Projectile> localProjectiles;
     u32 localLastUniqueId;
-
-    u32 controlledEntityUniqueId;
-    u8 controlledEntityTeamId;
 
     TileMap* m_tileMap;
 
@@ -102,4 +114,12 @@ private:
     static std::unique_ptr<C_Entity> m_entityData[ENTITY_MAX_TYPES];
 
     static void loadEntityData(const Context& context);
+    
+    u32 m_controlledEntityUniqueId;
+    u8 m_controlledEntityTeamId;
+
+    u32 m_spectatingEntityUniqueId;
+    u8 m_spectatingEntityTeamId;
+
+    bool m_heroDead;
 };

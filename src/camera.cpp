@@ -70,7 +70,10 @@ void Camera::changeState()
 
 void Camera::snapInstant(const Vector2& pos)
 {
-    m_view->setCenter(_clamp(pos));
+    const Vector2 clamped = _clamp(pos);
+
+    m_view->setCenter(clamped);
+    m_currentTransition.endPos = clamped;
     m_currentTransition.time = sf::Time::Zero;
 }
 
@@ -124,8 +127,18 @@ Vector2 Camera::_clamp(const Vector2& pos) const
 {
     Vector2 viewSize = m_view->getSize();
     Vector2 newPos;
-    newPos.x = Helper_clamp(pos.x, viewSize.x/2.f, (float) m_mapSize.x - viewSize.x/2.f);
-    newPos.y = Helper_clamp(pos.y, viewSize.y/2.f, (float) m_mapSize.y - viewSize.y/2.f);
+
+    if (m_mapSize.x < viewSize.x) {
+        newPos.x = m_mapSize.x/2.f;
+    } else {
+        newPos.x = Helper_clamp(pos.x, viewSize.x/2.f, (float) m_mapSize.x - viewSize.x/2.f);
+    }
+
+    if (m_mapSize.y < viewSize.y) {
+        newPos.y = m_mapSize.y/2.f;
+    } else {
+        newPos.y = Helper_clamp(pos.y, viewSize.y/2.f, (float) m_mapSize.y - viewSize.y/2.f);
+    }
 
     return newPos;
 }

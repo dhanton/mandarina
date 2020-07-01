@@ -66,7 +66,7 @@ struct _BaseProjectileData
 struct Projectile : _BaseProjectileData 
 {
     float distanceTraveled;
-    Entity* shooter;
+    u32 shooterUniqueId;
 
     u8 buffAppliedType;
     u16 damage;
@@ -123,15 +123,7 @@ void C_Projectile_localUpdate(C_Projectile& projectile, sf::Time eTime, const C_
 //check collisions with units locally and remove the projectile if collision happens
 void C_Projectile_checkCollisions(C_Projectile& projectile, const C_ManagersContext& context);
 
-//depending on the projectile type this function might do different things
-//default (and most projectiles) just deal damage
-//some heal, pull units to them, etc
-//damage depends on the unit that shot it
-void Projectile_onHit(Projectile& projectile, Unit* unitHit);
-//Unit* shooter = context.entityManager.units.atUniqueId(projectile.shooterUniqueId);
-//if (shooter)
-//unitHit->takeDamage(shooter->damage)
-//shooter->onDealDamage(*shooter, unitHit)
+void Projectile_onHit(Projectile& projectile, Unit* unitHit, const ManagersContext& context);
 
 //hitting a wall/unit or 
 void Projectile_onDeath(Projectile& projectile);

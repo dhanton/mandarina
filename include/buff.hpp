@@ -4,6 +4,7 @@
 #include "defines.hpp"
 #include "json_parser.hpp"
 #include "crcpacket.hpp"
+#include "managers_context.hpp"
 
 enum BuffType {
     BUFF_NONE, 
@@ -60,18 +61,29 @@ public:
     virtual void onEnd();
     virtual void onPreUpdate(sf::Time eTime);
     virtual void onUpdate(sf::Time eTime);
-    virtual void onDeath();
-    virtual void onTakeDamage(u16 damage, Entity* source);
-    virtual void onDealDamage(u16 damage, Entity* receiver);
+    virtual void onDeath(bool& dead);
+    
+    //uniqueId and teamId are passed since the source entity might be invalid when the damage is dealt
+    virtual void onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId);
+
+    virtual void onDealDamage(u16 damage, Entity* target);
     virtual void onBeHealed(u16 amount, Entity* source);
-    virtual void onHeal(u16 amount, Entity* receiver);
+    virtual void onHeal(u16 amount, Entity* target);
+    virtual void onEntityKill(Entity* target);
     // virtual void onAbilityCasted(Ability* ability);
     //onGoingHidden onGoingInvis onBreakingInvis
 
     void setUnit(Unit* unit);
 
     bool isDead() const;
+    
     u8 getType() const;
+    void setBuffType(u8 type);
+
+    //it can be useful for some buffs to hold a pointer to their creator
+    //like for example some buffs asociated with abilities
+    virtual void setCreator(void* creator, const ManagersContext& context);
+
     float getCurrentTime() const;
 
 protected:

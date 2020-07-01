@@ -35,7 +35,7 @@ public:
 
     virtual void onCast(Unit* caster, const ManagersContext& context, u16 clientDelay) = 0;
     virtual void C_onCast(C_Unit* caster, Vector2& pos, const C_ManagersContext& context, u32 inputId, bool repeating) = 0;
-    virtual void update(sf::Time eTime) = 0;
+    virtual void update(sf::Time eTime, GameMode* gameMode) = 0;
     
     //casting should depend only on internals of ability and the status of the unit
     //(both of which are displayed in client, which is important)
@@ -46,11 +46,18 @@ public:
     virtual float getPercentage() const;
     virtual u16 getMaxTime() const;
 
-    virtual void loadFromJson(const rapidjson::Document& doc) = 0;
+    //Abilities can add buffs to their casters when the caster is created
+    //This can be used for triggers like: passive abilities, recharged when damage dealt, etc
+    bool areBuffsAdded() const;
+    virtual void addBuffsToCaster(Unit* unit, const ManagersContext& context);
+
+    virtual void loadFromJson(const rapidjson::Document& doc);
 
 private:
     u8 m_type;
     u8 m_iconTextureId;
+
+    bool m_buffsAdded;
 };
 
 class CooldownAbility : public Ability
@@ -58,7 +65,7 @@ class CooldownAbility : public Ability
 public:
     virtual CooldownAbility* clone() const = 0;
 
-    virtual void update(sf::Time eTime);
+    virtual void update(sf::Time eTime, GameMode* gameMode);
     virtual bool canBeCasted(const Status& status) const;
 
     virtual float getPercentage() const;
@@ -89,23 +96,30 @@ class RechargeAbility : public Ability
 public:
     virtual RechargeAbility* clone() const = 0;
 
-    virtual void update(sf::Time eTime);
+    virtual void update(sf::Time eTime, GameMode* gameMode);
     virtual bool canBeCasted(const Status& status) const;
 
     virtual float getPercentage() const;
+    virtual void addToPercentage(float amount);
+
+    virtual void addBuffsToCaster(Unit* unit, const ManagersContext& context);
 
     virtual void loadFromJson(const rapidjson::Document& doc);
 
-    //The ability needs to be charged when the unit deals damage
-    //or performs different in-game actions
-    //(use a buff for this??)
+    float getRechargeMultiplier() const;
+    float getTimeRechargeMultiplier() const;
 
 protected:
     void onCastUpdate();
 
 private:
     float m_percentage;
+
+    //recharge caused by damage, stuns, kills, heal, etc
     float m_rechargeMultiplier;
+
+    //recharge caused by time
+    float m_timeRechargeMultiplier;
 };
 
 class PassiveAbility : public Ability
@@ -113,7 +127,7 @@ class PassiveAbility : public Ability
 public:
     virtual PassiveAbility* clone() const = 0;
 
-    virtual void update(sf::Time eTime);
+    virtual void update(sf::Time eTime, GameMode* gameMode);
     virtual bool canBeCasted(const Status& status) const;
 
     virtual void loadFromJson(const rapidjson::Document& doc);
@@ -133,6 +147,8 @@ private:
     
 #define ABILITY_BACKTRACK_PROJECTILE(delay) if (projectile) {Projectile_backtrackCollisions(*projectile, context, delay);}
 
-#define ABILITY_SET_PROJECTILE_SHOOTER(caster) if (projectile && caster) {projectile->shooter = caster;}
+#define ABILITY_SET_PROJECTILE_SHOOTER(caster) if (projectile && caster) {projectile->shooterUniqueId = caster->getUniqueId();}
 
 #define ABILITY_SET_PROJECTILE_INPUT_ID(inputId) if (projectile) {projectile->createdInputId = inputId;}
+
+#define ABILITY_SET_PROJECTILE_DAMAGE_MULTIPLIER(multiplier) if (projectile) {projectile->damage *= multiplier;}

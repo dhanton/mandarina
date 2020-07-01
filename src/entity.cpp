@@ -106,7 +106,7 @@ void BaseEntityComponent::loadFromJson(const rapidjson::Document& doc)
         m_flyingHeight = 0;
     }
 
-    m_collisionRadius = doc["collision_radius"].GetInt();
+    m_collisionRadius = doc["collision_radius"].GetUint();
 
     m_inBush = false;
 
@@ -207,10 +207,10 @@ void C_Entity::insertRenderNode(const C_ManagersContext& managersContext, const 
 #endif
 }
 
-void HealthComponent::takeDamage(u16 damage, Entity* source)
+void HealthComponent::takeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId)
 {
     m_health = std::max((int) m_health - (int) damage, 0);
-    onTakeDamage(damage, source);
+    onTakeDamage(damage, source, uniqueId, teamId);
 }
 
 void HealthComponent::beHealed(u16 amount, Entity* source)
@@ -219,9 +219,10 @@ void HealthComponent::beHealed(u16 amount, Entity* source)
     onBeHealed(amount, source);
 }
 
-void HealthComponent::onTakeDamage(u16 damage, Entity* source)
+void HealthComponent::onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId)
 {
-
+    m_latestDamageDealer = uniqueId;
+    m_latestDamageDealerTeamId = teamId;
 }
 
 void HealthComponent::onBeHealed(u16 amount, Entity* source)
@@ -239,12 +240,24 @@ u16 HealthComponent::getMaxHealth() const
     return m_maxHealth;
 }
 
+u8 HealthComponent::getLatestDamageDealerTeamId() const
+{
+    return m_latestDamageDealerTeamId;
+}
+
+u32 HealthComponent::getLatestDamageDealer() const
+{
+    return m_latestDamageDealer;
+}
+
 void HealthComponent::loadFromJson(const rapidjson::Document& doc)
 {
-    m_maxHealth = doc["health"].GetInt();
+    m_latestDamageDealer = 0;
+
+    m_maxHealth = doc["health"].GetUint();
 
     if (doc.HasMember("starting_health")) {
-        m_health = doc["starting_health"].GetInt();
+        m_health = doc["starting_health"].GetUint();
     } else {
         m_health = m_maxHealth;
     }
@@ -265,7 +278,7 @@ u8 TrueSightComponent::getTrueSightRadius() const
 void TrueSightComponent::loadFromJson(const rapidjson::Document& doc)
 {
     if (doc.HasMember("true_sight_radius")) {
-        m_trueSightRadius = doc["true_sight_radius"].GetInt();
+        m_trueSightRadius = doc["true_sight_radius"].GetUint();
     } else {
         m_trueSightRadius = defaultTrueSightRadius;
     }

@@ -33,10 +33,12 @@ int main(int argc, char* argv[])
     HSteamNetConnection localCon1 = k_HSteamNetConnection_Invalid;
     HSteamNetConnection localCon2 = k_HSteamNetConnection_Invalid;
 
+#ifdef MANDARINA_DEBUG
     //NETWORK CONDITIONS TESTING
     SteamNetworkingUtils()->SetGlobalConfigValueInt32(k_ESteamNetworkingConfig_FakePacketLag_Recv, 25);
     // SteamNetworkingUtils()->SetGlobalConfigValueInt32(k_ESteamNetworkingConfig_FakePacketLoss_Recv, 10);
     // SteamNetworkingUtils()->SetGlobalConfigValueInt32(k_ESteamNetworkingConfig_FakePacketReorder_Recv, 10);
+#endif
 
     if (argc > 1) {
         std::string option = argv[1];
@@ -121,7 +123,7 @@ int main(int argc, char* argv[])
 
         case ExecMode::Server:
         {
-            GameServer server(context, 1);
+            GameServer server(context, GAME_MODE_BATTLE_ROYALE_FFA);
             server.mainLoop(running);
 
             break;
@@ -129,7 +131,7 @@ int main(int argc, char* argv[])
 
         case ExecMode::LocalConnection:
         {
-            GameServer server(context, 1);
+            GameServer server(context,GAME_MODE_BATTLE_ROYALE_FFA);
 
             std::thread thread(&GameServer::mainLoop, &server, std::ref(running));
 

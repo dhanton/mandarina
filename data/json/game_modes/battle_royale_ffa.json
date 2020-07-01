@@ -1,0 +1,7 @@
+{
+    "max_players": 2,
+    "can_join_mid_match": false,
+    "players_per_team": 1,
+    "lobby_map_filename": "lobby_small",
+    "map_filename": "test_small"
+}

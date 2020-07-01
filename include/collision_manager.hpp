@@ -18,8 +18,10 @@ public:
     CollisionManager& operator=(const CollisionManager&) = delete;
 
     void onInsertEntity(u32 uniqueId, const Vector2& pos, u8 radius);
-    void onUpdateUnit(u32 uniqueId, const Vector2& newPos, float newRadius);
-    void onDeleteUnit(u32 uniqueId);
+    void onUpdateEntity(u32 uniqueId, const Vector2& newPos, float newRadius);
+    void onDeleteEntity(u32 uniqueId);
+    
+    void clear();
 
     QuadtreeType* getQuadtree();
 

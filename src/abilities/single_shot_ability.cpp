@@ -3,6 +3,7 @@
 #include "unit.hpp"
 #include "server_entity_manager.hpp"
 #include "client_entity_manager.hpp"
+#include "game_mode.hpp"
 
 SingleShotAbility* SingleShotAbility::clone() const
 {
@@ -18,6 +19,10 @@ void SingleShotAbility::onCast(Unit* caster, const ManagersContext& context, u16
     ABILITY_CREATE_PROJECTILE(m_projectileType, caster->getPosition(), caster->getAimAngle(), caster->getTeamId())
     ABILITY_SET_PROJECTILE_SHOOTER(caster)
     ABILITY_BACKTRACK_PROJECTILE(clientDelay)
+
+    //@WIP: Get unit multiplier as well based on Hero power
+    float multiplier = context.gameMode->getDamageMultiplier();
+    ABILITY_SET_PROJECTILE_DAMAGE_MULTIPLIER(multiplier)
 }
 
 void SingleShotAbility::C_onCast(C_Unit* caster, Vector2& casterPos, const C_ManagersContext& context, u32 inputId, bool repeating)

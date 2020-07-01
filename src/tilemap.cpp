@@ -1,6 +1,7 @@
 #include "tilemap.hpp"
 
 #include <iostream>
+#include "paths.hpp"
 
 TileMap::TileMap(u16 tileSize, u16 tileScale)
 {
@@ -8,11 +9,11 @@ TileMap::TileMap(u16 tileSize, u16 tileScale)
     m_tileScale = tileScale;
 }
 
-void TileMap::loadFromFile(const std::string& file)
+void TileMap::loadFromFile(const std::string& filename)
 {
     sf::Image image;
 
-    if (!image.loadFromFile(file)) {
+    if (!image.loadFromFile(MAPS_PATH + filename + "." + MAP_FILENAME_EXT)) {
         std::cout << "TileMap::loadFromFile error - Invalid filename" << std::endl;
         return;
     }
@@ -41,6 +42,30 @@ void TileMap::loadFromFile(const std::string& file)
             }
         }
     }
+}
+
+std::list<Vector2> TileMap::loadSpawnPoints(const std::string& filename)
+{
+    sf::Image image;
+    std::list<Vector2> points;
+
+    if (!image.loadFromFile(MAPS_PATH + filename + "." + MAP_FILENAME_EXT)) {
+        std::cout << "TileMap::loadFromFile error - Invalid filename" << std::endl;
+        return points;
+    }
+
+
+    float tileSize = m_tileSize * m_tileScale;
+
+    for (int i = 0; i < image.getSize().x; ++i) {
+        for (int j = 0; j < image.getSize().y; ++j) {
+            if (image.getPixel(i, j) == sf::Color::Yellow) {
+                points.emplace_back(i * tileSize + tileSize/2.f, j * tileSize + tileSize/2.f);
+            }
+        }
+    }
+
+    return points;
 }
 
 bool TileMap::isColliding(u16 tileFlags, const Circlef& circle) const

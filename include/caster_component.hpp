@@ -28,7 +28,7 @@ public:
     CasterComponent& operator=(CasterComponent const& other);
     CasterComponent& operator=(CasterComponent && other) = default;
 
-    void update(sf::Time eTime);
+    void update(sf::Time eTime, GameMode* gameMode);
     void applyInput(Unit* caster, const PlayerInput& input, const ManagersContext& context, u16 clientDelay, const CanCast_ExtraFlags& extraFlags);
 
     //Since this class is not parent of C_Unit, this method has to be called for the controlledEntity only

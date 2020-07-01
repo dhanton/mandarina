@@ -46,22 +46,22 @@ CasterComponent& CasterComponent::operator=(CasterComponent const& other)
     return *this;
 }
 
-void CasterComponent::update(sf::Time eTime)
+void CasterComponent::update(sf::Time eTime, GameMode* gameMode)
 {
     if (m_primaryFire) {
-        m_primaryFire->update(eTime);
+        m_primaryFire->update(eTime, gameMode);
     }
 
     if (m_secondaryFire) {
-        m_secondaryFire->update(eTime);
+        m_secondaryFire->update(eTime, gameMode);
     }
 
     if (m_altAbility) {
-        m_altAbility->update(eTime);
+        m_altAbility->update(eTime, gameMode);
     }
 
     if (m_ultimate) {
-        m_ultimate->update(eTime);
+        m_ultimate->update(eTime, gameMode);
     }
 }
 

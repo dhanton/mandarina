@@ -17,6 +17,8 @@ public:
     const ClientCaster* getClientCaster() const;
     
     void setIsAlly(bool isAlly);
+    bool getIsAlly() const;
+
     void setFonts(const FontLoader* fonts);
     void setTextureLoader(const TextureLoader* textures);
 

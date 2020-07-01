@@ -9,15 +9,19 @@ class ClientCaster : public sf::Drawable, public InContext
 public:
     ClientCaster(const Context& context);
 
-    void update(sf::Time eTime);
+    void update(sf::Time eTime, GameMode* gameMode);
     void applyInputs(const PlayerInput& input, Vector2& casterPos, const C_ManagersContext& context);
     void reapplyInputs(const PlayerInput& input, Vector2& casterPos, const C_ManagersContext& context);
 
-    void setCaster(C_Unit* caster);
+    void setCaster(C_Unit* caster, GameMode* gameMode);
+    void forceCasterUpdate();
     C_Unit* getCaster() const;
 
     //needed by controlled unit to render its UI
     const CooldownAbility* getPrimaryFire() const;
+
+    void setSpectating(bool spectating);
+    bool getSpectating() const;
 
 private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const;
@@ -44,4 +48,6 @@ private:
     AbilityUI m_secondaryUI;
     AbilityUI m_altAbilityUI;
     AbilityUI m_ultimateUI;
+
+    bool m_spectating;
 };

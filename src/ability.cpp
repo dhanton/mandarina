@@ -2,6 +2,7 @@
 
 #include "helper.hpp"
 #include "unit.hpp"
+#include "game_mode.hpp"
 
 u8 Ability::stringToType(const std::string& typeStr)
 {
@@ -45,10 +46,31 @@ u16 Ability::getMaxTime() const
     return 0;
 }
 
-void CooldownAbility::update(sf::Time eTime)
+bool Ability::areBuffsAdded() const
+{
+    return m_buffsAdded;
+}
+
+void Ability::addBuffsToCaster(Unit* unit, const ManagersContext& context)
+{
+    m_buffsAdded = true;
+}
+
+void Ability::loadFromJson(const rapidjson::Document& doc)
+{
+    m_buffsAdded = false;
+}
+
+void CooldownAbility::update(sf::Time eTime, GameMode* gameMode)
 {
     if (m_currentCharges < m_maxCharges) {
-        float delta = m_currentCooldown - eTime.asSeconds();
+        float globalTimeMultiplier = 1.f;
+
+        if (gameMode) {
+            globalTimeMultiplier = gameMode->getAbilityTimeMultiplier();
+        }
+
+        float delta = m_currentCooldown - eTime.asSeconds() * globalTimeMultiplier;
 
         if (delta <= 0.f) {
             m_currentCharges++;
@@ -75,7 +97,9 @@ bool CooldownAbility::canBeCasted(const Status& status) const
 
 void CooldownAbility::loadFromJson(const rapidjson::Document& doc)
 {
-    m_maxCharges = doc["charges"].GetInt();
+    Ability::loadFromJson(doc);
+
+    m_maxCharges = doc["charges"].GetUint();
     m_cooldown = doc["cooldown"].GetFloat();
 
     if (doc.HasMember("next_charge_delay")) {
@@ -87,7 +111,7 @@ void CooldownAbility::loadFromJson(const rapidjson::Document& doc)
     m_currentNextChargeDelay = m_nextChargeDelay;
 
     if (doc.HasMember("starting_charges")) {
-        m_currentCharges = doc["starting_charges"].GetInt();
+        m_currentCharges = doc["starting_charges"].GetUint();
     } else {
         m_currentCharges = m_maxCharges;
     }
@@ -141,10 +165,17 @@ void CooldownAbility::onCastUpdate()
     }
 }
 
-void RechargeAbility::update(sf::Time eTime)
+void RechargeAbility::update(sf::Time eTime, GameMode* gameMode)
 {
+    float globalTimeMultiplier = 1.f;
+
+    //@WIP: Make this work on client (by passing game mode type instead of map, and letting the client figure out the rest)
+    if (gameMode) {
+        globalTimeMultiplier = gameMode->getAbilityTimeMultiplier();
+    }
+
     //default speed is one charge every 3 seconds
-    m_percentage += 0.0033333f * eTime.asSeconds() * m_rechargeMultiplier;
+    m_percentage += 0.0033333f * eTime.asSeconds() * m_timeRechargeMultiplier * globalTimeMultiplier;
 }
 
 bool RechargeAbility::canBeCasted(const Status& status) const
@@ -154,6 +185,8 @@ bool RechargeAbility::canBeCasted(const Status& status) const
 
 void RechargeAbility::loadFromJson(const rapidjson::Document& doc)
 {
+    Ability::loadFromJson(doc);
+
     if (doc.HasMember("starting_percentage")) {
         m_percentage = Helper_clamp(doc["starting_percentage"].GetFloat(), 0.f, 1.f);
     } else {
@@ -165,6 +198,12 @@ void RechargeAbility::loadFromJson(const rapidjson::Document& doc)
     } else {
         m_rechargeMultiplier = 1.f;
     }
+
+    if (doc.HasMember("time_recharge_multiplier")) {
+        m_timeRechargeMultiplier = doc["time_recharge_multiplier"].GetFloat();
+    } else {
+        m_timeRechargeMultiplier = 1.f;
+    }
 }
 
 float RechargeAbility::getPercentage() const
@@ -172,12 +211,39 @@ float RechargeAbility::getPercentage() const
     return m_percentage;
 }
 
+void RechargeAbility::addToPercentage(float amount)
+{
+    m_percentage += amount;
+}
+
+void RechargeAbility::addBuffsToCaster(Unit* unit, const ManagersContext& context)
+{
+    Ability::addBuffsToCaster(unit, context);
+
+    Buff* buff = unit->addBuff(BUFF_RECHARGE_ABILITY);
+    
+    if (buff) {
+        buff->setCreator(this, context);
+    }
+}
+
 void RechargeAbility::onCastUpdate()
 {
     m_percentage = 0.f;
 }
 
-void PassiveAbility::update(sf::Time eTime)
+float RechargeAbility::getRechargeMultiplier() const
+{
+    return m_rechargeMultiplier;
+}
+
+float RechargeAbility::getTimeRechargeMultiplier() const
+{
+    return m_timeRechargeMultiplier;
+}
+
+
+void PassiveAbility::update(sf::Time eTime, GameMode* gameMode)
 {
 
 }
@@ -189,5 +255,5 @@ bool PassiveAbility::canBeCasted(const Status& status) const
 
 void PassiveAbility::loadFromJson(const rapidjson::Document& doc)
 {
-
+    Ability::loadFromJson(doc);
 }

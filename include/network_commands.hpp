@@ -2,13 +2,18 @@
 enum class ClientCommand {
     Null,
     Snapshot,
-    InitialConditions
+    InitialInfo,
+    PlayerCoords,
+    GameModeType,
+    GameStarted,
+    ChangeSpectator,
+    TeamEliminated,
+    GameEnded
 };
 
 //Commands that can be received by the server
 enum class ServerCommand {
     Null,
-    PlayerReady,
     LatestSnapshotId,
     PlayerInput,
     ChangeInputRate,

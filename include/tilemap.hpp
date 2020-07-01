@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics/Image.hpp>
 #include <vector>
+#include <list>
 #include "defines.hpp"
 #include "bounding_body.hpp"
 
@@ -22,7 +23,8 @@ class TileMap
 public:
     TileMap(u16 tileSize = DEFAULT_TILE_SIZE, u16 tileScale = TILE_SCALE);
 
-    void loadFromFile(const std::string& file);
+    void loadFromFile(const std::string& filename);
+    std::list<Vector2> loadSpawnPoints(const std::string& filename);
 
     bool isColliding(u16 tileFlags, const Circlef& circle) const;
     bool isContained(u16 tileFlags, const Circlef& circle) const;

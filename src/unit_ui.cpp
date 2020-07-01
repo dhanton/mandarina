@@ -35,6 +35,11 @@ void UnitUI::setIsAlly(bool isAlly)
     m_isAlly = isAlly;
 }
 
+bool UnitUI::getIsAlly() const
+{
+    return m_isAlly;
+}
+
 void UnitUI::setFonts(const FontLoader* fonts)
 {
     m_fonts = fonts;

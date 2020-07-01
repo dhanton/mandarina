@@ -22,22 +22,34 @@ void CollisionManager::onInsertEntity(u32 uniqueId, const Vector2& pos, u8 radiu
     m_quadtree->Insert(m_entities[uniqueId].get());
 }
 
-void CollisionManager::onUpdateUnit(u32 uniqueId, const Vector2& newPos, float newRadius)
+void CollisionManager::onUpdateEntity(u32 uniqueId, const Vector2& newPos, float newRadius)
 {
     auto it = m_entities.find(uniqueId);
 
     if (it != m_entities.end()) {
-        it->second->body.circle.center = newPos;
-        it->second->body.circle.radius = newRadius;
+        //minimizes the amount of calls to Quadtree::Update
+        bool needsUpdate = false;
 
-        m_quadtree->Update(it->second.get());
+        if (it->second->body.circle.center != newPos) {
+            it->second->body.circle.center = newPos;
+            needsUpdate = true;
+        }
+
+        if (it->second->body.circle.radius != newRadius) {
+            it->second->body.circle.radius = newRadius;
+            needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+            m_quadtree->Update(it->second.get());
+        }
 
     } else {
         std::cout <<  "CollisionManager::onUpdateUnit error - UniqueId doesn't exist" << std::endl;
     }
 }
 
-void CollisionManager::onDeleteUnit(u32 uniqueId)
+void CollisionManager::onDeleteEntity(u32 uniqueId)
 {
     auto it = m_entities.find(uniqueId);
 
@@ -48,6 +60,12 @@ void CollisionManager::onDeleteUnit(u32 uniqueId)
     } else {
         std::cout <<  "CollisionManager::onDeleteUnit error - UniqueId doesn't exist" << std::endl;
     }
+}
+
+void CollisionManager::clear()
+{
+    m_quadtree->Clear();
+    m_entities.clear();
 }
 
 QuadtreeType* CollisionManager::getQuadtree()

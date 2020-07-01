@@ -1,9 +1,12 @@
 #include "client_caster.hpp"
 
 #include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/Graphics/RectangleShape.hpp>
+#include <SFML/Graphics/Text.hpp>
 
 #include "unit.hpp"
 #include "server_entity_manager.hpp"
+#include "game_mode.hpp"
 
 ClientCaster::ClientCaster(const Context& context):
     InContext(context),
@@ -14,9 +17,9 @@ ClientCaster::ClientCaster(const Context& context):
     m_caster = nullptr;
 }
 
-void ClientCaster::update(sf::Time eTime)
+void ClientCaster::update(sf::Time eTime, GameMode* gameMode)
 {
-    m_casterComponent.update(eTime);
+    m_casterComponent.update(eTime, gameMode);
 
     if (m_casterComponent.isValid()) {
         m_secondaryUI.setPercentage(m_casterComponent.getSecondaryFire()->getPercentage());
@@ -42,7 +45,7 @@ void ClientCaster::reapplyInputs(const PlayerInput& input, Vector2& casterPos, c
     m_casterComponent.C_applyInput(m_caster, casterPos, input, context, true, getExtraFlags());
 }
 
-void ClientCaster::setCaster(C_Unit* caster)
+void ClientCaster::setCaster(C_Unit* caster, GameMode* gameMode)
 {
     if (!caster) return;
 
@@ -67,8 +70,14 @@ void ClientCaster::setCaster(C_Unit* caster)
     m_altAbilityUI.setTexture(m_casterComponent.getAltAbility()->getIconTextureId());
     m_ultimateUI.setTexture(m_casterComponent.getUltimate()->getIconTextureId());
 
-    m_secondaryUI.setMaxTime(m_casterComponent.getSecondaryFire()->getMaxTime());
-    m_altAbilityUI.setMaxTime(m_casterComponent.getAltAbility()->getMaxTime());
+    float timeMultiplier = 1.f;
+
+    if (gameMode) {
+        timeMultiplier = gameMode->getAbilityTimeMultiplier();
+    }
+
+    m_secondaryUI.setMaxTime(m_casterComponent.getSecondaryFire()->getMaxTime() / timeMultiplier);
+    m_altAbilityUI.setMaxTime(m_casterComponent.getAltAbility()->getMaxTime() / timeMultiplier);
 
     //@TODO: Shape Type should depend on the type of the ability
     m_secondaryUI.setShapeType(AbilityUI::BOX);
@@ -92,6 +101,11 @@ void ClientCaster::setCaster(C_Unit* caster)
     m_caster = caster;
 }
 
+void ClientCaster::forceCasterUpdate()
+{
+    m_caster = nullptr;
+}
+
 C_Unit* ClientCaster::getCaster() const
 {
     return m_caster;
@@ -102,6 +116,16 @@ const CooldownAbility* ClientCaster::getPrimaryFire() const
     return m_casterComponent.getPrimaryFire();
 }
 
+void ClientCaster::setSpectating(bool spectating)
+{
+    m_spectating = spectating;
+}
+
+bool ClientCaster::getSpectating() const
+{
+    return m_spectating;
+}
+
 void ClientCaster::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     if (!m_caster) return;
@@ -109,9 +133,30 @@ void ClientCaster::draw(sf::RenderTarget& target, sf::RenderStates states) const
     sf::View previousView = target.getView();
     target.setView(target.getDefaultView());
 
-    target.draw(m_secondaryUI, states);
-    target.draw(m_altAbilityUI, states);
-    target.draw(m_ultimateUI, states);
+    if (m_spectating) {
+        //draw SPECTATING text
+        const Vector2u windowSize = m_context.window->getSize();
+
+        sf::Text spectatingText;
+        spectatingText.setFont(m_context.fonts->getResource("keep_calm_font"));
+        spectatingText.setCharacterSize(50);
+        spectatingText.setString("SPECTATING");
+        spectatingText.setFillColor(sf::Color::White);
+        spectatingText.setOutlineColor(sf::Color::Black);
+        spectatingText.setOutlineThickness(2.f);
+        spectatingText.setOrigin(spectatingText.getLocalBounds().width/2.f + spectatingText.getLocalBounds().left, 
+                                spectatingText.getLocalBounds().height/2.f + spectatingText.getLocalBounds().top);
+
+        float yOffset = 1.5f * spectatingText.getLocalBounds().height;
+        spectatingText.setPosition({windowSize.x/2.f, windowSize.y - spectatingText.getLocalBounds().height/2.f - yOffset});
+        
+        target.draw(spectatingText, states);
+
+    } else {
+        target.draw(m_secondaryUI, states);
+        target.draw(m_altAbilityUI, states);
+        target.draw(m_ultimateUI, states);
+    }
 
     target.setView(previousView);
 }

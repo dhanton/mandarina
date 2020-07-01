@@ -34,7 +34,7 @@ void HellsDashAbility::loadFromJson(const rapidjson::Document& doc)
 {
     CooldownAbility::loadFromJson(doc);
 
-    m_dashRange = doc["dash_range"].GetInt();
+    m_dashRange = doc["dash_range"].GetUint();
 }
 
 Vector2 HellsDashAbility::dashColliding_impl(float aimAngle, const Vector2& casterPos, float collisionRadius, TileMap* map)

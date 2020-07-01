@@ -85,16 +85,16 @@ void Buff::onUpdate(sf::Time eTime)
 
 }
 
-void Buff::onDeath()
+void Buff::onDeath(bool& dead)
 {
     
 }
-void Buff::onTakeDamage(u16 damage, Entity* source)
+void Buff::onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId)
 {
 
 }
 
-void Buff::onDealDamage(u16 damage, Entity* receiver)
+void Buff::onDealDamage(u16 damage, Entity* target)
 {
 
 }
@@ -104,7 +104,12 @@ void Buff::onBeHealed(u16 amount, Entity* source)
 
 }
 
-void Buff::onHeal(u16 amount, Entity* receiver)
+void Buff::onHeal(u16 amount, Entity* target)
+{
+
+}
+
+void Buff::onEntityKill(Entity* target)
 {
 
 }
@@ -122,6 +127,16 @@ bool Buff::isDead() const
 u8 Buff::getType() const
 {
     return m_type;
+}
+
+void Buff::setBuffType(u8 type)
+{
+    m_type = type;
+}
+
+void Buff::setCreator(void* creator, const ManagersContext& context)
+{
+    
 }
 
 float Buff::getCurrentTime() const

@@ -20,15 +20,14 @@ public:
     void update(sf::Time eTime);
 
     Projectile* createProjectile(u8 projectileType, const Vector2& pos, float aimAngle, u8 teamId);
-    Entity* createEntity(u8 entityType, const Vector2& pos, u8 teamId);
+    Entity* createEntity(u8 entityType, const Vector2& pos, u8 teamId, u32 forcedUniqueId = 0);
 
     void takeSnapshot(EntityManager* snapshot) const;
     void packData(const EntityManager* snapshot, u8 teamId, CRCPacket& outPacket) const;
 
     void allocateAll();
 
-    void setCollisionManager(CollisionManager* collisionManager);
-    void setTileMap(TileMap* tileMap);
+    void setManagersContext(const ManagersContext& managers);
 
     static const Entity* getEntityData(u8 type);
     static void loadEntityData(const JsonParser* jsonParser);
@@ -41,8 +40,7 @@ public:
 private:
     inline u32 _getNewUniqueId();
 
-    CollisionManager* m_collisionManager;
-    TileMap* m_tileMap;
+    ManagersContext m_managers;
 
     u32 m_lastUniqueId;
 

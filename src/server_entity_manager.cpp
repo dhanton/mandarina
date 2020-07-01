@@ -8,6 +8,8 @@ EntityManager::EntityManager(const JsonParser* jsonParser)
     loadEntityData(jsonParser);
 
     m_lastUniqueId = 0;
+
+    m_managers.entityManager = this;
 }
 
 //constructor used if the instance is a snapshot
@@ -18,25 +20,30 @@ EntityManager::EntityManager()
 
 void EntityManager::update(sf::Time eTime)
 {
-    ManagersContext context(this, m_collisionManager, m_tileMap);
-
     int i;
 
     for (auto it = entities.begin(); it != entities.end(); ++it) {
-        it->preUpdate(eTime, context);
+        it->preUpdate(eTime, m_managers);
     }
 
     for (auto it = entities.begin(); it != entities.end(); ++it) {
-        it->update(eTime, context);
+        it->update(eTime, m_managers);
     }
 
     //Is postupdate really needed?
-    for (auto it = entities.begin(); it != entities.end(); ++it) {
-        it->postUpdate(eTime, context);
+    for (auto it = entities.begin(); it != entities.end();) {
+        it->postUpdate(eTime, m_managers);
+
+        //remove dead entities
+        if (it->isDead()) {
+            it = entities.removeEntity(it);
+        } else {
+            ++it;
+        }
     }
 
     for (i = 0; i < projectiles.firstInvalidIndex(); ++i) {
-        Projectile_update(projectiles[i], eTime, context);
+        Projectile_update(projectiles[i], eTime, m_managers);
     }
 
     //remove dead projectiles
@@ -76,15 +83,28 @@ Projectile* EntityManager::createProjectile(u8 type, const Vector2& pos, float a
     return &projectile;
 }
 
-Entity* EntityManager::createEntity(u8 entityType, const Vector2& pos, u8 teamId)
+Entity* EntityManager::createEntity(u8 entityType, const Vector2& pos, u8 teamId, u32 forcedUniqueId)
 {
     if (entityType < 0 || entityType >= ENTITY_MAX_TYPES) {
         std::cout << "EntityManager::createEntity error - Invalid entity type" << std::endl;
         return nullptr;
     }
-
-    u32 uniqueId = _getNewUniqueId();
+    
     Entity* entity = nullptr;
+    u32 uniqueId;
+
+    //sometimes we might want to force the new entity to have a specific uniqueId
+    if (forcedUniqueId != 0) {
+        if (entities.atUniqueId(forcedUniqueId)) {
+            std::cout << "EntityManager::createEntity error - Forced uniqueId already exists" << std::endl;
+            return nullptr;
+        }
+
+        uniqueId = forcedUniqueId;
+
+    } else {
+        uniqueId = _getNewUniqueId();
+    }
 
     entity = m_entityData[entityType]->clone();
     entity->setUniqueId(uniqueId);
@@ -97,8 +117,8 @@ Entity* EntityManager::createEntity(u8 entityType, const Vector2& pos, u8 teamId
     //if the entity is initially solid, add it to the quadtree
     //@WIP: Maybe some quadtree entities start not being solid?
     if (entity->isSolid()) {
-        m_collisionManager->onInsertEntity(uniqueId, pos, entity->getCollisionRadius());
-        entity->onQuadtreeInserted(ManagersContext(this, m_collisionManager, m_tileMap));
+        m_managers.collisionManager->onInsertEntity(uniqueId, pos, entity->getCollisionRadius());
+        entity->onQuadtreeInserted(m_managers);
     }
 
     return entity;
@@ -172,14 +192,11 @@ void EntityManager::allocateAll()
     projectiles.resize(MAX_PROJECTILES);
 }
 
-void EntityManager::setCollisionManager(CollisionManager* collisionManager)
+void EntityManager::setManagersContext(const ManagersContext& managers)
 {
-    m_collisionManager = collisionManager;
-}
-
-void EntityManager::setTileMap(TileMap* tileMap)
-{
-    m_tileMap = tileMap;
+    m_managers.collisionManager = managers.collisionManager;
+    m_managers.tileMap = managers.tileMap;
+    m_managers.gameMode = managers.gameMode;
 }
 
 bool EntityManager::m_entitiesJsonLoaded = false;

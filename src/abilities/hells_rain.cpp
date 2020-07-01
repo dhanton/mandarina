@@ -44,15 +44,15 @@ void HellsRainAbility::loadFromJson(const rapidjson::Document& doc)
 {
     RechargeAbility::loadFromJson(doc);
 
-    m_bubbleNumber = doc["bubble_number"].GetInt();
+    m_bubbleNumber = doc["bubble_number"].GetUint();
     
     if (doc.HasMember("spread_angle")) {
-        m_spreadAngle = Helper_clamp(doc["spread_angle"].GetInt(), 0, 360);
+        m_spreadAngle = std::min(doc["spread_angle"].GetUint(), 360u);
     } else {
         m_spreadAngle = 360;
     }
     
-    m_spreadDistance = doc["spread_distance"].GetInt();
+    m_spreadDistance = doc["spread_distance"].GetUint();
 }
 
 Vector2 HellsRainAbility::calculateRndPos()

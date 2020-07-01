@@ -37,6 +37,10 @@ private:
     static bool m_abilitiesLoaded;
 };
 
+//IMPORTANT
+//CasterComponent and BuffHolderComponents should only be inherited by Unit (only units can hold buffs and cast abilities)
+//They're made into components so that internal unique_ptrs can be properly handled when units ared copied
+
 class Unit : public Entity, public _UnitBase, public HealthComponent, 
              public InvisibleComponent, public TrueSightComponent,
              public CasterComponent, public BuffHolderComponent
@@ -57,7 +61,7 @@ public:
     virtual void postUpdate(sf::Time eTime, const ManagersContext& context);
     virtual void packData(const Entity* prevEntity, u8 teamId, CRCPacket& outPacket) const;
 
-    virtual void onTakeDamage(u16 damage, Entity* source);
+    virtual void onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId);
     virtual void onBeHealed(u16 amount, Entity* source);
 
     virtual void applyInput(const PlayerInput& input, const ManagersContext& context, u16 clientDelay);
@@ -68,6 +72,9 @@ public:
 
 private:
     void moveColliding(Vector2 newPos, const ManagersContext& context, bool force = false);
+
+    Vector2 m_prevPos;
+    u8 m_prevCollisionRadius;
 };
 
 struct RenderNode;

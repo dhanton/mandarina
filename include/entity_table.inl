@@ -47,7 +47,7 @@ _Entity_Type* EntityTable<_Entity_Type>::addEntity(_Entity_Type* entity)
 template<typename _Entity_Type>
 typename EntityTable<_Entity_Type>::iterator EntityTable<_Entity_Type>::removeEntity(u32 uniqueId)
 {
-    typename _Table::iterator it = m_table.begin();
+    typename _Table::iterator it = m_table.find(uniqueId);
 
     if (it != m_table.end()) {
         return iterator(m_table.erase(it));
@@ -90,4 +90,10 @@ template<typename _Entity_Type>
 size_t EntityTable<_Entity_Type>::size() const
 {
     return m_table.size();
+}
+
+template<typename _Entity_Type>
+void EntityTable<_Entity_Type>::clear()
+{
+    m_table.clear();
 }

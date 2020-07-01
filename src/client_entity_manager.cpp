@@ -37,8 +37,11 @@ C_EntityManager::C_EntityManager(const Context& context, sf::Time worldTime):
     loadEntityData(context);
 
     localLastUniqueId = 0;
-    controlledEntityUniqueId = 0;
-    controlledEntityTeamId = 0;
+    m_controlledEntityUniqueId = 0;
+    m_controlledEntityTeamId = 0;
+    m_spectatingEntityUniqueId = 0;
+    m_spectatingEntityTeamId = 0;
+    m_heroDead = false;
 
 #ifdef MANDARINA_DEBUG
     renderingDebug = false;
@@ -58,7 +61,7 @@ C_EntityManager::C_EntityManager():
 
 void C_EntityManager::update(sf::Time eTime)
 {
-    C_ManagersContext context(this, m_tileMap);
+    C_ManagersContext context(this, m_tileMap, nullptr);
     int i = 0;
 
     while (i < localProjectiles.firstInvalidIndex()) {
@@ -75,7 +78,7 @@ void C_EntityManager::update(sf::Time eTime)
 
 void C_EntityManager::renderUpdate(sf::Time eTime)
 {
-    C_ManagersContext managersContext(this, m_tileMap);
+    C_ManagersContext managersContext(this, m_tileMap, nullptr);
 
     //we update local projectiles as much as possible (renderUpdate)
     //but we check their collision only in the normal update
@@ -120,14 +123,14 @@ void C_EntityManager::performInterpolation(const C_EntityManager* prevSnapshot, 
         return;
     }
 
-    C_ManagersContext context(this, m_tileMap);
+    C_ManagersContext context(this, m_tileMap, nullptr);
 
     //interpolate entities
     for (auto it = entities.begin(); it != entities.end(); ++it) {
         const C_Entity* prevEntity = prevSnapshot->entities.atUniqueId(it->getUniqueId());
         const C_Entity* nextEntity = nextSnapshot->entities.atUniqueId(it->getUniqueId());
 
-        it->interpolate(prevEntity, nextEntity, elapsedTime, totalTime, it->getUniqueId() == controlledEntityUniqueId);
+        it->interpolate(prevEntity, nextEntity, elapsedTime, totalTime, it->getUniqueId() == m_controlledEntityUniqueId);
     }
 
     //interpolate projectiles
@@ -144,9 +147,7 @@ void C_EntityManager::performInterpolation(const C_EntityManager* prevSnapshot, 
 void C_EntityManager::copySnapshotData(const C_EntityManager* snapshot, u32 latestAppliedInputId)
 {
     //controlledEntity might change
-    controlledEntityUniqueId = snapshot->controlledEntityUniqueId;
-
-    const C_Entity* controlledEntity = snapshot->entities.atUniqueId(controlledEntityUniqueId);
+    m_controlledEntityUniqueId = snapshot->getControlledEntityUniqueId();
 
     //copy entities that don't exist locally
     for (auto it = snapshot->entities.begin(); it != snapshot->entities.end(); ++it) {
@@ -155,7 +156,7 @@ void C_EntityManager::copySnapshotData(const C_EntityManager* snapshot, u32 late
         if (!currentEntity) {
             entities.addEntity(it->clone());
         } else {
-            currentEntity->copySnapshotData(&it, it->getUniqueId() == controlledEntityUniqueId);
+            currentEntity->copySnapshotData(&it, it->getUniqueId() == m_controlledEntityUniqueId);
         }
     }
 
@@ -217,7 +218,7 @@ void C_EntityManager::updateRevealedUnits()
 
     //O(n + m*n) where n is units and m is units on the same team
 
-    C_ManagersContext context(this, m_tileMap);
+    C_ManagersContext context(this, m_tileMap, nullptr);
 
     //locally update if each entity is visible or not
     for (auto it = entities.begin(); it != entities.end(); ++it) {
@@ -227,7 +228,7 @@ void C_EntityManager::updateRevealedUnits()
     //reveal entities locally if they meet the conditions
     for (auto it = entities.begin(); it != entities.end(); ++it) {
         //only entities of this team can reveal other entities
-        if (it->getTeamId() != controlledEntityTeamId) continue;
+        if (it->getTeamId() != getLocalTeamId()) continue;
 
         for (auto it2 = entities.begin(); it2 != entities.end(); ++it2) {
             it->localReveal(&it2);
@@ -238,7 +239,7 @@ void C_EntityManager::updateRevealedUnits()
 C_Entity* C_EntityManager::createEntity(u8 entityType, u32 uniqueId)
 {
     if (entityType < 0 || entityType >= ENTITY_MAX_TYPES) {
-        std::cout << "EntityManager::createEntity error - Invalid entity type" << std::endl;
+        std::cout << "C_EntityManager::createEntity error - Invalid entity type" << std::endl;
         return nullptr;
     }
 
@@ -277,7 +278,7 @@ C_Projectile* C_EntityManager::createProjectile(u8 type, const Vector2& pos, flo
 void C_EntityManager::loadFromData(C_EntityManager* prevSnapshot, CRCPacket& inPacket)
 {
     if (prevSnapshot) {
-        controlledEntityUniqueId = prevSnapshot->controlledEntityUniqueId;
+        m_controlledEntityUniqueId = prevSnapshot->getControlledEntityUniqueId();
     }
 
     //number of units
@@ -356,6 +357,56 @@ void C_EntityManager::allocateAll()
 void C_EntityManager::setTileMap(TileMap* tileMap)
 {
     m_tileMap = tileMap;
+}
+
+u8 C_EntityManager::getLocalTeamId() const
+{
+    return isHeroDead() ? m_spectatingEntityTeamId : m_controlledEntityTeamId;
+}
+
+u32 C_EntityManager::getLocalUniqueId() const
+{
+    return isHeroDead() ? m_spectatingEntityUniqueId : m_controlledEntityUniqueId;
+}
+
+u8 C_EntityManager::getControlledEntityTeamId() const
+{
+    return m_controlledEntityTeamId;
+}
+
+void C_EntityManager::setControlledEntityTeamId(u8 teamId)
+{
+    m_controlledEntityTeamId = teamId;
+}
+
+u32 C_EntityManager::getControlledEntityUniqueId() const
+{
+    return m_controlledEntityUniqueId;
+}
+
+void C_EntityManager::setControlledEntityUniqueId(u32 uniqueId)
+{
+    m_controlledEntityUniqueId = uniqueId;
+}
+
+void C_EntityManager::setSpectatingEntityTeamId(u8 teamId)
+{
+    m_spectatingEntityTeamId = teamId;
+}
+
+void C_EntityManager::setSpectatingEntityUniqueId(u32 uniqueId)
+{
+    m_spectatingEntityUniqueId = uniqueId;
+}
+
+bool C_EntityManager::isHeroDead() const
+{
+    return (entities.atUniqueId(m_controlledEntityUniqueId) == nullptr);
+}
+
+void C_EntityManager::setHeroDead(bool heroDead)
+{
+    m_heroDead = heroDead;
 }
 
 std::vector<RenderNode>& C_EntityManager::getRenderNodes()

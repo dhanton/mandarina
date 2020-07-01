@@ -20,9 +20,9 @@ void _BaseProjectile_loadFromJson(const rapidjson::Document& doc, ProjectileType
     projectile.type = type;
 
     projectile.dead = false;
-    projectile.collisionRadius = doc["collision_radius"].GetInt();
-    projectile.movementSpeed = doc["movement_speed"].GetInt();
-    projectile.range = doc["range"].GetInt();
+    projectile.collisionRadius = doc["collision_radius"].GetUint();
+    projectile.movementSpeed = doc["movement_speed"].GetUint();
+    projectile.range = doc["range"].GetUint();
 
     if (doc.HasMember("destroys_tiles")) {
         projectile.destroysTiles = doc["destroys_tiles"].GetBool();
@@ -266,7 +266,7 @@ void Projectile_update(Projectile& projectile, sf::Time eTime, const ManagersCon
     u16 collidingTile = context.tileMap->getCollidingTile(circle);
 
     if (projectile.destroysTiles && (collidingTile & (TILE_BLOCK | TILE_BUSH)) != 0) {
-        //@WIP: Destroy those tiles
+        //@TODO: Destroy those tiles
         //(send it to the client or predict it??)
     }
 
@@ -296,7 +296,7 @@ void Projectile_update(Projectile& projectile, sf::Time eTime, const ManagersCon
         if (unit) {
             if (_BaseProjectile_canHitTeam(projectile, unit->getTeamId())) {
 
-                Projectile_onHit(projectile, unit);
+                Projectile_onHit(projectile, unit, context);
                 projectile.dead = true;
                 queryDone = true;
             }
@@ -352,21 +352,32 @@ void C_Projectile_checkCollisions(C_Projectile& projectile, const C_ManagersCont
     }
 }
 
-void Projectile_onHit(Projectile& projectile, Unit* unitHit)
+void Projectile_onHit(Projectile& projectile, Unit* unitHit, const ManagersContext& context)
 {
     //@TODO: Should projectiles apply a certain force on hit => projectile.hitForce
     //(implement some sort of friction for units as well)
 
+    Entity* shooter = context.entityManager->entities.atUniqueId(projectile.shooterUniqueId);
+
     //deal damage
-    unitHit->takeDamage(projectile.damage, projectile.shooter);
+    unitHit->takeDamage(projectile.damage, shooter, projectile.shooterUniqueId, projectile.teamId);
 
     //reveal the unit hit
-    if (projectile.shouldReveal && projectile.shooter) {
+    if (projectile.shouldReveal) {
         RevealBuff* revealBuff = static_cast<RevealBuff*>(unitHit->addBuff(BUFF_STANDARD_REVEAL));
-        revealBuff->revealForTeam(projectile.shooter->getTeamId());
+        revealBuff->revealForTeam(projectile.teamId);
 
         if (projectile.revealTime != 0) {
             revealBuff->setDuration((float) projectile.revealTime / 1000.f);
+        }
+    }
+
+    if (shooter) {
+        Unit* shooterUnit = dynamic_cast<Unit*>(shooter);
+
+        if (shooterUnit) {
+            //callbacks for damage dealt
+            shooterUnit->onDealDamage(projectile.damage, unitHit);
         }
     }
 

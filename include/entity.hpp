@@ -137,21 +137,31 @@ protected:
 class HealthComponent
 {
 public:
-    void takeDamage(u16 damage, Entity* source);
+    void takeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId);
     void beHealed(u16 amount, Entity* source);
 
-    virtual void onTakeDamage(u16 damage, Entity* source);
+    virtual void onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId);
     virtual void onBeHealed(u16 amount, Entity* source);
 
     u16 getHealth() const;
     u16 getMaxHealth() const;
 
+    u32 getLatestDamageDealer() const;
+
+    //the previous uniqueId might not be valid, but we still need the teamId
+    u8 getLatestDamageDealerTeamId() const;
+
 protected:
     void loadFromJson(const rapidjson::Document& doc);
+
 
 protected:
     u16 m_health;
     u16 m_maxHealth;
+
+    //latest entity that dealt damage to this component
+    u32 m_latestDamageDealer;
+    u8 m_latestDamageDealerTeamId;
 };
 
 class TrueSightComponent

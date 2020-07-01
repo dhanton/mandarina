@@ -8,7 +8,6 @@ class EntityTable
 {
 private:
     typedef std::unordered_map<u32, std::unique_ptr<_Entity_Type>> _Table;
-    typedef std::pair<u32, std::unique_ptr<_Entity_Type>> _Pair;
 
 public:
     //These custom iterators return second element of pair when referenced
@@ -77,6 +76,8 @@ public:
     const_iterator end() const;
 
     size_t size() const;
+
+    void clear();
 
 private:
     _Table m_table;

@@ -2,6 +2,7 @@
 
 #include "network_commands.hpp"
 #include "helper.hpp"
+#include "game_mode_loader.hpp"
 
 GameClientCallbacks::GameClientCallbacks(GameClient* p)
 {
@@ -27,6 +28,7 @@ void GameClientCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
 
             parent->m_pInterface->CloseConnection(info->m_hConn, 0, nullptr, false);
             parent->m_serverConnectionId = k_HSteamNetConnection_Invalid;
+            parent->m_connected = false;
 
             break;
         }
@@ -41,15 +43,6 @@ void GameClientCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
         {
             parent->printMessage("Connection completed with server");
             parent->m_connected = true;
-
-            //Eventually, sending ready command should be based on input from the player
-            //Like interacting with something in the tavern
-            //Or clicking a button in a menu
-
-            CRCPacket packet;
-            packet << (u8) ServerCommand::PlayerReady << true;
-            parent->sendPacket(packet, parent->m_serverConnectionId, true);
-            break;
         }
     }
 }
@@ -76,6 +69,9 @@ GameClient::GameClient(const Context& context, const SteamNetworkingIPAddr& endp
     m_currentInput.id = 1;
     m_smoothUnitRadius = 20.f;
 
+    m_forceFullSnapshotUpdate = false;
+    m_fullUpdateReceived = false;
+
     ////////////////////// THIINGS TO LOAD FROM JSON FILE ////////////////////////
     m_updateRate = sf::seconds(1.f/30.f);
     m_inputRate = sf::seconds(1.f/30.f);
@@ -91,11 +87,6 @@ GameClient::GameClient(const Context& context, const SteamNetworkingIPAddr& endp
         m_serverConnectionId = context.localCon1;
 
         printMessage("Adding server in local connection");
-
-        //local connection doesn't trigger callbacks
-        CRCPacket packet;
-        packet << (u8) ServerCommand::PlayerReady << true;
-        sendPacket(packet, m_serverConnectionId, true);
     }
 }
 
@@ -198,6 +189,10 @@ void GameClient::mainLoop(bool& running)
 
             //draw UI elements
             window.draw(*m_clientCaster);
+            
+            if (m_gameMode && m_gameMode->hasGameEnded()) {
+                m_gameMode->drawGameEndInfo(window, m_context.fonts);
+            }
         }
 
         window.display();
@@ -213,8 +208,6 @@ void GameClient::receiveLoop()
 
 void GameClient::update(sf::Time eTime)
 {
-    if (!m_connected) return;
-
     m_infoTimer += eTime;
 
     if (m_infoTimer >= sf::seconds(5.f)) {
@@ -230,17 +223,24 @@ void GameClient::update(sf::Time eTime)
     }
 
     m_entityManager.update(eTime);
-    m_clientCaster->update(eTime);
 
-    CRCPacket outPacket;
-    writeLatestSnapshotId(outPacket);
+    m_clientCaster->setSpectating(m_entityManager.isHeroDead());
+    
+    if (!m_clientCaster->getSpectating()) {
+        m_clientCaster->update(eTime, m_gameMode.get());
+    }
 
-    sendPacket(outPacket, m_serverConnectionId, false);
+    if (m_connected) {
+        CRCPacket outPacket;
+        writeLatestSnapshotId(outPacket);
+
+        sendPacket(outPacket, m_serverConnectionId, false);
+    }
 }
 
 void GameClient::renderUpdate(sf::Time eTime)
 {
-    C_Entity* entity = m_entityManager.entities.atUniqueId(m_entityManager.controlledEntityUniqueId);
+    C_Entity* entity = m_entityManager.entities.atUniqueId(m_entityManager.getControlledEntityUniqueId());
 
     if (std::next(m_interSnapshot_it, m_requiredSnapshotsToRender) != m_snapshots.end()) {
         m_interElapsed += eTime;
@@ -258,6 +258,9 @@ void GameClient::renderUpdate(sf::Time eTime)
             setupNextInterpolation();
 
             totalTime = next_it->worldTime - m_interSnapshot_it->worldTime;
+
+            //the entity might have been destroyed while setting up the next interpolation
+            entity = m_entityManager.entities.atUniqueId(m_entityManager.getControlledEntityUniqueId());
         }
 
         m_entityManager.performInterpolation(&m_interSnapshot_it->entityManager, &next_it->entityManager, 
@@ -290,17 +293,24 @@ void GameClient::renderUpdate(sf::Time eTime)
         }
     }
 
-    //follow the entity with the camera
+    //follow the entity with the camera (either controlled or spectating)
     if (entity) {
         Vector2 pos = entity->getPosition();
 
-        float speed = (float) entity->getControlledMovementSpeed();
-
         if (Helper_vec2length(m_smoothUnitPos - pos) > m_smoothUnitRadius) {
+            float speed = (float) entity->getControlledMovementSpeed();
+
             m_smoothUnitPos = pos;
 
             //anything <= smoothRadius/speed causes jittering
             m_camera.snapSmooth(pos, sf::seconds(m_smoothUnitRadius/speed * 1.5f));
+        }
+    } else {
+        entity = m_entityManager.entities.atUniqueId(m_entityManager.getLocalUniqueId());
+
+        if (entity) {
+            //this could be smoother but it's fine for now
+            m_camera.snapInstant(entity->getPosition());
         }
     }
 
@@ -314,8 +324,8 @@ void GameClient::renderUpdate(sf::Time eTime)
 
 void GameClient::setupNextInterpolation()
 {
-    const u32 controlledEntityId = m_entityManager.controlledEntityUniqueId;
-    const u32 snapshotEntityId = m_interSnapshot_it->entityManager.controlledEntityUniqueId;
+    const u32 controlledEntityId = m_entityManager.getControlledEntityUniqueId();
+    const u32 snapshotEntityId = m_interSnapshot_it->entityManager.getControlledEntityUniqueId();
 
     //Update the abilities if the controlled entity changes (also in the first iteration)
     if (!m_clientCaster->getCaster() || (controlledEntityId != snapshotEntityId)) {
@@ -324,7 +334,7 @@ void GameClient::setupNextInterpolation()
         C_Unit* controlledUnit = dynamic_cast<C_Unit*>(m_entityManager.entities.atUniqueId(controlledEntityId));
         
         if (controlledUnit) {
-            m_clientCaster->setCaster(controlledUnit);
+            m_clientCaster->setCaster(controlledUnit, m_gameMode.get());
             controlledUnit->getUnitUI()->setClientCaster(m_clientCaster.get());
         }
     }
@@ -392,7 +402,7 @@ void GameClient::handleInput(const sf::Event& event, bool focused)
 
 void GameClient::saveCurrentInput()
 {
-    C_Entity* entity = m_entityManager.entities.atUniqueId(m_entityManager.controlledEntityUniqueId);
+    C_Entity* entity = m_entityManager.entities.atUniqueId(m_entityManager.getControlledEntityUniqueId());
 
     //@TODO: Should we send inputs even if there's no entity
     //to ensure players can move the entity as soon as available?
@@ -416,14 +426,14 @@ void GameClient::saveCurrentInput()
 
     //we dont modify the unit since we intepolate its position
     //between two inputs (result is stored in entityPos)
-    entity->applyMovementInput(entityPos, m_currentInput, C_ManagersContext(manager, &m_tileMap), m_inputRate);
+    entity->applyMovementInput(entityPos, m_currentInput, C_ManagersContext(manager, &m_tileMap, m_gameMode.get()), m_inputRate);
 
     //when casting abilities we use the normal entity manager
     //since local entities might be created
-    m_clientCaster->applyInputs(m_currentInput, entityPos, C_ManagersContext(&m_entityManager, &m_tileMap));
+    m_clientCaster->applyInputs(m_currentInput, entityPos, C_ManagersContext(&m_entityManager, &m_tileMap, m_gameMode.get()));
 
     //send this input
-    {
+    if (m_connected) {
         CRCPacket outPacket;
         outPacket << (u8) ServerCommand::PlayerInput;
         PlayerInput_packData(m_currentInput, outPacket);
@@ -433,6 +443,7 @@ void GameClient::saveCurrentInput()
     m_inputSnapshots.push_back(InputSnapshot());
     m_inputSnapshots.back().input = m_currentInput;
     m_inputSnapshots.back().endPosition = entityPos;
+    m_inputSnapshots.back().forceSnap = false;
 
     //reset input timer
     m_currentInput.timeApplied = sf::Time::Zero;
@@ -481,15 +492,17 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
     if (predictedEndPos != endPosition) {
 
 #if 0 && defined MANDARINA_DEBUG
-        //this message can get annoying because there are a lot of minor prediction errors
+        //this message can get annoying because there are a lot of minor prediction errors sometimes
         printMessage("Incorrect prediction - Delta: %f", Helper_vec2length(predictedEndPos - endPosition));
 #endif
 
         Vector2 newPos = endPosition;
-        C_Entity* entity = m_entityManager.entities.atUniqueId(m_entityManager.controlledEntityUniqueId);
+        C_Entity* entity = m_entityManager.entities.atUniqueId(m_entityManager.getControlledEntityUniqueId());
 
         //get the newest entityManager to perform collision better
-        C_ManagersContext context(m_snapshots.empty() ? &m_entityManager : &m_snapshots.back().entityManager, &m_tileMap);
+        C_ManagersContext context(m_snapshots.empty() ? &m_entityManager : &m_snapshots.back().entityManager, &m_tileMap, m_gameMode.get());
+
+        bool forceSnap = false;
 
         // recalculate all the positions of all the inputs starting from this one
         while (it != m_inputSnapshots.end()) {
@@ -506,6 +519,11 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
                 PlayerInput_repeatAppliedInput(it->input, newPos, movementSpeed);
             }
 
+            //forceSnap propagates to newer inputs
+            if (it->forceSnap) {
+                forceSnap = true;
+            }
+
             //try to smoothly correct the input one step at a time
             //(this weird method is the one that gets the best results apparently)
             Vector2 dirVec = newPos - it->endPosition;
@@ -513,7 +531,7 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
 
             //@TODO: These values (0.5, 10, 200) have to be tinkered to make it look as smooth as possible
             //The method used could also change if this one's not good enough
-            if (distance < 200.f) {
+            if (!forceSnap && distance < 200.f) {
                 float offset = std::max(0.5, Helper_lerp(0.0, 10.0, distance, 200.0));
                 it->endPosition += Helper_vec2unitary(dirVec) * std::min(offset, distance);
 
@@ -560,12 +578,17 @@ void GameClient::handleCommand(u8 command, CRCPacket& packet)
             u32 controlledEntityUniqueId;
             packet >> controlledEntityUniqueId;
 
+            bool forceFullUpdate;
+            packet >> forceFullUpdate;
+
             Snapshot* prevSnapshot = findSnapshotById(prevSnapshotId);
             C_EntityManager* prevEntityManager = nullptr;
 
+            m_forceFullSnapshotUpdate = forceFullUpdate;
+
             if (!prevSnapshot) {
                 if (prevSnapshotId != 0) {
-                    printMessage("Snapshot error - Previous snapshot doesn't exist");
+                    printMessage("Snapshot error - Previous snapshot doesn't exist (id %i)", prevSnapshotId);
                     packet.clear();
                     break;
                 }
@@ -581,7 +604,7 @@ void GameClient::handleCommand(u8 command, CRCPacket& packet)
             snapshot.entityManager.loadFromData(prevEntityManager, packet);
             snapshot.worldTime = m_worldTime;
             snapshot.latestAppliedInput = appliedPlayerInputId;
-            snapshot.entityManager.controlledEntityUniqueId = controlledEntityUniqueId;
+            snapshot.entityManager.setControlledEntityUniqueId(controlledEntityUniqueId);
 
             removeOldSnapshots(prevSnapshotId);
 
@@ -600,34 +623,107 @@ void GameClient::handleCommand(u8 command, CRCPacket& packet)
             break;
         }
 
-        case ClientCommand::InitialConditions:
+        case ClientCommand::InitialInfo:
         {
-            std::string filename;
-            packet >> filename;
+            u32 uniqueId;
+            packet >> uniqueId;
 
-            m_tileMap.loadFromFile(MAPS_PATH + filename + "." + MAP_FILENAME_EXT);
-            m_tileMapRenderer.generateLayers();
+            u8 teamId;
+            packet >> teamId;
 
-            Vector2u totalSize = m_tileMap.getWorldSize();
+            m_entityManager.setControlledEntityUniqueId(uniqueId);
+            m_entityManager.setControlledEntityTeamId(teamId);
 
-            m_canvas.create(totalSize.x, totalSize.y);
-            m_canvasCreated = true;
+            break;
+        }
 
-            m_camera.setMapSize(totalSize);
-
+        case ClientCommand::PlayerCoords:
+        {
             //initially the camera will be looking at the center of the map
-            m_camera.snapInstant((Vector2) totalSize/2.f);
+            m_camera.snapInstant((Vector2) m_tileMap.getWorldSize()/2.f);
 
-            packet >> m_entityManager.controlledEntityUniqueId;
+            Vector2 initialPos;
+            packet >> initialPos.x >> initialPos.y;
 
-            if (m_entityManager.controlledEntityUniqueId != 0) {
-                Vector2 initialPos;
-                packet >> m_entityManager.controlledEntityTeamId;
-                packet >> initialPos.x >> initialPos.y;
-                
-                //then we move the camera smoothly towards the controlled unit
-                m_camera.snapSmooth(initialPos, sf::seconds(1.5f), true);
+            //then we move the camera smoothly towards the controlled unit
+            m_camera.snapSmooth(initialPos, sf::seconds(1.5f), true);
+
+            break;
+        }
+
+        case ClientCommand::GameModeType:
+        {
+            u8 gameModeType;
+            packet >> gameModeType;
+
+            bool started;
+            packet >> started;
+
+            m_gameMode = std::unique_ptr<GameMode>(GameModeLoader::create(gameModeType, m_context));
+
+            if (started) {
+                m_gameMode->startGame();
+                loadMap(m_gameMode->getMapFilename());
+            } else {
+                loadMap(m_gameMode->getLobbyMapFilename());
             }
+
+            break;
+        }
+
+        case ClientCommand::GameStarted:
+        {
+            u32 uniqueId;
+            packet >> uniqueId;
+
+            u8 teamId;
+            packet >> teamId;
+
+            m_entityManager.setControlledEntityUniqueId(uniqueId);
+            m_entityManager.setControlledEntityTeamId(teamId);
+
+            m_gameMode->startGame();
+            loadMap(m_gameMode->getMapFilename());
+
+            //force ClientCaster to restart cooldown and ability info next update
+            m_clientCaster->forceCasterUpdate();
+
+            for (auto& inputSnapshot : m_inputSnapshots) {
+                //This helps eliminate an interpolation artifact that happened
+                //if distance between old position (in lobby) and new position was < 200
+                inputSnapshot.forceSnap = true;
+            }
+
+            break;
+        }
+
+        case ClientCommand::ChangeSpectator:
+        {
+            u32 uniqueId;
+            packet >> uniqueId;
+
+            u8 teamId;
+            packet >> teamId;
+
+            m_entityManager.setSpectatingEntityUniqueId(uniqueId);
+
+            if (teamId != m_entityManager.getLocalTeamId()) {
+                m_entityManager.setSpectatingEntityTeamId(teamId);
+            }
+
+            break;
+        }
+
+        case ClientCommand::TeamEliminated:
+        {
+            //display team eliminated message (depends on game mode)
+
+            break;
+        }
+
+        case ClientCommand::GameEnded:
+        {
+            m_gameMode->loadGameEndData(packet);
 
             break;
         }
@@ -648,6 +744,12 @@ void GameClient::removeOldSnapshots(u32 olderThan)
     }
 }
 
+void GameClient::writeLatestSnapshotId(CRCPacket& packet)
+{
+    packet << (u8) ServerCommand::LatestSnapshotId;
+    packet << (m_forceFullSnapshotUpdate ? 0 : m_snapshots.back().id);
+}
+
 GameClient::Snapshot* GameClient::findSnapshotById(u32 snapshotId)
 {
     for (Snapshot& snapshot : m_snapshots) {
@@ -659,8 +761,15 @@ GameClient::Snapshot* GameClient::findSnapshotById(u32 snapshotId)
     return nullptr;
 }
 
-void GameClient::writeLatestSnapshotId(CRCPacket& packet)
+void GameClient::loadMap(const std::string& filename)
 {
-    packet << (u8) ServerCommand::LatestSnapshotId;
-    packet << m_snapshots.back().id;
+    m_tileMap.loadFromFile(filename);
+    m_tileMapRenderer.generateLayers();
+
+    const Vector2u totalSize = m_tileMap.getWorldSize();
+
+    m_canvas.create(totalSize.x, totalSize.y);
+    m_canvasCreated = true;
+
+    m_camera.setMapSize(totalSize);
 }

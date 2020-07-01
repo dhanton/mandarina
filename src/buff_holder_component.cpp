@@ -6,6 +6,7 @@
 //all buffs have to be included for loadBuffData to work
 #include "buffs/root_buff.hpp"
 #include "buffs/reveal_buff.hpp"
+#include "buffs/recharge_ability_buff.hpp"
 
 bool BuffHolderComponent::m_buffsLoaded = false;
 std::unique_ptr<Buff> BuffHolderComponent::m_buffData[BUFF_MAX_TYPES];
@@ -16,7 +17,8 @@ void BuffHolderComponent::loadBuffData(const JsonParser* jsonParser)
 
     #define DoBuff(class_name, type, json_id) \
         m_buffData[BUFF_##type] = std::unique_ptr<Buff>(new class_name()); \
-        m_buffData[BUFF_##type]->loadFromJson(*jsonParser->getDocument(json_id));
+        m_buffData[BUFF_##type]->loadFromJson(*jsonParser->getDocument(json_id)); \
+        m_buffData[BUFF_##type]->setBuffType(BUFF_##type);
     #include "buffs.inc"
     #undef DoBuff
 
@@ -80,19 +82,19 @@ void BuffHolderComponent::onUpdate(sf::Time eTime)
     FOR_ALL_BUFFS(onUpdate(eTime))
 }
 
-void BuffHolderComponent::onDeath()
+void BuffHolderComponent::onDeath(bool& dead)
 {
-    FOR_ALL_BUFFS(onDeath())
+    FOR_ALL_BUFFS(onDeath(dead))
 }
 
-void BuffHolderComponent::onTakeDamage(u16 damage, Entity* source)
+void BuffHolderComponent::onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId)
 {
-    FOR_ALL_BUFFS(onTakeDamage(damage, source))
+    FOR_ALL_BUFFS(onTakeDamage(damage, source, uniqueId, teamId))
 }
 
-void BuffHolderComponent::onDealDamage(u16 damage, Entity* receiver)
+void BuffHolderComponent::onDealDamage(u16 damage, Entity* target)
 {
-    FOR_ALL_BUFFS(onDealDamage(damage, receiver))
+    FOR_ALL_BUFFS(onDealDamage(damage, target))
 }
 
 void BuffHolderComponent::onBeHealed(u16 amount, Entity* source)
@@ -100,9 +102,14 @@ void BuffHolderComponent::onBeHealed(u16 amount, Entity* source)
     FOR_ALL_BUFFS(onBeHealed(amount, source))
 }
 
-void BuffHolderComponent::onHeal(u16 amount, Entity* receiver)
+void BuffHolderComponent::onHeal(u16 amount, Entity* target)
 {
-    FOR_ALL_BUFFS(onHeal(amount, receiver))
+    FOR_ALL_BUFFS(onHeal(amount, target))
+}
+
+void BuffHolderComponent::onEntityKill(Entity* target)
+{
+    FOR_ALL_BUFFS(onEntityKill(target))
 }
 
 // void BuffHolderComponent::onAbilityCasted(Ability* ability)

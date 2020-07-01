@@ -13,6 +13,7 @@
 #include "collision_manager.hpp"
 
 #include "tilemap.hpp"
+#include "game_mode.hpp"
 
 class GameServer;
 
@@ -34,9 +35,10 @@ public:
     struct ClientInfo {
         u32 uniqueId = 0;
         HSteamNetConnection connectionId = k_HSteamNetConnection_Invalid;
-        bool isReady = false;
 
         u32 snapshotId = 0;
+        bool forceFullUpdate = false;
+
         sf::Time snapshotRate;
         u32 latestInputId = 0;
         sf::Time inputRate;
@@ -44,6 +46,13 @@ public:
 
         u8 teamId = 0;
         u32 controlledEntityUniqueId = 0;
+
+        u8 spectatingTeamId = 0;
+        u32 spectatingUniqueId = 0;
+        bool heroDead = true;
+
+        //EntityType of hero selected (before/after matchmaking)
+        u8 selectedHeroType = ENTITY_MAX_TYPES;
 
         int ping = -1;
     };
@@ -62,7 +71,7 @@ public:
     };
 
 public:
-    GameServer(const Context& context, int playersNeeded);
+    GameServer(const Context& context, u8 gameModeType);
     ~GameServer();
 
     void mainLoop(bool& running);
@@ -75,11 +84,17 @@ public:
     void handleCommand(u8 command, int index, CRCPacket& packet);
     void onConnectionCompleted(HSteamNetConnection connectionId);
 
+    Entity* createClientHeroEntity(int index, bool keepOldUniqueId = false);
+    void handleDeadHeroes();
+
     int addClient();
+    bool canNewClientConnect() const;
     
     bool addClientToPoll(int index);
     int getIndexByConnectionId(HSteamNetConnection connectionId) const;
-    bool isIndexValid(int index) const;
+
+    void createGameMode(u8 gameModeType);
+    std::string getCurrentMapFilename() const;
 
 private:
     GameServerCallbacks m_gameServerCallbacks;
@@ -101,9 +116,6 @@ private:
     sf::Time m_minSnapshotRate;
     sf::Time m_maxPingCorrection;
 
-    //Number of clients required to start the game
-    int m_playersNeeded;
-
     //used to safely shutdown the server with Ctrl+C
     static bool SIGNAL_SHUTDOWN;
 
@@ -116,12 +128,13 @@ private:
 
     CollisionManager m_collisionManager;
 
-    std::string m_tileMapFilename;
     TileMap m_tileMap;
 
     sf::Time m_worldTime;
 
-    //initial size of the clients vector
-    //will grow to accomodate more if needed
-    const int INITIAL_CLIENTS_SIZE;
+    std::unique_ptr<GameMode> m_gameMode;
+
+    bool m_gameEnded;
+    sf::Time m_gameEndLingeringTime;
+    sf::Time m_gameEndTimer;
 };

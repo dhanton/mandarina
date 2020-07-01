@@ -27,16 +27,18 @@ protected:
     
     //@TODO: purge (buffs/debuffs)
 
+public:
     //there are more callbacks that don't get called at the same time for all the buffs
     //onEnd() onStart() onPurged()
 
     void onPreUpdate(sf::Time eTime);
     void onUpdate(sf::Time eTime);
-    void onDeath();
-    void onTakeDamage(u16 damage, Entity* source);
-    void onDealDamage(u16 damage, Entity* receiver);
+    void onDeath(bool& dead);
+    void onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId);
+    void onDealDamage(u16 damage, Entity* target);
     void onBeHealed(u16 amount, Entity* source);
-    void onHeal(u16 amount, Entity* receiver);
+    void onHeal(u16 amount, Entity* target);
+    void onEntityKill(Entity* target);
     // void onAbilityCasted(Ability* ability);
 
 private:

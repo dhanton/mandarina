@@ -42,6 +42,8 @@ public:
     T* atUniqueId(u32 uniqueId);
     const T* atUniqueId(u32 uniqueId) const;
 
+    void clear();
+
 private:
     std::vector<T> m_elements;
     std::unordered_map<u32, int> m_hashTable;

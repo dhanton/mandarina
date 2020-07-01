@@ -7,6 +7,7 @@
 #include "network_commands.hpp"
 #include "player_input.hpp"
 #include "helper.hpp"
+#include "game_mode_loader.hpp"
 
 GameServerCallbacks::GameServerCallbacks(GameServer* p)
 {
@@ -41,37 +42,41 @@ void GameServerCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
 
         case k_ESteamNetworkingConnectionState_Connecting:
         {
-            int index = -1;
-            
-            if (parent->m_gameStarted) {
+            if (parent->canNewClientConnect()) {
+                int index = parent->addClient();
+
+                if (index != -1) {
+                    parent->m_clients[index].connectionId = info->m_hConn;
+
+                    u32 clientId = parent->m_clients[index].uniqueId;
+
+                    //Set the rest of the parameters (displayName, character, team, etc)
+
+                    if (parent->m_pInterface->AcceptConnection(info->m_hConn) != k_EResultOK) {
+                        parent->printMessage("There was an error accepting connection with client %d", clientId);
+                        parent->m_pInterface->CloseConnection(info->m_hConn, 0, nullptr, false);
+                        break;
+                    }
+
+                    if (!parent->addClientToPoll(index)) {
+                        parent->printMessage("There was an error adding client %d to poll", clientId);
+                        parent->m_pInterface->CloseConnection(info->m_hConn, 0, nullptr, false);
+                        break;
+                    }
+
+                    parent->printMessage("Connecting with client %d", clientId);
+                }
+
+            } else {
+                //@TODO: Implement reconnections
                 //traverse all clients
                 //if one of them is not valid
                 //and has the same identity (secret key)
                 //then that one is reconnecting
-            } else {
-                index = parent->addClient();
-            }
 
-            if (index != -1) {
-                parent->m_clients[index].connectionId = info->m_hConn;
-
-                u32 clientId = parent->m_clients[index].uniqueId;
-
-                //Set the rest of the parameters (displayName, character, team, etc)
-
-                if (parent->m_pInterface->AcceptConnection(info->m_hConn) != k_EResultOK) {
-                    parent->printMessage("There was an error accepting connection with client %d", clientId);
-                    parent->m_pInterface->CloseConnection(info->m_hConn, 0, nullptr, false);
-                    break;
-                }
-
-                if (!parent->addClientToPoll(index)) {
-                    parent->printMessage("There was an error adding client %d to poll", clientId);
-                    parent->m_pInterface->CloseConnection(info->m_hConn, 0, nullptr, false);
-                    break;
-                }
-
-                parent->printMessage("Connecting with client %d", clientId);
+                //Regarding disconnecting:
+                //If the game hasn't started or players can join mid match the disconnection should just remove the client
+                //Otherwise the client should be marked as disconnected so if they reconnect their data is not lost
             }
 
             break;
@@ -88,24 +93,20 @@ void GameServerCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
 
 bool GameServer::SIGNAL_SHUTDOWN = false;
 
-GameServer::GameServer(const Context& context, int playersNeeded):
+GameServer::GameServer(const Context& context, u8 gameModeType):
     m_gameServerCallbacks(this),
     InContext(context),
     NetPeer(&m_gameServerCallbacks, true),
-
-    //TODO: Initial size should be the expected value of the amount of clients that will try to connect
-    //This can be hight/low independently of playersNeeded 
-    //for example if a streamer sets up a server maybe 10k people try to connect (even for a 2-man party)
-    //Still has to always be larger than playersNeeded
-    INITIAL_CLIENTS_SIZE(playersNeeded * 2 + 10),
     m_entityManager(context.jsonParser)
 {
+    createGameMode(gameModeType);
+
     loadProjectilesFromJson(context.jsonParser);
 
     m_gameStarted = false;
-    m_playersNeeded = playersNeeded;
     m_lastClientId = 0;
     m_lastSnapshotId = 0;
+    m_gameEnded = false;
 
     //@TODO:
     ////////////////////////// THINGS TO LOAD FROM JSON FILE ////////////////////////////////////
@@ -123,25 +124,19 @@ GameServer::GameServer(const Context& context, int playersNeeded):
 
     m_maxPingCorrection = sf::milliseconds(70);
 
-    m_tileMapFilename = "test_small";
+    m_gameEndLingeringTime = sf::seconds(20.f);
 
     /////////////////////////////////////////////////////////////////////////////////////////////
 
     //Resize this vector to avoid dynamically adding elements
     //(this will still happen if more clients connect)
-    m_clients.resize(INITIAL_CLIENTS_SIZE);
+    m_clients.resize(m_gameMode->getMaxPlayers() + 10);
 
-    m_entityManager.setCollisionManager(&m_collisionManager);
-    m_entityManager.setTileMap(&m_tileMap);
+    m_entityManager.setManagersContext(ManagersContext(nullptr, &m_collisionManager, &m_tileMap, m_gameMode.get()));
+
     m_entityManager.allocateAll();
 
-    m_tileMap.loadFromFile(MAPS_PATH + m_tileMapFilename + "." + MAP_FILENAME_EXT);
-    
-    //@DELETE (TESTING)
-    m_entityManager.createEntity(ENTITY_RED_DEMON, Vector2(1400.f, 1450.f), 1);
-    for (int i = 0; i < 100; ++i) {
-        m_entityManager.createEntity(ENTITY_RED_DEMON, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), rand()%2);
-    }
+    m_tileMap.loadFromFile(m_gameMode->getLobbyMapFilename());
 
     if (!context.local) {
         m_endpoint.ParseString("127.0.0.1:7000");
@@ -173,6 +168,8 @@ GameServer::GameServer(const Context& context, int playersNeeded):
 
 GameServer::~GameServer()
 {
+    printMessage("Cleaning up...");
+
     for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
         m_pInterface->CloseConnection(m_clients[i].connectionId, 0, nullptr, false);
     }
@@ -211,6 +208,8 @@ void GameServer::mainLoop(bool& running)
         //Remove this for maximum performance (more CPU usage)
         // std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
+
+    printMessage("Main loop ended");
 }
 
 void GameServer::receiveLoop()
@@ -233,46 +232,88 @@ void GameServer::update(const sf::Time& eTime, bool& running)
 #endif //_WIN32
 
     if (!m_gameStarted) {
-        int playersReady = 0;
+        //@WIP: Add other ways to start the game (when the host wants)
+        //This condition should still be met though
+        if (m_clients.firstInvalidIndex() >= m_gameMode->getRequiredPlayers()) {
+            m_gameStarted = true;
 
-        for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
-            if (m_clients[i].isReady) {
-                playersReady++;
+            printMessage("Game starting!");
+
+            m_tileMap.loadFromFile(m_gameMode->getMapFilename());
+
+            //remove all entities and projectiles created during the lobby
+            m_entityManager.entities.clear();
+            m_entityManager.projectiles.clear();
+            m_collisionManager.clear();
+
+            m_gameMode->startGame();
+
+            for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
+                //create heroes again
+                createClientHeroEntity(i, true);
+            }
+
+            m_gameMode->onGameStarted(m_clients.firstInvalidIndex());
+
+            for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
+                CRCPacket outPacket;
+                const Entity* entity = m_entityManager.entities.atUniqueId(m_clients[i].controlledEntityUniqueId);
+
+                outPacket << (u8) ClientCommand::GameStarted << m_clients[i].controlledEntityUniqueId << m_clients[i].teamId;
+
+                if (entity) {
+                    outPacket << (u8) ClientCommand::PlayerCoords << entity->getPosition().x << entity->getPosition().y;
+                }
+
+                sendPacket(outPacket, m_clients[i].connectionId, true);
+            }
+
+            //@DELETE (TESTING)
+            // m_entityManager.createEntity(ENTITY_RED_DEMON, Vector2(1400.f, 1450.f), 1);
+            for (int i = 0; i < 100; ++i) {
+                // m_entityManager.createEntity(ENTITY_RED_DEMON, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 2);
+            }
+        }
+    }
+
+    if (m_gameMode->hasGameEnded()) {
+        if (!m_gameEnded) {
+            m_gameEnded = true;
+            printMessage("Game ended");
+            
+            for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
+                CRCPacket outPacket;
+                outPacket << (u8) ClientCommand::GameEnded;
+
+                //send winner team, leaderboard, etc
+                m_gameMode->packGameEndData(outPacket);
+
+                sendPacket(outPacket, m_clients[i].connectionId, true);
             }
         }
 
-        if (playersReady >= m_playersNeeded) {
-            m_gameStarted = true;
+        m_gameEndTimer += eTime;
 
-            printMessage("Game starting");
+        if (m_gameEndTimer >= m_gameEndLingeringTime) {
+            running = false;
+            printMessage("Lingering time ended");
 
-            //remove valid clients that didn't make it into the party
-            while (m_clients.firstInvalidIndex() > m_playersNeeded) {
-                m_pInterface->CloseConnection(m_clients[m_playersNeeded].connectionId, 0, nullptr, false);
-                m_clients.removeElement(m_clients[m_playersNeeded].uniqueId);
-            }
-
-            //to save space, since no new clients are gonna be added
-            m_clients.removeInvalidData();
-
-            //inform the players that the game is starting
-            //start the main game level
+            return;
         }
     }
 
     m_worldTime += eTime;
 
+    m_gameMode->onUpdate(eTime);
+
     /////////////////////////////////////////////////////////////////////////////
 
     //Important to note that even if the game hasn't started yet
     //the idea is to be able to walk around and do a bunch of activities
-    //with your character
+    //with your character (without lethal damage or with infinite respawns)
 
     //So the game "lobby" is like a tavern for players to gather before the game
-    //Players can perform an action to inform the server that they're ready
-    
-    //When all party members are ready the game starts 
-    //All the other players are kicked out
+    //Players in the lobby are assumed to be ready
 
     for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
         //reset number of inputs sent (for next update)
@@ -286,6 +327,9 @@ void GameServer::update(const sf::Time& eTime, bool& running)
     }
 
     m_entityManager.update(eTime);
+    
+    handleDeadHeroes();
+    //@TODO: handleRespawnedHeroes
 }
 
 void GameServer::sendSnapshots()
@@ -312,19 +356,25 @@ void GameServer::sendSnapshots()
         outPacket << m_clients[i].snapshotId;
         outPacket << m_clients[i].latestInputId;
         outPacket << m_clients[i].controlledEntityUniqueId;
+        outPacket << m_clients[i].forceFullUpdate;
 
-        if (m_clients[i].snapshotId < oldestSnapshotId) {
-            oldestSnapshotId = m_clients[i].snapshotId;
-        }
-
-        auto it = m_snapshots.find(m_clients[i].snapshotId);
         EntityManager* snapshotManager = nullptr;
 
-        if (it != m_snapshots.end()) {
-            snapshotManager = &it->second.entityManager;
+        if (!m_clients[i].forceFullUpdate) {
+            if (m_clients[i].snapshotId < oldestSnapshotId) {
+                oldestSnapshotId = m_clients[i].snapshotId;
+            }
+
+            auto it = m_snapshots.find(m_clients[i].snapshotId);
+
+            if (it != m_snapshots.end()) {
+                snapshotManager = &it->second.entityManager;
+            }
         }
 
-        m_entityManager.packData(snapshotManager, m_clients[i].teamId, outPacket);
+        u8 teamId = (m_clients[i].heroDead ? m_clients[i].spectatingTeamId : m_clients[i].teamId);
+
+        m_entityManager.packData(snapshotManager, teamId, outPacket);
 
         sendPacket(outPacket, m_clients[i].connectionId, false);
     }
@@ -379,21 +429,18 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
             break;
         }
 
-        case ServerCommand::PlayerReady:
-        {
-            bool ready;
-            packet >> ready;
-
-            m_clients[index].isReady = ready;
-            break;
-        }
-
         case ServerCommand::LatestSnapshotId:
         {
             u32 latestId;
             packet >> latestId;
 
-            if (latestId <= m_lastSnapshotId && latestId >= m_clients[index].snapshotId) {
+            if (m_clients[index].forceFullUpdate) {
+                //only accept snapshots with id = 0 if forceFullUpdate is true
+                if (latestId == 0) {
+                    m_clients[index].forceFullUpdate = false;
+                }
+
+            } else if (latestId <= m_lastSnapshotId && latestId >= m_clients[index].snapshotId) {
                 m_clients[index].snapshotId = latestId;
             }
 
@@ -425,7 +472,7 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
                 //clientDelay = pingDelay + renderDelay
                 int clientDelay = Helper_clamp(m_clients[index].ping, 0, m_maxPingCorrection.asMilliseconds()) + 150;
 
-                entity->applyInput(playerInput, ManagersContext(&m_entityManager, &m_collisionManager, &m_tileMap), clientDelay);
+                entity->applyInput(playerInput, ManagersContext(&m_entityManager, &m_collisionManager, &m_tileMap, m_gameMode.get()), clientDelay);
 
                 m_clients[index].latestInputId = playerInput.id;
             }
@@ -468,25 +515,133 @@ void GameServer::onConnectionCompleted(HSteamNetConnection connectionId)
         m_clients[index].snapshotRate = m_snapshotRate;
         m_clients[index].inputRate = m_defaultInputRate;
 
+        //@TODO: Choose unit type based on player hero selection (done before matchmaking in client)
+        m_clients[index].selectedHeroType = ENTITY_RED_DEMON;
+        m_clients[index].heroDead = false;
+
+        Entity* entity = createClientHeroEntity(index);
+
         CRCPacket outPacket;
-        outPacket << (u8) ClientCommand::InitialConditions << m_tileMapFilename;
+        outPacket << (u8) ClientCommand::InitialInfo << m_clients[index].controlledEntityUniqueId << m_clients[index].teamId;
+        outPacket << (u8) ClientCommand::GameModeType << m_gameMode->getType() << m_gameStarted;
 
-        //@TODO: Create unit based on game mode settings (position, teamId) and hero selection (class type)
-        Vector2 pos = {1500.f, 1500.f};
-        Entity* entity = m_entityManager.createEntity(ENTITY_RED_DEMON, pos, m_clients[index].teamId);
-
-        if (entity != nullptr) {
-            m_clients[index].controlledEntityUniqueId = entity->getUniqueId();
-            outPacket << m_clients[index].controlledEntityUniqueId;
-            outPacket << m_clients[index].teamId;
-            outPacket << pos.x << pos.y;
-        } else {
-            outPacket << (u32) 0;
+        if (entity) {
+            outPacket << (u8) ClientCommand::PlayerCoords << entity->getPosition().x << entity->getPosition().y;
         }
 
         sendPacket(outPacket, connectionId, true);
         printMessage("Connection completed with client %d", m_clients[index].uniqueId);
     }
+}
+
+Entity* GameServer::createClientHeroEntity(int index, bool keepOldUniqueId)
+{
+    if (index == -1) return nullptr;
+
+    Entity* entity = nullptr;
+
+    //remove one if it already exists
+    u32 uniqueId = m_clients[index].controlledEntityUniqueId;
+
+    if (uniqueId != 0) {
+        entity = m_entityManager.entities.atUniqueId(uniqueId);
+
+        if (entity) {
+            m_entityManager.entities.removeEntity(uniqueId);
+        }
+    }
+
+    if (keepOldUniqueId) {
+        //we can force the entity to conserve the old client controlledEntityUniqueId
+        entity = m_entityManager.createEntity(m_clients[index].selectedHeroType, Vector2(), m_clients[index].teamId, uniqueId);
+
+    } else {
+        //or we can use a new one
+        entity = m_entityManager.createEntity(m_clients[index].selectedHeroType, Vector2(), m_clients[index].teamId);
+
+        if (entity) {
+            //and update the client info
+            m_clients[index].controlledEntityUniqueId = entity->getUniqueId();
+        }
+    }
+
+    if (entity) {
+        //the game mode might move the unit or change its teamId
+        m_gameMode->onHeroCreated(static_cast<Unit*>(entity));
+
+        //update the client teamId using the unit 
+        m_clients[index].teamId = entity->getTeamId();
+    }
+
+    return entity;
+}
+
+void GameServer::handleDeadHeroes()
+{
+    auto& deadHeroes = m_gameMode->getNewDeadHeroes();
+
+    for (auto heroData : deadHeroes) {
+        int index = -1;
+        int killerIndex = -1;
+
+        //find which client controlls this hero
+        for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
+            if (m_clients[i].controlledEntityUniqueId == heroData.uniqueId) {
+                index = i;
+            }
+
+            if (m_clients[i].controlledEntityUniqueId == heroData.killerUniqueId) {
+                killerIndex = i;
+            }
+
+            if (index != -1 && killerIndex != -1) break;
+        }
+
+        if (index != -1) {
+            u32 spectateUniqueId = heroData.killerUniqueId;
+            u8 spectateTeamId = heroData.killerTeamId;
+
+            //if the killer hero is dead we spectate whatever it's expectating
+            if (killerIndex != -1 && m_clients[killerIndex].heroDead) {
+                spectateUniqueId = m_clients[killerIndex].spectatingUniqueId;
+                spectateTeamId = m_clients[killerIndex].spectatingTeamId;
+            }
+
+            for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
+                //if a client was spectating or controlling the hero that just died change spectator
+                if (i == index || m_clients[i].spectatingUniqueId == heroData.uniqueId) {
+                    if (heroData.teamEliminated) {
+                        bool changedTeam = (m_clients[i].spectatingTeamId != spectateTeamId);
+
+                        m_clients[i].spectatingUniqueId = spectateUniqueId;
+                        m_clients[i].spectatingTeamId = spectateTeamId;
+
+                        CRCPacket outPacket;
+                        outPacket << (u8) ClientCommand::ChangeSpectator << spectateUniqueId << spectateTeamId;
+
+                        if (m_clients[i].teamId == m_clients[index].teamId) {
+                            //tell all players of that team that they're eliminated
+                            outPacket << (u8) ClientCommand::TeamEliminated;
+                        }
+
+                        sendPacket(outPacket, m_clients[i].connectionId, true);
+
+                        if (changedTeam) {
+                            m_clients[i].snapshotId = 0;
+                            m_clients[i].forceFullUpdate = true;
+                        }
+
+                    } else {
+                        //@TODO: Spectate the next hero in the team
+                    }
+                }
+            }
+
+            m_clients[index].heroDead = true;
+        }
+    }
+
+    deadHeroes.clear();
 }
 
 int GameServer::addClient()
@@ -497,6 +652,11 @@ int GameServer::addClient()
     m_clients[index].uniqueId = clientId;
 
     return index;
+}
+
+bool GameServer::canNewClientConnect() const
+{
+    return (!m_gameStarted || m_gameMode->canJoinMidMatch()) && m_clients.firstInvalidIndex() < m_gameMode->getMaxPlayers();
 }
 
 bool GameServer::addClientToPoll(int index)
@@ -518,4 +678,15 @@ int GameServer::getIndexByConnectionId(HSteamNetConnection connectionId) const
     }
 
     return -1;
+}
+
+void GameServer::createGameMode(u8 gameModeType)
+{
+    m_gameMode = std::unique_ptr<GameMode>(GameModeLoader::create(gameModeType, m_context));
+    m_gameMode->setManagersContext(ManagersContext(&m_entityManager, &m_collisionManager, &m_tileMap, nullptr));
+}
+
+std::string GameServer::getCurrentMapFilename() const
+{
+    return (m_gameStarted ? m_gameMode->getMapFilename() : m_gameMode->getLobbyMapFilename());
 }
