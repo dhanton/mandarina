@@ -6,6 +6,8 @@
 #include "defines.hpp"
 #include "crcpacket.hpp"
 
+class Status;
+
 struct PlayerInput
 {
     bool left = false;
@@ -26,7 +28,7 @@ struct PlayerInput
     sf::Time timeApplied;
 };
 
-void PlayerInput_packData(PlayerInput& playerInput, CRCPacket& outPacket);
+void PlayerInput_packData(PlayerInput& playerInput, CRCPacket& outPacket, const Status& status);
 void PlayerInput_loadFromData(PlayerInput& playerInput, CRCPacket& inPacket);
 
 void PlayerInput_handleInput(PlayerInput& playerInput, const sf::Event& event);

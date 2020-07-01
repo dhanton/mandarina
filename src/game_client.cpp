@@ -436,7 +436,7 @@ void GameClient::saveCurrentInput()
     if (m_connected) {
         CRCPacket outPacket;
         outPacket << (u8) ServerCommand::PlayerInput;
-        PlayerInput_packData(m_currentInput, outPacket);
+        PlayerInput_packData(m_currentInput, outPacket, static_cast<C_Unit*>(entity)->getStatus());
         sendPacket(outPacket, m_serverConnectionId, false);
     }
 

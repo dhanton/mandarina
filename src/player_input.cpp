@@ -5,20 +5,27 @@
 #include "bit_stream.hpp"
 #include "helper.hpp"
 #include "defines.hpp"
+#include "buff.hpp"
 
-void PlayerInput_packData(PlayerInput& playerInput, CRCPacket& outPacket)
+void PlayerInput_packData(PlayerInput& playerInput, CRCPacket& outPacket, const Status& status)
 {
     BitStream stream;
 
-    stream.pushBit(playerInput.left);
-    stream.pushBit(playerInput.right);
-    stream.pushBit(playerInput.up);
-    stream.pushBit(playerInput.down);
+    //If we don't check this here then the unit in the server will start moving before
+    //the unit in the client, creating prediction errors
+    bool canMove = status.canMove();
+    bool canCast = status.canCast();
 
-    stream.pushBit(playerInput.primaryFire);
-    stream.pushBit(playerInput.secondaryFire);
-    stream.pushBit(playerInput.altAbility);
-    stream.pushBit(playerInput.ultimate);
+    stream.pushBit(canMove ? playerInput.left : false);
+    stream.pushBit(canMove ? playerInput.right : false);
+    stream.pushBit(canMove ? playerInput.up : false);
+    stream.pushBit(canMove ? playerInput.down : false);
+
+    stream.pushBit(status.canAttack() ? playerInput.primaryFire : false);
+
+    stream.pushBit(canCast ? playerInput.secondaryFire : false);
+    stream.pushBit(canCast ? playerInput.altAbility : false);
+    stream.pushBit(canCast ? playerInput.ultimate : false);
 
     outPacket << playerInput.id;
     outPacket << stream.popByte();
