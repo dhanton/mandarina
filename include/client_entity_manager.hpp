@@ -39,7 +39,7 @@ struct RenderNode {
     float collisionRadius;
 #endif
 
-    RenderNode(float height, u32 uniqueId);
+    RenderNode(u32 uniqueId);
 
     inline bool operator<(const RenderNode& other);
 };

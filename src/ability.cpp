@@ -208,7 +208,6 @@ void RechargeAbility::update(sf::Time eTime, GameMode* gameMode)
 {
     float globalTimeMultiplier = 1.f;
 
-    //@WIP: Make this work on client (by passing game mode type instead of map, and letting the client figure out the rest)
     if (gameMode) {
         globalTimeMultiplier = gameMode->getAbilityTimeMultiplier();
     }

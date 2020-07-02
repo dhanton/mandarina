@@ -6,15 +6,19 @@
 #include "helper.hpp"
 #include "tilemap.hpp"
 #include "texture_ids.hpp"
+#include "hero.hpp"
 
-RenderNode::RenderNode(float height, u32 uniqueId)
+//all entities must be included
+#include "entities/food.hpp"
+
+RenderNode::RenderNode(u32 uniqueId)
 {
-    this->height = height;
     this->uniqueId = uniqueId;
 
     usingSprite = false;
     drawable = nullptr;
 
+    height = 0.f;
     manualFilter = 0;
 }
 
@@ -456,6 +460,14 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
                 shape.setOutlineThickness(1.5f);
                 shape.setPosition(node.position);
                 target.draw(shape, states);
+
+                Vector2 heightPos = Vector2(node.position.x, node.height);
+                sf::Vertex line[2];
+                line[0].position = heightPos - Vector2(node.collisionRadius, 0.f);
+                line[0].color  = sf::Color::Red;
+                line[1].position = heightPos + Vector2(node.collisionRadius, 0.f);
+                line[1].color = sf::Color::Red;
+                target.draw(line, 2, sf::Lines);
             }
 #endif
         }

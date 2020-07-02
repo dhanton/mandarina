@@ -9,6 +9,9 @@
 #include "helper.hpp"
 #include "game_mode_loader.hpp"
 
+//@DELETE
+#include "entities/food.hpp"
+
 GameServerCallbacks::GameServerCallbacks(GameServer* p)
 {
     parent = p;
@@ -268,11 +271,17 @@ void GameServer::update(const sf::Time& eTime, bool& running)
                 sendPacket(outPacket, m_clients[i].connectionId, true);
             }
 
+#ifdef MANDARINA_DEBUG
             //@DELETE (TESTING)
             // m_entityManager.createEntity(ENTITY_RED_DEMON, Vector2(1400.f, 1450.f), 1);
             for (int i = 0; i < 100; ++i) {
                 // m_entityManager.createEntity(ENTITY_RED_DEMON, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 2);
+                // Entity* entity = m_entityManager.createEntity(ENTITY_FOOD, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 2);
+                // Entity* entity = m_entityManager.createEntity(ENTITY_FOOD, Vector2(400.f + 30.f * i, 300.f), 2);
+                // Food* food = static_cast<Food*>(entity);
+                // food->setFoodType(FOOD_COFFEE);
             }
+#endif
         }
     }
 
@@ -567,7 +576,7 @@ Entity* GameServer::createClientHeroEntity(int index, bool keepOldUniqueId)
 
     if (entity) {
         //the game mode might move the unit or change its teamId
-        m_gameMode->onHeroCreated(static_cast<Unit*>(entity));
+        m_gameMode->onHeroCreated(static_cast<Hero*>(entity));
 
         //update the client teamId using the unit 
         m_clients[index].teamId = entity->getTeamId();

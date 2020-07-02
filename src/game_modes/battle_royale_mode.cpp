@@ -132,9 +132,9 @@ void BattleRoyaleMode::C_onUpdate(sf::Time eTime)
     updateStorm(eTime);
 }
 
-void BattleRoyaleMode::onHeroCreated(Unit* controlledUnit)
+void BattleRoyaleMode::onHeroCreated(Hero* hero)
 {
-    GameMode::onHeroCreated(controlledUnit);
+    GameMode::onHeroCreated(hero);
 
     if (!hasGameStarted()) return;
 
@@ -147,7 +147,7 @@ void BattleRoyaleMode::onHeroCreated(Unit* controlledUnit)
         auto it = std::next(m_spawnPoints.begin(), rand() % m_spawnPoints.size());
 
         //move the unit randomly to one of the spawn points
-        controlledUnit->setPosition(*it);
+        hero->setPosition(*it);
         m_spawnPoints.erase(it);
 
     } else {
@@ -159,7 +159,7 @@ void BattleRoyaleMode::onHeroCreated(Unit* controlledUnit)
     //This general method could be useful for certain spells as well
 }
 
-void BattleRoyaleMode::onHeroDeath(Unit* hero, bool& dead)
+void BattleRoyaleMode::onHeroDeath(Hero* hero, bool& dead)
 {
     if (m_gameEnded) return;
 

@@ -155,6 +155,28 @@ void C_Entity::loadFromJson(const rapidjson::Document& doc, u16 textureId, const
     } else {
         m_scale = 1.f;
     }
+
+    if (doc.HasMember("sub_texture_rect")) {
+        m_useSubTextureRect = true;
+
+        m_subTextureRect.width = doc["sub_texture_rect"]["width"].GetInt();
+        m_subTextureRect.height = doc["sub_texture_rect"]["height"].GetInt();
+        
+        if (doc["sub_texture_rect"].HasMember("left")) {
+            m_subTextureRect.left = doc["sub_texture_rect"]["left"].GetInt();
+        } else {
+            m_subTextureRect.left = 0;
+        }
+
+        if (doc["sub_texture_rect"].HasMember("top")) {
+            m_subTextureRect.top = doc["sub_texture_rect"]["top"].GetInt();
+        } else {
+            m_subTextureRect.top = 0;
+        }
+
+    } else {
+        m_useSubTextureRect = false;
+    }
 }
 
 void C_Entity::updateControlledAngle(float newAngle)
@@ -190,15 +212,23 @@ void C_Entity::localReveal(C_Entity* entity)
 void C_Entity::insertRenderNode(const C_ManagersContext& managersContext, const Context& context)
 {
     std::vector<RenderNode>& renderNodes = managersContext.entityManager->getRenderNodes();
-    renderNodes.emplace_back(getPosition().y + m_flyingHeight, m_uniqueId);
+    renderNodes.emplace_back(m_uniqueId);
     renderNodes.back().usingSprite = true;
 
     sf::Sprite& sprite = renderNodes.back().sprite;
     
     sprite.setTexture(context.textures->getResource(m_textureId));
+
+    if (m_useSubTextureRect) {
+        sprite.setTextureRect(m_subTextureRect);
+    }
+
     sprite.setScale(m_scale, m_scale);
     sprite.setOrigin(sprite.getLocalBounds().width/2.f, sprite.getLocalBounds().height/2.f);
     sprite.setPosition(m_pos);
+
+    //getGlobalBounds() is required to take scale into account
+    renderNodes.back().height = getPosition().y + sprite.getGlobalBounds().height/2.f + m_flyingHeight;
 
 #ifdef MANDARINA_DEBUG
     renderNodes.back().debugDisplayData = std::to_string(m_uniqueId);
@@ -228,6 +258,14 @@ void HealthComponent::onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 
 void HealthComponent::onBeHealed(u16 amount, Entity* source)
 {
 
+}
+
+void HealthComponent::increaseMaxHealth(u16 amount)
+{
+    float percentage = static_cast<float>(m_health)/static_cast<float>(m_maxHealth);
+
+    m_maxHealth = std::min(0xffff, m_maxHealth + amount);
+    m_health = percentage * m_maxHealth;
 }
 
 u16 HealthComponent::getHealth() const

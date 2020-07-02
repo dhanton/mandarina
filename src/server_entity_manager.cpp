@@ -2,6 +2,10 @@
 
 #include "collision_manager.hpp"
 #include "tilemap.hpp"
+#include "hero.hpp"
+
+//all entities have to be included
+#include "entities/food.hpp"
 
 EntityManager::EntityManager(const JsonParser* jsonParser)
 {

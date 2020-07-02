@@ -25,8 +25,8 @@ public:
     virtual void onUpdate(sf::Time eTime);
     virtual void C_onUpdate(sf::Time eTime);
 
-    virtual void onHeroCreated(Unit* controlledUnit);
-    virtual void onHeroDeath(Unit* hero, bool& dead);
+    virtual void onHeroCreated(Hero* hero);
+    virtual void onHeroDeath(Hero* hero, bool& dead);
     virtual void onUnitUpdate(Unit* unit);
 
     u8 getWinnerTeamId() const;

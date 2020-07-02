@@ -111,22 +111,22 @@ void GameMode::C_onGameStarted()
 
 }
 
-void GameMode::onHeroCreated(Unit* controlledUnit)
+void GameMode::onHeroCreated(Hero* hero)
 {
     if (m_gameStarted) {
         //@TODO: Server should forward some data to GameMode regarding matchmaking parties, mmr, etc
         //so that the game mode can create teams appropiately
 
     } else {
-        controlledUnit->setSolid(false);
-        controlledUnit->setPosition({100.f, 100.f});
+        hero->setSolid(false);
+        hero->setPosition({100.f, 100.f});
 
         //each player is their own team in the lobby
-        controlledUnit->setTeamId(++m_lastTeamId);
+        hero->setTeamId(++m_lastTeamId);
     }
 }
 
-void GameMode::onHeroDeath(Unit* hero, bool& dead)
+void GameMode::onHeroDeath(Hero* hero, bool& dead)
 {
 
 }

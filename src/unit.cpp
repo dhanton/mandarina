@@ -126,14 +126,8 @@ void Unit::update(sf::Time eTime, const ManagersContext& context)
     if (!m_dead && m_health == 0) {
         m_dead = true;
 
-        //m_dead is passed as a reference in these two functions
-        //(so that buffs can prevent a unit from dying)
-        onDeath(m_dead);
-
-        if (m_dead && context.gameMode) {
-            //@WIP: Put this only on Hero::update (Hero = Unit + death/respawn + XP + name)
-            context.gameMode->onHeroDeath(this, m_dead);
-        }
+        //m_dead is passed as a reference so that buffs can prevent a unit from dying
+        onDeath(m_dead, context.gameMode);
 
         if (m_dead) {
             u32 killerUniqueId = getLatestDamageDealer();
@@ -315,6 +309,11 @@ void Unit::packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUni
     }
 }
 
+float Unit::getPowerDamageMultiplier() const
+{
+    return 1.f;
+}
+
 void Unit::onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId)
 {
     BuffHolderComponent::onTakeDamage(damage, source, uniqueId, teamId);
@@ -325,6 +324,11 @@ void Unit::onBeHealed(u16 amount, Entity* source)
 {
     BuffHolderComponent::onBeHealed(amount, source);
     HealthComponent::onBeHealed(amount, source);
+}
+
+void Unit::onDeath(bool& dead, GameMode* gameMode)
+{
+    BuffHolderComponent::onDeath(dead);
 }
 
 void Unit::applyInput(const PlayerInput& input, const ManagersContext& context, u16 clientDelay)
@@ -646,9 +650,10 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
         m_ui.setIsAlly(m_teamId == managersContext.entityManager->getLocalTeamId());
     }
 
-    uiRenderNodes.emplace_back(getPosition().y, m_uniqueId);
+    uiRenderNodes.emplace_back(m_uniqueId);
     uiRenderNodes.back().usingSprite = false;
     uiRenderNodes.back().drawable = &m_ui;
+    uiRenderNodes.back().height = getPosition().y;
 
 #ifdef MANDARINA_DEBUG
     uiRenderNodes.back().position = getPosition();
@@ -662,7 +667,7 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
 
     //setup the weapon node if equipped
     if (m_weaponId != WEAPON_NONE) {
-        renderNodes.emplace_back(getPosition().y + m_flyingHeight, m_uniqueId);
+        renderNodes.emplace_back(m_uniqueId);
         renderNodes.back().usingSprite = true;
 
         const Weapon& weapon = g_weaponData[m_weaponId];
@@ -673,6 +678,8 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
         weaponSprite.setOrigin(weaponSprite.getLocalBounds().width/2.f, weaponSprite.getLocalBounds().height/2.f);
         weaponSprite.setPosition(getPosition());
         weaponSprite.setRotation(-getAimAngle() - weapon.angleOffset);
+
+        renderNodes.back().height = getPosition().y + m_flyingHeight;
 
         //put the weapon behind or in front of the unit depending on the quadrant
         if (aimQuadrant == 2 || aimQuadrant == 3) {

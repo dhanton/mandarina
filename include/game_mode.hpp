@@ -7,7 +7,7 @@
 #include "json_parser.hpp"
 #include "defines.hpp"
 #include "managers_context.hpp"
-#include "unit.hpp"
+#include "hero.hpp"
 
 enum GameModeType {
     #define DoGameMode(class_name, type, json_id) \
@@ -62,11 +62,11 @@ public:
 
     //called when a hero is created (when player joins game or when game starts)
     //moves the unit to its initial position and sets its teamId if needed
-    virtual void onHeroCreated(Unit* controlledUnit);
+    virtual void onHeroCreated(Hero* hero);
 
     //will keep track of players to respawn them or 
     //remove them completely from the game
-    virtual void onHeroDeath(Unit* hero, bool& dead);
+    virtual void onHeroDeath(Hero* hero, bool& dead);
 
     //called by units every update
     virtual void onUnitUpdate(Unit* unit);

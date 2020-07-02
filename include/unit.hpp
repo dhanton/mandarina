@@ -62,8 +62,11 @@ public:
     virtual void postUpdate(sf::Time eTime, const ManagersContext& context);
     virtual void packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUniqueId, CRCPacket& outPacket) const;
 
+    virtual float getPowerDamageMultiplier() const;
+
     virtual void onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId);
     virtual void onBeHealed(u16 amount, Entity* source);
+    virtual void onDeath(bool& dead, GameMode* gameMode);
 
     virtual void applyInput(const PlayerInput& input, const ManagersContext& context, u16 clientDelay);
 

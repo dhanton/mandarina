@@ -20,8 +20,7 @@ void SingleShotAbility::onCast(Unit* caster, const ManagersContext& context, u16
     ABILITY_SET_PROJECTILE_SHOOTER(caster)
     ABILITY_BACKTRACK_PROJECTILE(clientDelay)
 
-    //@WIP: Get unit multiplier as well based on Hero power
-    float multiplier = context.gameMode->getDamageMultiplier();
+    float multiplier = context.gameMode->getDamageMultiplier() * caster->getPowerDamageMultiplier();
     ABILITY_SET_PROJECTILE_DAMAGE_MULTIPLIER(multiplier)
 }
 

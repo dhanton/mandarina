@@ -26,7 +26,7 @@ endif ()
 include_directories(include)
 
 set(SRC_DIR "./src")
-file(GLOB SRC_FILES "${SRC_DIR}/*.cpp" "${INCLUDE_DIR}/*.inl" "${SRC_DIR}/abilities/*.cpp" "${SRC_DIR}/buffs/*.cpp" "${SRC_DIR}/game_modes/*.cpp")
+file(GLOB SRC_FILES "${SRC_DIR}/*.cpp" "${INCLUDE_DIR}/*.inl" "${SRC_DIR}/entities/*.cpp" "${SRC_DIR}/abilities/*.cpp" "${SRC_DIR}/buffs/*.cpp" "${SRC_DIR}/game_modes/*.cpp")
 
 include_directories(~/Programacion/Librerias/SFML/include)
 set(SFML_LIBS debug libsfml-audio-d.so libsfml-graphics-d.so libsfml-network-d.so libsfml-window-d.so libsfml-system-d.so

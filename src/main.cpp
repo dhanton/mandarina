@@ -83,6 +83,7 @@ int main(int argc, char* argv[])
         textures->loadResource(TEXTURES_PATH + "devils_bow.png", TextureId::DEVILS_BOW);
         textures->loadResource(TEXTURES_PATH + "hells_bubble.png", TextureId::HELLS_BUBBLE);
         textures->loadResource(TEXTURES_PATH + "hells_dart.png", TextureId::HELLS_DART);
+        textures->loadResource(TEXTURES_PATH + "food.png", TextureId::FOOD);
 
         textures->loadResource(TEXTURES_PATH + "storm.png", TextureId::STORM);
 

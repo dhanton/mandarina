@@ -398,8 +398,7 @@ void C_Projectile_insertRenderNode(const C_Projectile& projectile, const C_Manag
 {
     std::vector<RenderNode>& renderNodes = managersContext.entityManager->getRenderNodes();
 
-    //@WIP: use flyingHeight = shooter.height + shooter.flyingHeight instead of 100
-    renderNodes.emplace_back(projectile.pos.y + 100, projectile.uniqueId);
+    renderNodes.emplace_back(projectile.uniqueId);
     renderNodes.back().usingSprite = true;
 
     sf::Sprite& sprite = renderNodes.back().sprite;
@@ -407,6 +406,9 @@ void C_Projectile_insertRenderNode(const C_Projectile& projectile, const C_Manag
     sprite.setTexture(context.textures->getResource(projectile.textureId));
     sprite.setScale(projectile.scale, projectile.scale);
     sprite.setOrigin(sprite.getLocalBounds().width/2.f, sprite.getLocalBounds().height/2.f);
+
+    //@WIP: use flyingHeight = shooter.height + shooter.flyingHeight instead of 100
+    renderNodes.back().height = projectile.pos.y + 100;
 
     if (projectile.renderRotation) {
         sprite.setRotation(-projectile.rotation-projectile.rotationOffset);

@@ -32,8 +32,6 @@ void ClientCaster::applyInputs(const PlayerInput& input, Vector2& casterPos, con
 {
     if (!m_caster) return;
     
-    //@WIP: Correct the cooldown in client if casting fails on server
-
     m_casterComponent.C_applyInput(m_caster, casterPos, input, context, false, getExtraFlags());
 }
 

@@ -101,7 +101,7 @@ void UnitUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
 
     const float percentage = (float)m_unit->getHealth()/(float)m_unit->getMaxHealth();
 
-    if (percentage != 0.f) {
+    if (percentage > 0.05f) {
         const Vector2 padding = Vector2(4.f, 4.f);
 
         sf::RectangleShape foreground;

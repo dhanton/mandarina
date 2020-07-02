@@ -1,0 +1,7 @@
+{
+    "collision_radius": 13,
+    "sub_texture_rect": {
+        "width": 32,
+        "height": 32
+    }
+}

@@ -129,6 +129,9 @@ public:
 protected:
     u16 m_textureId;
     float m_scale;
+
+    sf::IntRect m_subTextureRect;
+    bool m_useSubTextureRect;
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -144,6 +147,9 @@ public:
     virtual void onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId);
     virtual void onBeHealed(u16 amount, Entity* source);
 
+    //increase max health but keep health/max the same
+    void increaseMaxHealth(u16 amount);
+
     u16 getHealth() const;
     u16 getMaxHealth() const;
 
@@ -154,7 +160,6 @@ public:
 
 protected:
     void loadFromJson(const rapidjson::Document& doc);
-
 
 protected:
     u16 m_health;
