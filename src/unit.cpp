@@ -168,6 +168,8 @@ void Unit::update(sf::Time eTime, const ManagersContext& context)
         m_prevCollisionRadius = m_collisionRadius;
     }
 
+    context.gameMode->onUnitUpdate(this);
+
     m_inBush = context.tileMap->isColliding(TILE_BUSH, Circlef(m_pos, m_collisionRadius));
 
     //reveal of all units inside true sight radius

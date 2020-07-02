@@ -176,6 +176,10 @@ void GameClient::mainLoop(bool& running)
             m_entityManager.renderingEntitiesUI = false;
             m_canvas.draw(m_entityManager);
             m_tileMapRenderer.renderAfterEntities(m_canvas);
+            
+            if (m_gameMode) {
+                m_gameMode->draw(m_canvas, m_context.textures);
+            }
 
             m_canvas.display();
 
@@ -220,6 +224,10 @@ void GameClient::update(sf::Time eTime)
         printMessage("Out/s: %f", status.m_flOutBytesPerSec);
 
         m_infoTimer = sf::Time::Zero;
+    }
+
+    if (m_gameMode) {
+        m_gameMode->C_onUpdate(eTime);
     }
 
     m_entityManager.update(eTime);
@@ -684,10 +692,13 @@ void GameClient::handleCommand(u8 command, CRCPacket& packet)
             packet >> started;
 
             m_gameMode = std::unique_ptr<GameMode>(GameModeLoader::create(gameModeType, m_context));
+            m_gameMode->setTileMap(&m_tileMap);
 
             if (started) {
                 m_gameMode->startGame();
                 loadMap(m_gameMode->getMapFilename());
+
+                m_gameMode->C_onGameStarted();
             } else {
                 loadMap(m_gameMode->getLobbyMapFilename());
             }
@@ -708,6 +719,8 @@ void GameClient::handleCommand(u8 command, CRCPacket& packet)
 
             m_gameMode->startGame();
             loadMap(m_gameMode->getMapFilename());
+
+            m_gameMode->C_onGameStarted();
 
             //force ClientCaster to restart cooldown and ability info next update
             m_clientCaster->forceCasterUpdate();

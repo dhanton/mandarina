@@ -683,7 +683,7 @@ int GameServer::getIndexByConnectionId(HSteamNetConnection connectionId) const
 void GameServer::createGameMode(u8 gameModeType)
 {
     m_gameMode = std::unique_ptr<GameMode>(GameModeLoader::create(gameModeType, m_context));
-    m_gameMode->setManagersContext(ManagersContext(&m_entityManager, &m_collisionManager, &m_tileMap, nullptr));
+    m_gameMode->setTileMap(&m_tileMap);
 }
 
 std::string GameServer::getCurrentMapFilename() const

@@ -75,6 +75,7 @@ public:
 
     void setUnit(Unit* unit);
 
+    void kill();
     bool isDead() const;
     
     u8 getType() const;

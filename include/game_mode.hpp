@@ -32,24 +32,33 @@ public:
     };
 
 public:
-    void setManagersContext(const ManagersContext& managersContext);
+    void setTileMap(TileMap* tileMap);
 
     virtual void loadFromJson(const rapidjson::Document& doc);
 
     virtual void packGameEndData(CRCPacket& outPacket);
     virtual void loadGameEndData(CRCPacket& inPacket);
 
+    //remove this when the storm gets implemented with tiles
+    virtual void draw(sf::RenderTexture& renderTexture, const TextureLoader* textures);
+
     //we don't use drawable since this class is shared by client and server
     virtual void drawGameEndInfo(sf::RenderWindow& window, const FontLoader* fonts);
 
     //creates chests and other game mode specific entities
     //(called after heroes are created)
+    //prepares the storm
     virtual void onGameStarted(u8 numberOfPlayers);
+
+    //only prepares the storm
+    virtual void C_onGameStarted();
 
     //can update special events (like the storm for battle royale)
     //will also check if the game win condition has been met
     //in which case the game will end with a command for all clients
     virtual void onUpdate(sf::Time eTime);
+
+    virtual void C_onUpdate(sf::Time eTime);
 
     //called when a hero is created (when player joins game or when game starts)
     //moves the unit to its initial position and sets its teamId if needed
@@ -58,6 +67,9 @@ public:
     //will keep track of players to respawn them or 
     //remove them completely from the game
     virtual void onHeroDeath(Unit* hero, bool& dead);
+
+    //called by units every update
+    virtual void onUnitUpdate(Unit* unit);
 
     //assign recharge for abilities that require it
     //calculate hero damage multiplier based on XP or something

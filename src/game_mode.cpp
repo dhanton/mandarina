@@ -2,9 +2,9 @@
 
 #include "server_entity_manager.hpp"
 
-void GameMode::setManagersContext(const ManagersContext& managersContext)
+void GameMode::setTileMap(TileMap* tileMap)
 {
-    m_tileMap = managersContext.tileMap;
+    m_tileMap = tileMap;
 }
 
 void GameMode::loadFromJson(const rapidjson::Document& doc)
@@ -81,6 +81,11 @@ void GameMode::loadGameEndData(CRCPacket& outPacket)
     m_gameEnded = true;
 }
 
+void GameMode::draw(sf::RenderTexture& renderTexture, const TextureLoader* textures)
+{
+
+}
+
 void GameMode::drawGameEndInfo(sf::RenderWindow& window, const FontLoader* fonts)
 {
 
@@ -91,9 +96,19 @@ void GameMode::onUpdate(sf::Time eTime)
 
 }
 
+void GameMode::C_onUpdate(sf::Time eTime)
+{
+
+}
+
 void GameMode::onGameStarted(u8 numberOfPlayers)
 {
     //game mode specific entities can be created by child classes
+}
+
+void GameMode::C_onGameStarted()
+{
+
 }
 
 void GameMode::onHeroCreated(Unit* controlledUnit)
@@ -129,6 +144,11 @@ float GameMode::getAbilityTimeMultiplier() const
 float GameMode::getRechargeMultiplier() const
 {
     return m_gameStarted ? m_rechargeMultiplier : m_lobbyRechargeMultiplier;
+}
+
+void GameMode::onUnitUpdate(Unit* unit)
+{
+    
 }
 
 std::list<GameMode::HeroData>& GameMode::getNewDeadHeroes()

@@ -7,6 +7,7 @@
 #include "buffs/root_buff.hpp"
 #include "buffs/reveal_buff.hpp"
 #include "buffs/recharge_ability_buff.hpp"
+#include "buffs/storm_buff.hpp"
 
 bool BuffHolderComponent::m_buffsLoaded = false;
 std::unique_ptr<Buff> BuffHolderComponent::m_buffData[BUFF_MAX_TYPES];
@@ -44,15 +45,36 @@ Buff* BuffHolderComponent::addBuff(u8 buffType)
     if (!m_buffsLoaded) return nullptr;
     if (buffType >= BUFF_MAX_TYPES) return nullptr;
 
-    //@TODO: We need some sort of setting to remove old buffs with the same name in some cases
-    //(look at platano for reference)
-
     m_buffs.emplace_back(m_buffData[buffType]->clone());
 
     //safe as long as this class is only inherited by Unit (must be the case)
     m_buffs.back()->setUnit(static_cast<Unit*>(this));
 
     return m_buffs.back().get();
+}
+
+Buff* BuffHolderComponent::addUniqueBuff(u8 buffType)
+{
+    if (!m_buffsLoaded) return nullptr;
+    if (buffType >= BUFF_MAX_TYPES) return nullptr;
+    
+    for (const auto& buff : m_buffs) {
+        if (buff->getType() == buffType) {
+            return nullptr;
+        }
+    }
+
+    return addBuff(buffType);
+}
+
+void BuffHolderComponent::removeUniqueBuff(u8 buffType)
+{
+    for (const auto& buff : m_buffs) {
+        if (buff->getType() == buffType) {
+            buff->kill();
+            break;
+        }
+    }
 }
 
 #define FOR_ALL_BUFFS(function_string) \

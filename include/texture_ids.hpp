@@ -17,6 +17,9 @@ namespace TextureId
         ROOTED,
         SLOWED,
 
+        //storm modifier
+        STORM,
+
         //textures used by entities
         #define DoEntity(class_name, type, json_id) \
             type,

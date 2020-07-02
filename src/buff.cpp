@@ -119,6 +119,11 @@ void Buff::setUnit(Unit* unit)
     m_unit = unit;
 }
 
+void Buff::kill()
+{
+    m_dead = true;
+}
+
 bool Buff::isDead() const
 {
     return m_dead;

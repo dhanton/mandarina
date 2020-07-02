@@ -22,11 +22,13 @@ public:
 
     Buff* addBuff(u8 buffType);
 
+    //@TODO: proper purge and better creation flags
+    Buff* addUniqueBuff(u8 buffType);
+    void removeUniqueBuff(u8 buffType);
+
 protected:
     std::list<std::unique_ptr<Buff>> m_buffs;
     
-    //@TODO: purge (buffs/debuffs)
-
 public:
     //there are more callbacks that don't get called at the same time for all the buffs
     //onEnd() onStart() onPurged()

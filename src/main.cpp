@@ -84,6 +84,8 @@ int main(int argc, char* argv[])
         textures->loadResource(TEXTURES_PATH + "hells_bubble.png", TextureId::HELLS_BUBBLE);
         textures->loadResource(TEXTURES_PATH + "hells_dart.png", TextureId::HELLS_DART);
 
+        textures->loadResource(TEXTURES_PATH + "storm.png", TextureId::STORM);
+
         textures->loadResource(ICONS_PATH + "hells_bubble.png", TextureId::ICON_HELLS_BUBBLE);
         textures->loadResource(ICONS_PATH + "hells_dart.png", TextureId::ICON_HELLS_DART);
         textures->loadResource(ICONS_PATH + "hells_dash.png", TextureId::ICON_HELLS_DASH);
