@@ -304,7 +304,7 @@ void PassiveAbility::update(sf::Time eTime, GameMode* gameMode)
 
 bool PassiveAbility::canBeCasted(const Status& status) const
 {
-
+    return true;
 }
 
 void PassiveAbility::loadFromJson(const rapidjson::Document& doc)

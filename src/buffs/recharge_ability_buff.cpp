@@ -41,6 +41,8 @@ float RechargeAbilityBuff::getMultiplier() const
 
         multiplier *= m_ability->getRechargeMultiplier();
 
+        return multiplier;
+
     } else {
         return 0.f;
     }
