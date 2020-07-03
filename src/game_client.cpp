@@ -104,7 +104,7 @@ GameClient::~GameClient()
 
 void GameClient::mainLoop(bool& running)
 {
-    sf::RenderWindow window{{m_screenSize.x, m_screenSize.y}, "Mandarina Prototype", m_screenStyle};
+    sf::RenderWindow window{{m_screenSize.x, m_screenSize.y}, "Mandarina v0.0.1", m_screenStyle};
     window.setMouseCursorVisible(false);
     
     sf::View view = window.getDefaultView();

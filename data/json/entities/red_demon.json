@@ -4,7 +4,7 @@
     "ultimate": "HELLS_RAIN",
     "health": 200,
     "passive_healing_per_second": 0.10,
-    "movement_speed": 350,
+    "movement_speed": 200,
     "collision_radius": 20,
     "scale": 4
 }
