@@ -146,6 +146,13 @@ void C_Hero::loadFromData(u32 controlledEntityUniqueId, CRCPacket& inPacket, Cas
 
 void C_Hero::insertRenderNode(const C_ManagersContext& managersContext, const Context& context)
 {
+#ifdef MANDARINA_DEBUG
+    bool renderingLocallyHidden = managersContext.entityManager->renderingLocallyHidden;
+    if (!renderingLocallyHidden && isLocallyHidden() && !isServerRevealed()) return;
+#else
+    if (isLocallyHidden() && !isServerRevealed()) return;
+#endif
+
     C_Unit::insertRenderNode(managersContext, context);
 
     std::vector<RenderNode>& uiRenderNodes = managersContext.entityManager->getUIRenderNodes();

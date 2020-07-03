@@ -70,8 +70,9 @@ int main(int argc, char* argv[])
         textures = std::unique_ptr<TextureLoader>(new TextureLoader());
         
         //@TODO: Load textures automatically
-
         textures->loadResource(TEXTURES_PATH + "test_tileset.png", TextureId::TEST_TILESET);
+        
+        textures->loadResource(TEXTURES_PATH + "crosshair.png", TextureId::CROSSHAIR);
 
         textures->loadResource(TEXTURES_PATH + "stunned.png", TextureId::STUNNED);
         textures->loadResource(TEXTURES_PATH + "silenced.png", TextureId::SILENCED);

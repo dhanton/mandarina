@@ -53,8 +53,6 @@ void GameServerCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
 
                     u32 clientId = parent->m_clients[index].uniqueId;
 
-                    //Set the rest of the parameters (displayName, character, team, etc)
-
                     if (parent->m_pInterface->AcceptConnection(info->m_hConn) != k_EResultOK) {
                         parent->printMessage("There was an error accepting connection with client %d", clientId);
                         parent->m_pInterface->CloseConnection(info->m_hConn, 0, nullptr, false);
@@ -504,6 +502,12 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
             std::string displayName;
             packet >> displayName;
 
+            if (displayName.size() > HeroBase::maxDisplayNameSize) {
+                displayName.resize(HeroBase::maxDisplayNameSize);
+            }
+
+            m_clients[index].displayName = displayName;
+
             Hero* hero = static_cast<Hero*>(m_entityManager.entities.atUniqueId(m_clients[index].controlledEntityUniqueId));
 
             if (hero) {
@@ -562,6 +566,7 @@ Hero* GameServer::createClientHeroEntity(int index, bool keepOldUniqueId)
     if (keepOldUniqueId) {
         //we can force the entity to conserve the old client controlledEntityUniqueId
         entity = m_entityManager.createEntity(m_clients[index].selectedHeroType, Vector2(), m_clients[index].teamId, uniqueId);
+        static_cast<Hero*>(entity)->setDisplayName(m_clients[index].displayName);
 
     } else {
         //or we can use a new one

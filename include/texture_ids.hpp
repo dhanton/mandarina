@@ -10,6 +10,8 @@ namespace TextureId
     enum _TextureId {
         TEST_TILESET,
 
+        CROSSHAIR,
+
         //textures used to display buffs in client
         STUNNED,
         SILENCED,

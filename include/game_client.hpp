@@ -140,4 +140,6 @@ private:
     bool m_fullUpdateReceived;
 
     std::string m_displayName;
+
+    sf::Sprite m_mouseSprite;
 };

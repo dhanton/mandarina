@@ -636,14 +636,16 @@ void C_Unit::localReveal(C_Entity* entity)
 void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Context& context)
 {
 #ifdef MANDARINA_DEBUG
-        bool renderingLocallyHidden = managersContext.entityManager->renderingLocallyHidden;
-        if (!renderingLocallyHidden && m_locallyHidden && !m_serverRevealed) return;
+    bool renderingLocallyHidden = managersContext.entityManager->renderingLocallyHidden;
+    if (!renderingLocallyHidden && m_locallyHidden && !m_serverRevealed) return;
 #else
-        if (m_locallyHidden && !m_serverRevealed) return;
+    if (m_locallyHidden && !m_serverRevealed) return;
 #endif
 
     std::vector<RenderNode>& renderNodes = managersContext.entityManager->getRenderNodes();
     C_Entity::insertRenderNode(managersContext, context);
+
+    const float unitHeight = renderNodes.back().height;
 
     sf::Sprite& sprite = renderNodes.back().sprite;
 
@@ -729,7 +731,7 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
         weaponSprite.setPosition(getPosition());
         weaponSprite.setRotation(-getAimAngle() - weapon.angleOffset);
 
-        renderNodes.back().height = getPosition().y + m_flyingHeight;
+        renderNodes.back().height = unitHeight;
 
         //put the weapon behind or in front of the unit depending on the quadrant
         if (aimQuadrant == 2 || aimQuadrant == 3) {

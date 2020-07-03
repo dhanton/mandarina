@@ -46,6 +46,7 @@ public:
 
         u8 teamId = 0;
         u32 controlledEntityUniqueId = 0;
+        std::string displayName;
 
         u8 spectatingTeamId = 0;
         u32 spectatingUniqueId = 0;

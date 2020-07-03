@@ -4,6 +4,7 @@
 #include "network_commands.hpp"
 #include "helper.hpp"
 #include "game_mode_loader.hpp"
+#include "texture_ids.hpp"
 
 GameClientCallbacks::GameClientCallbacks(GameClient* p)
 {
@@ -81,6 +82,9 @@ GameClient::GameClient(const Context& context):
 
     m_inputRate = sf::seconds(1.f/30.f);
 
+    m_mouseSprite.setTexture(context.textures->getResource(TextureId::CROSSHAIR));
+    m_mouseSprite.setOrigin(m_mouseSprite.getLocalBounds().width/2.f, m_mouseSprite.getLocalBounds().height/2.f);
+
     if (!context.local) {
         m_serverConnectionId = connectToServer(m_endpoint);
         m_connected = false;
@@ -101,6 +105,7 @@ GameClient::~GameClient()
 void GameClient::mainLoop(bool& running)
 {
     sf::RenderWindow window{{m_screenSize.x, m_screenSize.y}, "Mandarina Prototype", m_screenStyle};
+    window.setMouseCursorVisible(false);
     
     sf::View view = window.getDefaultView();
     view.zoom(m_camera.getZoom());
@@ -199,6 +204,8 @@ void GameClient::mainLoop(bool& running)
             if (m_gameMode && m_gameMode->hasGameEnded()) {
                 m_gameMode->drawGameEndInfo(window, m_context.fonts);
             }
+
+            window.draw(m_mouseSprite);
         }
 
         window.display();
@@ -250,6 +257,10 @@ void GameClient::update(sf::Time eTime)
 
 void GameClient::renderUpdate(sf::Time eTime)
 {
+    Vector2i mousePixel = sf::Mouse::getPosition(*m_context.window);
+    Vector2 mousePos = m_camera.mapPixelToCoords(mousePixel);
+    m_mouseSprite.setPosition(mousePos);
+
     C_Entity* entity = m_entityManager.entities.atUniqueId(m_entityManager.getControlledEntityUniqueId());
 
     if (std::next(m_interSnapshot_it, m_requiredSnapshotsToRender) != m_snapshots.end()) {
@@ -294,9 +305,6 @@ void GameClient::renderUpdate(sf::Time eTime)
                                                  m_controlledEntityInterTimer.asSeconds(), m_inputRate.asSeconds());
                 entity->setPosition(newPos);
             }
-
-            Vector2i mousePixel = sf::Mouse::getPosition(*m_context.window);
-            Vector2 mousePos = m_camera.mapPixelToCoords(mousePixel);
 
             PlayerInput_updateAimAngle(m_currentInput, entity->getPosition(), mousePos);
             entity->updateControlledAngle(m_currentInput.aimAngle);
