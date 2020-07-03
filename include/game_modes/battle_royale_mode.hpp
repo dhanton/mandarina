@@ -51,9 +51,10 @@ private:
     float m_stormDamageMultiplier;
 
     u8 m_numberOfTeamsRemaining;
-    std::vector<bool> m_teamsEliminated;
+    std::vector<Hero*> m_heroes;
 
     u8 m_winnerTeamId;
+    std::string m_winnerDisplayName;
 
     std::string m_spawnPointsFilename;
     bool m_spawnPointsLoaded;

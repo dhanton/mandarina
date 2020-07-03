@@ -12,12 +12,9 @@ public:
 
     void onDealDamage(u16 damage, Entity* target);
     void onEntityKill(Entity* target);
+    //onHeal should give ~ same percentage as damage
+    //onPlaceBuff should give less than damage
 
-    //@WIP: Add recharge values for other actions
-    //kills should be approx 30% charge
-    //heals should be like damage
-    //placing buffs on enemies should be less than the rest
-    
     void setCreator(void* creator, const ManagersContext& context);
 
 private:

@@ -72,6 +72,8 @@ public:
     //check server input was correct and redo all inputs otherwise
     void checkServerInput(u32 inputId, const Vector2& endPosition, u16 movementSpeed, const CasterSnapshot& casterSnapshot);
 
+    void sendDisplayName();
+
     void processPacket(HSteamNetConnection connectionId, CRCPacket& packet);
     void handleCommand(u8 command, CRCPacket& packet);
 

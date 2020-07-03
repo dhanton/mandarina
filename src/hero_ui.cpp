@@ -41,7 +41,6 @@ void HeroUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     const float yOffset = HealthUI::getYOffset(m_isControlledEntity);
     const int powerLevel = m_hero->getPowerLevel();
-    const std::string displayName = m_hero->getDisplayName().empty() ? "DEFAULT" : m_hero->getDisplayName();
 
     const Vector2 backgroundPos = m_hero->getPosition() + Vector2(0.f, yOffset - m_hero->getCollisionRadius());
     const Vector2 pos = backgroundPos - Vector2(HealthUI::barSize.x/2.f + 6.f, 1.f);
@@ -64,18 +63,21 @@ void HeroUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
     powerText.setOutlineThickness(1.f);
     powerText.setPosition(powerCircle.getPosition());
 
-    sf::Text nameText;
-    nameText.setFont(m_fonts->getResource("keep_calm_font"));
-    nameText.setCharacterSize(10);
-    nameText.setString(displayName);
-    nameText.setFillColor(sf::Color::White);
-    nameText.setOrigin(nameText.getLocalBounds().width/2.f + nameText.getLocalBounds().left, 
-                         nameText.getLocalBounds().height/2.f + nameText.getLocalBounds().top);
-    nameText.setOutlineColor(sf::Color::Black);
-    nameText.setOutlineThickness(1.f);
-    nameText.setPosition(backgroundPos - Vector2(0.f, nameText.getLocalBounds().height + 10.f));
-    
     target.draw(powerCircle, states);
     target.draw(powerText, states);
-    target.draw(nameText, states);
+
+    if (!m_hero->getDisplayName().empty()) {
+        sf::Text nameText;
+        nameText.setFont(m_fonts->getResource("keep_calm_font"));
+        nameText.setCharacterSize(10);
+        nameText.setString(m_hero->getDisplayName());
+        nameText.setFillColor(sf::Color::White);
+        nameText.setOrigin(nameText.getLocalBounds().width/2.f + nameText.getLocalBounds().left, 
+                            nameText.getLocalBounds().height/2.f + nameText.getLocalBounds().top);
+        nameText.setOutlineColor(sf::Color::Black);
+        nameText.setOutlineThickness(1.f);
+        nameText.setPosition(backgroundPos - Vector2(0.f, nameText.getLocalBounds().height + 10.f));
+        
+        target.draw(nameText, states);
+    }
 }

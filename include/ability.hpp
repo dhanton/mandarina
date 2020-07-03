@@ -158,9 +158,6 @@ private:
 //These macros can be used by both onCast and C_onCast to create projectiles
 //To use them, a projectile pointer must be defined previously
 
-//@WIP: Implement damage amplification (after the projectile has loaded its starting damage)
-//based on the current game mode's XP system
-
 #define ABILITY_CREATE_PROJECTILE(type, pos, angle, teamId) \
     projectile = context.entityManager->createProjectile(type, pos, angle, teamId);
     

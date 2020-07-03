@@ -33,10 +33,7 @@ void BattleRoyaleMode::loadFromJson(const rapidjson::Document& doc)
     m_spawnPointsLoaded = false;
     m_numberOfTeamsRemaining = 0;
 
-    m_teamsEliminated.resize(getMaxPlayers() + 1, false);
-
-    //for simplicity we add the neutral team and set it to be eliminated from the start
-    m_teamsEliminated[0] = true;
+    m_heroes.resize(getMaxPlayers() + 1, nullptr);
 
     //maybe this could be loaded from json file?
     m_stormPatterns = {Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(0, -1)};
@@ -50,15 +47,14 @@ void BattleRoyaleMode::packGameEndData(CRCPacket& outPacket)
 {
     GameMode::packGameEndData(outPacket);
 
-    outPacket << m_winnerTeamId;
-    //@WIP: Send winner's display name as well
+    outPacket << m_winnerTeamId << m_winnerDisplayName;
 }
 
 void BattleRoyaleMode::loadGameEndData(CRCPacket& inPacket)
 {
     GameMode::loadGameEndData(inPacket);
 
-    inPacket >> m_winnerTeamId;
+    inPacket >> m_winnerTeamId >> m_winnerDisplayName;
 }
 
 void BattleRoyaleMode::draw(sf::RenderTexture& renderTexture, const TextureLoader* textures)
@@ -76,8 +72,7 @@ void BattleRoyaleMode::drawGameEndInfo(sf::RenderWindow& window, const FontLoade
     sf::Text winnerText;
     winnerText.setFont(fonts->getResource("keep_calm_font"));
     winnerText.setCharacterSize(70);
-    //@WIP: Display winner name as well
-    winnerText.setString("The winner is team " + std::to_string((int) m_winnerTeamId) + "!");
+    winnerText.setString("The winner is " + m_winnerDisplayName + "!");
     winnerText.setFillColor(sf::Color::White);
     winnerText.setOutlineColor(sf::Color::Black);
     winnerText.setOutlineThickness(2.f);
@@ -152,6 +147,10 @@ void BattleRoyaleMode::onHeroCreated(Hero* hero)
         m_spawnPointsLoaded = true;
     }
 
+    //@TODO: Team position is a bit more complicated
+    //Should probably add a method to spawn all members close a specific point but without touching
+    //This general method could be useful for certain spells as well
+
     if (!m_spawnPoints.empty()) {
         auto it = std::next(m_spawnPoints.begin(), rand() % m_spawnPoints.size());
 
@@ -163,18 +162,18 @@ void BattleRoyaleMode::onHeroCreated(Hero* hero)
         std::cout << "BattleRoyaleMode::onHeroCreated error - Not enough spawn points" << std::endl;
     }
 
-    //@TODO: Team position is a bit more complicated
-    //Should probably add a method to spawn all members close a specific point but without touching
-    //This general method could be useful for certain spells as well
+    m_heroes[hero->getTeamId() + m_playersPerTeam - 1] = hero;
 }
 
 void BattleRoyaleMode::onHeroDeath(Hero* hero, bool& dead)
 {
     if (m_gameEnded) return;
 
+    //@TODO: Generalize this when playersPerTeam != 1
+
     if (m_playersPerTeam == 1) {
         m_numberOfTeamsRemaining--;
-        m_teamsEliminated[hero->getTeamId()] = true;
+        m_heroes[hero->getTeamId()] = nullptr;
 
         HeroData data;
 
@@ -188,18 +187,14 @@ void BattleRoyaleMode::onHeroDeath(Hero* hero, bool& dead)
         if (m_numberOfTeamsRemaining == 1) {
             m_gameEnded = true;
 
-            for (int i = 0; i < m_teamsEliminated.size(); ++i) {
-                if (!m_teamsEliminated[i]) {
+            for (int i = 0; i < m_heroes.size(); ++i) {
+                if (m_heroes[i]) {
                     m_winnerTeamId = i;
-                    //@WIP: save its display name as well
-
+                    m_winnerDisplayName = m_heroes[i]->getDisplayName();
                     break;
                 }
             }
         }
-
-    } else {
-        //@TODO: Teams
     }
 }
 

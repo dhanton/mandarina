@@ -26,10 +26,6 @@ void BuffHolderComponent::loadBuffData(const JsonParser* jsonParser)
     m_buffsLoaded = true;
 }
 
-//@WIP: We should copy the buffs in some way or another ?????
-//since this is used only the server, and since buffs are not used by snapshot units, 
-//are they not needed>???????????
-
 BuffHolderComponent::BuffHolderComponent(BuffHolderComponent const& other)
 {
 

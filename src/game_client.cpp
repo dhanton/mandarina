@@ -583,6 +583,15 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
     }
 }
 
+void GameClient::sendDisplayName()
+{
+    if (!m_displayName.empty()) {
+        CRCPacket outPacket;
+        outPacket << (u8) ServerCommand::DisplayName << m_displayName;
+        sendPacket(outPacket, m_serverConnectionId, true);
+    }
+}
+
 void GameClient::processPacket(HSteamNetConnection connectionId, CRCPacket& packet)
 {
     while (!packet.endOfPacket()) {
@@ -673,11 +682,7 @@ void GameClient::handleCommand(u8 command, CRCPacket& packet)
             m_entityManager.setControlledEntityUniqueId(uniqueId);
             m_entityManager.setControlledEntityTeamId(teamId);
 
-            if (!m_displayName.empty()) {
-                CRCPacket outPacket;
-                outPacket << (u8) ServerCommand::DisplayName << m_displayName;
-                sendPacket(outPacket, m_serverConnectionId, true);
-            }
+            sendDisplayName();
 
             break;
         }
