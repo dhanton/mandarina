@@ -17,5 +17,6 @@ enum class ServerCommand {
     LatestSnapshotId,
     PlayerInput,
     ChangeInputRate,
-    ChangeSnapshotRate
+    ChangeSnapshotRate,
+    DisplayName
 };

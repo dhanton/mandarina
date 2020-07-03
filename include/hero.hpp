@@ -3,10 +3,12 @@
 #include "unit.hpp"
 #include "hero_ui.hpp"
 
-class _HeroBase
+class HeroBase
 {
 public:
-    _HeroBase() = default;
+    static const size_t maxDisplayNameSize;
+
+    HeroBase() = default;
 
     std::string getDisplayName() const;
     void setDisplayName(std::string displayName);
@@ -24,7 +26,7 @@ protected:
     u32 m_power;
 };
 
-class Hero : public Unit, public _HeroBase
+class Hero : public Unit, public HeroBase
 {
 public:
     virtual Hero* clone() const;
@@ -42,7 +44,7 @@ private:
     std::vector<u8> m_consumedFood;
 };
 
-class C_Hero : public C_Unit, public _HeroBase
+class C_Hero : public C_Unit, public HeroBase
 {
 public:
     virtual C_Hero* clone() const;

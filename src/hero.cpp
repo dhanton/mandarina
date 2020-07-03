@@ -6,32 +6,33 @@
 #include "entities/food.hpp"
 
 const u32 maxPower = 255000;
+const size_t HeroBase::maxDisplayNameSize = 10;
 
-std::string _HeroBase::getDisplayName() const
+std::string HeroBase::getDisplayName() const
 {
     return m_displayName;
 }
 
-void _HeroBase::setDisplayName(std::string displayName)
+void HeroBase::setDisplayName(std::string displayName)
 {
-    if (displayName.size() > 0xff) {
-        displayName.resize(0xff);
+    if (displayName.size() > maxDisplayNameSize) {
+        displayName.resize(maxDisplayNameSize);
     }
 
     m_displayName = displayName;
 }
 
-u32 _HeroBase::getPower() const
+u32 HeroBase::getPower() const
 {
     return m_power;
 }
 
-u8 _HeroBase::getPowerLevel() const
+u8 HeroBase::getPowerLevel() const
 {
     return static_cast<u8>(static_cast<float>(m_power)/1000.f);
 }
 
-void _HeroBase::loadFromJson(const rapidjson::Document& doc)
+void HeroBase::loadFromJson(const rapidjson::Document& doc)
 {
     m_power = 0;
 }
@@ -44,7 +45,7 @@ Hero* Hero::clone() const
 void Hero::loadFromJson(const rapidjson::Document& doc)
 {
     Unit::loadFromJson(doc);
-    _HeroBase::loadFromJson(doc);
+    HeroBase::loadFromJson(doc);
 }
 
 void Hero::packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUniqueId, CRCPacket& outPacket) const
@@ -63,11 +64,7 @@ void Hero::packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUni
     outPacket << bits.popByte();
 
     if (displayNameChanged) {
-        outPacket << (u8) m_displayName.size();
-
-        for (const char& c : m_displayName) {
-            outPacket << c;
-        }
+        outPacket << m_displayName;
     }
 
     if (powerLevelChanged) {
@@ -117,7 +114,7 @@ C_Hero* C_Hero::clone() const
 void C_Hero::loadFromJson(const rapidjson::Document& doc, u16 textureId, const Context& context)
 {
     C_Unit::loadFromJson(doc, textureId, context);
-    _HeroBase::loadFromJson(doc);
+    HeroBase::loadFromJson(doc);
 }
 
 void C_Hero::loadFromData(u32 controlledEntityUniqueId, CRCPacket& inPacket, CasterSnapshot& casterSnapshot)
@@ -135,16 +132,8 @@ void C_Hero::loadFromData(u32 controlledEntityUniqueId, CRCPacket& inPacket, Cas
 
     if (displayNameChanged) {
         m_displayName.clear();
-        
-        u8 size;
-        inPacket >> size;
 
-        for (int i = 0; i < size; ++i) {
-            char c;
-            c >> size;
-
-            m_displayName.push_back(c);
-        }
+        inPacket >> m_displayName;
     }
 
     if (powerLevelChanged) {

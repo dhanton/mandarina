@@ -84,7 +84,7 @@ public:
     void handleCommand(u8 command, int index, CRCPacket& packet);
     void onConnectionCompleted(HSteamNetConnection connectionId);
 
-    Entity* createClientHeroEntity(int index, bool keepOldUniqueId = false);
+    Hero* createClientHeroEntity(int index, bool keepOldUniqueId = false);
     void handleDeadHeroes();
 
     int addClient();

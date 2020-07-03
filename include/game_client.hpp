@@ -82,6 +82,7 @@ public:
 
 private:
     void loadMap(const std::string& filename);
+    void readDisplayName(const std::string& filename);
 
 private:
     GameClientCallbacks m_gameClientCallbacks;
@@ -128,4 +129,6 @@ private:
 
     bool m_forceFullSnapshotUpdate;
     bool m_fullUpdateReceived;
+
+    std::string m_displayName;
 };

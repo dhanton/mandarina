@@ -515,6 +515,20 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
 
             break;
         }
+
+        case ServerCommand::DisplayName:
+        {
+            std::string displayName;
+            packet >> displayName;
+
+            Hero* hero = static_cast<Hero*>(m_entityManager.entities.atUniqueId(m_clients[index].controlledEntityUniqueId));
+
+            if (hero) {
+                hero->setDisplayName(displayName);
+            }
+
+            break;
+        }
     }
 }
 
@@ -530,14 +544,14 @@ void GameServer::onConnectionCompleted(HSteamNetConnection connectionId)
         m_clients[index].selectedHeroType = ENTITY_RED_DEMON;
         m_clients[index].heroDead = false;
 
-        Entity* entity = createClientHeroEntity(index);
+        Hero* hero = createClientHeroEntity(index);
 
         CRCPacket outPacket;
         outPacket << (u8) ClientCommand::InitialInfo << m_clients[index].controlledEntityUniqueId << m_clients[index].teamId;
         outPacket << (u8) ClientCommand::GameModeType << m_gameMode->getType() << m_gameStarted;
 
-        if (entity) {
-            outPacket << (u8) ClientCommand::PlayerCoords << entity->getPosition().x << entity->getPosition().y;
+        if (hero) {
+            outPacket << (u8) ClientCommand::PlayerCoords << hero->getPosition().x << hero->getPosition().y;
         }
 
         sendPacket(outPacket, connectionId, true);
@@ -545,7 +559,7 @@ void GameServer::onConnectionCompleted(HSteamNetConnection connectionId)
     }
 }
 
-Entity* GameServer::createClientHeroEntity(int index, bool keepOldUniqueId)
+Hero* GameServer::createClientHeroEntity(int index, bool keepOldUniqueId)
 {
     if (index == -1) return nullptr;
 
@@ -584,7 +598,8 @@ Entity* GameServer::createClientHeroEntity(int index, bool keepOldUniqueId)
         m_clients[index].teamId = entity->getTeamId();
     }
 
-    return entity;
+    //make sure the clients can't choose an entity type that's not a hero
+    return static_cast<Hero*>(entity);
 }
 
 void GameServer::handleDeadHeroes()

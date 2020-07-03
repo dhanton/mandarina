@@ -1,5 +1,6 @@
 #include "game_client.hpp"
 
+#include <fstream>
 #include "network_commands.hpp"
 #include "helper.hpp"
 #include "game_mode_loader.hpp"
@@ -71,6 +72,8 @@ GameClient::GameClient(const Context& context, const SteamNetworkingIPAddr& endp
 
     m_forceFullSnapshotUpdate = false;
     m_fullUpdateReceived = false;
+
+    readDisplayName("name.txt");
 
     ////////////////////// THIINGS TO LOAD FROM JSON FILE ////////////////////////
     m_updateRate = sf::seconds(1.f/30.f);
@@ -666,6 +669,12 @@ void GameClient::handleCommand(u8 command, CRCPacket& packet)
             m_entityManager.setControlledEntityUniqueId(uniqueId);
             m_entityManager.setControlledEntityTeamId(teamId);
 
+            if (!m_displayName.empty()) {
+                CRCPacket outPacket;
+                outPacket << (u8) ServerCommand::DisplayName << m_displayName;
+                sendPacket(outPacket, m_serverConnectionId, true);
+            }
+
             break;
         }
 
@@ -809,4 +818,14 @@ void GameClient::loadMap(const std::string& filename)
     m_canvasCreated = true;
 
     m_camera.setMapSize(totalSize);
+}
+
+void GameClient::readDisplayName(const std::string& filename)
+{
+    std::fstream nameFile(DATA_PATH + filename);
+    nameFile >> m_displayName;
+
+    if (m_displayName.size() > HeroBase::maxDisplayNameSize) {
+        m_displayName.resize(HeroBase::maxDisplayNameSize);
+    }
 }
