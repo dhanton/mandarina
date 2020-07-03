@@ -81,6 +81,8 @@ public:
     virtual void postUpdate(sf::Time eTime, const ManagersContext& context) = 0;
     virtual void packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUniqueId, CRCPacket& outPacket) const = 0;
 
+    virtual void onCreated();
+
     virtual bool shouldSendToTeam(u8 teamId) const;
 
     virtual void applyInput(const PlayerInput& input, const ManagersContext& context, u16 clientDelay);

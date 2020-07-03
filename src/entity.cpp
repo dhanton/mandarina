@@ -124,6 +124,11 @@ void Entity::loadFromJson(const rapidjson::Document& doc)
     m_dead = false;
 }
 
+void Entity::onCreated()
+{
+
+}
+
 bool Entity::shouldSendToTeam(u8 teamId) const
 {
     return true;

@@ -256,7 +256,9 @@ void GameServer::update(const sf::Time& eTime, bool& running)
                 createClientHeroEntity(i, true);
             }
 
-            m_gameMode->onGameStarted(m_clients.firstInvalidIndex());
+            ManagersContext context(&m_entityManager, &m_collisionManager, &m_tileMap, m_gameMode.get());
+
+            m_gameMode->onGameStarted(m_clients.firstInvalidIndex(), context);
 
             for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
                 CRCPacket outPacket;

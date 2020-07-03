@@ -66,16 +66,16 @@ u8 FoodBase::getRandomFood()
     return (rand() % (m_rarityOffset[rarity + 1] - m_rarityOffset[rarity])) + m_rarityOffset[rarity];
 }
 
-void FoodBase::scatterFoods(const Vector2& pos, const std::vector<u8>& foods, const ManagersContext& context)
+void FoodBase::scatterFood(const Vector2& pos, const std::vector<u8>& foodVec, const ManagersContext& context)
 {
-    if (foods.empty()) return;
+    if (foodVec.empty()) return;
     
     const float scatterRadius = 60.f;
 
-    //don't scatter foods closer than this
+    //don't scatter food closer than this
     const float offset = 25.f;
 
-    for (int i = 0; i < foods.size(); ++i) {
+    for (int i = 0; i < foodVec.size(); ++i) {
         const float randAngle = (rand() % 360) * PI/180.0;
         const float dist = static_cast<float>(rand() % static_cast<int>(scatterRadius - offset)) + offset;
         const Vector2 randVec = Vector2(std::sin(randAngle) * dist, std::cos(randAngle) * dist);
@@ -89,23 +89,20 @@ void FoodBase::scatterFoods(const Vector2& pos, const std::vector<u8>& foods, co
 
         if (entity) {
             Food* food = static_cast<Food*>(entity);
-            food->setFoodType(foods[i]);
+            food->setFoodType(foodVec[i]);
         }
     }
 }
 
-void FoodBase::scatterRandomFoods(const Vector2& pos, int min, int max, const ManagersContext& context)
+void FoodBase::scatterRandomFood(const Vector2& pos, int foodAmount, const ManagersContext& context)
 {
-    if (min > max) return;
+    std::vector<u8> foodVec;
 
-    int N = (rand() % (max - min + 1)) + min;
-    std::vector<u8> foods;
-
-    for (int i = 0; i < N; ++i) {
-        foods.push_back(getRandomFood());
+    for (int i = 0; i < foodAmount; ++i) {
+        foodVec.push_back(getRandomFood());
     }
 
-    scatterFoods(pos, foods, context);
+    scatterFood(pos, foodVec, context);
 }
 
 void FoodBase::loadFoodData(const rapidjson::Document& doc)
@@ -114,7 +111,7 @@ void FoodBase::loadFoodData(const rapidjson::Document& doc)
 
     if (m_foodDataLoaded) return;
     
-    //number of foods in each rarity
+    //number of food in each rarity
     m_rarityOffset[FOOD_RARITY_COMMON] = 0;
     m_rarityOffset[FOOD_RARITY_UNCOMMON] = 18;
     m_rarityOffset[FOOD_RARITY_RARE] = 27;
@@ -147,7 +144,7 @@ void FoodBase::loadFoodData(const rapidjson::Document& doc)
     m_powerGiven[FOOD_RARITY_RARE] = 900;
     m_powerGiven[FOOD_RARITY_MYTHIC] = 4000;
 
-    //glow color used for non common foods
+    //glow color used for non common food
     m_color[FOOD_RARITY_COMMON] = sf::Color::Black;
     m_color[FOOD_RARITY_UNCOMMON] = sf::Color(192, 192, 192);
     m_color[FOOD_RARITY_RARE] = sf::Color(255, 215, 0);
@@ -291,7 +288,7 @@ void C_Food::insertRenderNode(const C_ManagersContext& managersContext, const Co
     std::vector<RenderNode>& renderNodes = managersContext.entityManager->getRenderNodes();
     C_Entity::insertRenderNode(managersContext, context);
 
-    //foods rarer than common have a glow around them
+    // rarer than common have a glow around them
     if (getRarity() != FOOD_RARITY_COMMON) {
         sf::Sprite& sprite = renderNodes.back().sprite;
         float height = renderNodes.back().height;

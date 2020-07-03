@@ -6,6 +6,7 @@
 
 //all entities have to be included
 #include "entities/food.hpp"
+#include "entities/crate.hpp"
 
 EntityManager::EntityManager(const JsonParser* jsonParser)
 {
@@ -33,8 +34,11 @@ void EntityManager::update(sf::Time eTime)
     for (auto it = entities.begin(); it != entities.end(); ++it) {
         it->update(eTime, m_managers);
     }
+    
+    for (i = 0; i < projectiles.firstInvalidIndex(); ++i) {
+        Projectile_update(projectiles[i], eTime, m_managers);
+    }
 
-    //Is postupdate really needed?
     for (auto it = entities.begin(); it != entities.end();) {
         it->postUpdate(eTime, m_managers);
 
@@ -44,10 +48,6 @@ void EntityManager::update(sf::Time eTime)
         } else {
             ++it;
         }
-    }
-
-    for (i = 0; i < projectiles.firstInvalidIndex(); ++i) {
-        Projectile_update(projectiles[i], eTime, m_managers);
     }
 
     //remove dead projectiles
@@ -115,6 +115,7 @@ Entity* EntityManager::createEntity(u8 entityType, const Vector2& pos, u8 teamId
 
     entity->setTeamId(teamId);
     entity->setPosition(pos);
+    entity->onCreated();
 
     entities.addEntity(entity);
 

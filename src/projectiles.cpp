@@ -291,12 +291,12 @@ void Projectile_update(Projectile& projectile, sf::Time eTime, const ManagersCon
         }
 
         u32 collisionUniqueId = query.GetCurrent()->uniqueId;
-        Unit* unit = (Unit*) context.entityManager->entities.atUniqueId(collisionUniqueId);
+        Entity* entity = context.entityManager->entities.atUniqueId(collisionUniqueId);
 
-        if (unit) {
-            if (_BaseProjectile_canHitTeam(projectile, unit->getTeamId())) {
+        if (entity) {
+            if (_BaseProjectile_canHitTeam(projectile, entity->getTeamId())) {
 
-                Projectile_onHit(projectile, unit, context);
+                Projectile_onHit(projectile, entity, context);
                 projectile.dead = true;
                 queryDone = true;
             }
@@ -352,38 +352,45 @@ void C_Projectile_checkCollisions(C_Projectile& projectile, const C_ManagersCont
     }
 }
 
-void Projectile_onHit(Projectile& projectile, Unit* unitHit, const ManagersContext& context)
+void Projectile_onHit(Projectile& projectile, Entity* entityHit, const ManagersContext& context)
 {
     //@TODO: Should projectiles apply a certain force on hit => projectile.hitForce
     //(implement some sort of friction for units as well)
 
     Entity* shooter = context.entityManager->entities.atUniqueId(projectile.shooterUniqueId);
 
+    //dynamic_cast will go away eventually
+    Unit* unitHit = dynamic_cast<Unit*>(entityHit);
+    HealthComponent* healthComponentHit = dynamic_cast<HealthComponent*>(entityHit);
+
     //deal damage
-    unitHit->takeDamage(projectile.damage, shooter, projectile.shooterUniqueId, projectile.teamId);
+    if (healthComponentHit) {
+        healthComponentHit->takeDamage(projectile.damage, shooter, projectile.shooterUniqueId, projectile.teamId);
+    }
 
-    //reveal the unit hit
-    if (projectile.shouldReveal) {
-        RevealBuff* revealBuff = static_cast<RevealBuff*>(unitHit->addBuff(BUFF_STANDARD_REVEAL));
-        revealBuff->revealForTeam(projectile.teamId);
+    //apply buff and reveal
+    if (unitHit) {
+        if (projectile.shouldReveal) {
+            RevealBuff* revealBuff = static_cast<RevealBuff*>(unitHit->addBuff(BUFF_STANDARD_REVEAL));
+            revealBuff->revealForTeam(projectile.teamId);
 
-        if (projectile.revealTime != 0) {
-            revealBuff->setDuration((float) projectile.revealTime / 1000.f);
+            if (projectile.revealTime != 0) {
+                revealBuff->setDuration((float) projectile.revealTime / 1000.f);
+            }
+        }
+
+        if (projectile.buffAppliedType != BUFF_NONE) {
+            unitHit->addBuff(projectile.buffAppliedType);
         }
     }
 
+    //damage dealt callbacks
     if (shooter) {
         Unit* shooterUnit = dynamic_cast<Unit*>(shooter);
 
         if (shooterUnit) {
-            //callbacks for damage dealt
-            shooterUnit->onDealDamage(projectile.damage, unitHit);
+            shooterUnit->onDealDamage(projectile.damage, entityHit);
         }
-    }
-
-    //apply buff
-    if (projectile.buffAppliedType != BUFF_NONE) {
-        unitHit->addBuff(projectile.buffAppliedType);
     }
 }
 

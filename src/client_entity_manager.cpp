@@ -10,6 +10,7 @@
 
 //all entities must be included
 #include "entities/food.hpp"
+#include "entities/crate.hpp"
 
 RenderNode::RenderNode(u32 uniqueId)
 {

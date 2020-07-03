@@ -3,12 +3,6 @@
 #include <SFML/Graphics/CircleShape.hpp>
 #include "entity.hpp"
 
-//ordered from lowest to highest tier
-//Mythic - 1 foods (purple)
-//Rare - 3 foods (golden)
-//Uncommon - 9 foods (gray)
-//Common - 18 foods (black)
-
 enum FoodType {
     FOOD_APPLE,
     FOOD_BANANA,
@@ -66,8 +60,8 @@ public:
     static sf::Color getRarityColor(u8 foodType);
 
     static u8 getRandomFood();
-    static void scatterFoods(const Vector2& pos, const std::vector<u8>& foods, const ManagersContext& context);
-    static void scatterRandomFoods(const Vector2& pos, int min, int max, const ManagersContext& context);
+    static void scatterFood(const Vector2& pos, const std::vector<u8>& foodVec, const ManagersContext& context);
+    static void scatterRandomFood(const Vector2& pos, int foodAmount, const ManagersContext& context);
 
 protected:
     u8 m_foodType;

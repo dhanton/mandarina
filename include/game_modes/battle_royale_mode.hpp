@@ -3,6 +3,7 @@
 //@storm_remove: removed when storm implemented as a tile
 #include <SFML/Graphics/VertexArray.hpp>
 
+#include <SFML/Graphics/Color.hpp>
 #include <vector>
 #include "game_mode.hpp"
 
@@ -19,7 +20,7 @@ public:
 
     virtual void drawGameEndInfo(sf::RenderWindow& window, const FontLoader* fonts);
 
-    virtual void onGameStarted(u8 numberOfPlayers);
+    virtual void onGameStarted(u8 numberOfPlayers, const ManagersContext& context);
     virtual void C_onGameStarted();
 
     virtual void onUpdate(sf::Time eTime);
@@ -54,6 +55,7 @@ private:
 
     u8 m_winnerTeamId;
 
+    std::string m_spawnPointsFilename;
     bool m_spawnPointsLoaded;
     std::list<Vector2> m_spawnPoints;
 

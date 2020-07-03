@@ -44,7 +44,7 @@ void TileMap::loadFromFile(const std::string& filename)
     }
 }
 
-std::list<Vector2> TileMap::loadSpawnPoints(const std::string& filename)
+std::list<Vector2> TileMap::loadSpawnPoints(const std::string& filename, const sf::Color& color)
 {
     sf::Image image;
     std::list<Vector2> points;
@@ -59,7 +59,7 @@ std::list<Vector2> TileMap::loadSpawnPoints(const std::string& filename)
 
     for (int i = 0; i < image.getSize().x; ++i) {
         for (int j = 0; j < image.getSize().y; ++j) {
-            if (image.getPixel(i, j) == sf::Color::Yellow) {
+            if (image.getPixel(i, j) == color) {
                 points.emplace_back(i * tileSize + tileSize/2.f, j * tileSize + tileSize/2.f);
             }
         }

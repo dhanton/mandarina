@@ -83,7 +83,7 @@ void Hero::onDeath(bool& dead, const ManagersContext& context)
             context.gameMode->onHeroDeath(this, m_dead);
         }
 
-        FoodBase::scatterFoods(getPosition(), m_consumedFood, context);
+        FoodBase::scatterFood(getPosition(), m_consumedFood, context);
     }
 }
 

@@ -24,7 +24,7 @@ public:
     TileMap(u16 tileSize = DEFAULT_TILE_SIZE, u16 tileScale = TILE_SCALE);
 
     void loadFromFile(const std::string& filename);
-    std::list<Vector2> loadSpawnPoints(const std::string& filename);
+    std::list<Vector2> loadSpawnPoints(const std::string& filename, const sf::Color& color);
 
     bool isColliding(u16 tileFlags, const Circlef& circle) const;
     bool isContained(u16 tileFlags, const Circlef& circle) const;

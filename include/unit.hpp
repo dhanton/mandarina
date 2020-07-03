@@ -5,6 +5,7 @@
 #include "caster_component.hpp"
 #include "json_parser.hpp"
 #include "unit_ui.hpp"
+#include "health_ui.hpp"
 #include "buff_holder_component.hpp"
 #include "caster_snapshot.hpp"
 
@@ -76,6 +77,7 @@ public:
 
 private:
     void moveColliding(Vector2 newPos, const ManagersContext& context, bool force = false);
+    void checkDead(const ManagersContext& context);
 
     Vector2 m_prevPos;
     u8 m_prevCollisionRadius;
@@ -115,6 +117,9 @@ public:
     UnitUI* getUnitUI();
     const UnitUI* getUnitUI() const;
 
+    HealthUI* getHealthUI();
+    const HealthUI* getHealthUI() const;
+
     bool isLocallyHidden() const;
     void setLocallyHidden(bool locallyHidden);
     bool isServerRevealed() const;
@@ -124,7 +129,8 @@ public:
 private:
     void predictMovementLocally(const Vector2& oldPos, Vector2& newPos, const C_ManagersContext& context) const;
 
-    UnitUI m_ui;
+    UnitUI m_unitUI;
+    HealthUI m_healthUI;
 
     bool m_locallyHidden;
     bool m_serverRevealed;

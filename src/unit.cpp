@@ -123,25 +123,7 @@ void Unit::loadFromJson(const rapidjson::Document& doc)
 
 void Unit::update(sf::Time eTime, const ManagersContext& context)
 {
-    if (!m_dead && m_health == 0) {
-        m_dead = true;
-
-        //m_dead is passed as a reference so that buffs can prevent a unit from dying
-        onDeath(m_dead, context);
-
-        if (m_dead) {
-            u32 killerUniqueId = getLatestDamageDealer();
-            Entity* entity = context.entityManager->entities.atUniqueId(killerUniqueId);
-
-            if (entity) {
-                Unit* unit = dynamic_cast<Unit*>(entity);
-
-                if (unit) {
-                    unit->onEntityKill(this);
-                }
-            }
-        }
-    }
+    checkDead(context);
 
     if (m_dead) return;
 
@@ -215,7 +197,7 @@ void Unit::preUpdate(sf::Time eTime, const ManagersContext& context)
 
 void Unit::postUpdate(sf::Time eTime, const ManagersContext& context)
 {
-
+    checkDead(context);
 }
 
 void Unit::packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUniqueId, CRCPacket& outPacket) const
@@ -412,6 +394,29 @@ void Unit::moveColliding(Vector2 newPos, const ManagersContext& context, bool fo
     context.collisionManager->onUpdateEntity(m_uniqueId, m_pos, m_collisionRadius);
 }
 
+void Unit::checkDead(const ManagersContext& context)
+{
+    if (!m_dead && m_health == 0) {
+        m_dead = true;
+
+        //m_dead is passed as a reference so that buffs can prevent a unit from dying
+        onDeath(m_dead, context);
+
+        if (m_dead) {
+            u32 killerUniqueId = getLatestDamageDealer();
+            Entity* entity = context.entityManager->entities.atUniqueId(killerUniqueId);
+
+            if (entity) {
+                Unit* unit = dynamic_cast<Unit*>(entity);
+
+                if (unit) {
+                    unit->onEntityKill(this);
+                }
+            }
+        }
+    }
+}
+
 C_Unit* C_Unit::clone() const
 {
     return new C_Unit(*this);
@@ -530,11 +535,13 @@ void C_Unit::copySnapshotData(const C_Entity* snapshotEntity, bool isControlled)
 {
     Vector2 pos = getPosition();
     float aimAngle = getAimAngle();
-    UnitUI ui = m_ui;
+    UnitUI unitUI = m_unitUI;
+    HealthUI healthUI = m_healthUI;
 
     *this = *(static_cast<const C_Unit*>(snapshotEntity));
 
-    m_ui = ui;
+    m_unitUI = unitUI;
+    m_healthUI = healthUI;
 
     if (isControlled) {
         //this is not really needed since the controlled entity position is
@@ -637,22 +644,34 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
     std::vector<RenderNode>& uiRenderNodes = managersContext.entityManager->getUIRenderNodes();
 
     //add unit UI
-    if (!m_ui.getUnit()) {
-        m_ui.setUnit(this);
-        m_ui.setFonts(context.fonts);
-        m_ui.setTextureLoader(context.textures);
+    if (!m_unitUI.getUnit()) {
+        m_unitUI.setUnit(this);
+        m_unitUI.setFonts(context.fonts);
+        m_unitUI.setTextureLoader(context.textures);
+    }
+
+    //add health UI
+    if (!m_healthUI.getEntity()) {
+        m_healthUI.setEntity(this);
+        m_healthUI.setHealthComponent(this);
+        m_healthUI.setFonts(context.fonts);
     }
 
     //isAlly can change if the client changes the team its spectating
     bool isAlly = (m_teamId == managersContext.entityManager->getLocalTeamId());
 
-    if (!m_ui.getUnit() || isAlly != m_ui.getIsAlly()) {
-        m_ui.setIsAlly(m_teamId == managersContext.entityManager->getLocalTeamId());
+    if (!m_healthUI.getEntity() || isAlly != m_healthUI.getIsAlly()) {
+        m_healthUI.setIsAlly(m_teamId == managersContext.entityManager->getLocalTeamId());
     }
 
     uiRenderNodes.emplace_back(m_uniqueId);
     uiRenderNodes.back().usingSprite = false;
-    uiRenderNodes.back().drawable = &m_ui;
+    uiRenderNodes.back().drawable = &m_unitUI;
+    uiRenderNodes.back().height = getPosition().y;
+
+    uiRenderNodes.emplace_back(m_uniqueId);
+    uiRenderNodes.back().usingSprite = false;
+    uiRenderNodes.back().drawable = &m_healthUI;
     uiRenderNodes.back().height = getPosition().y;
 
 #ifdef MANDARINA_DEBUG
@@ -699,12 +718,22 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
 
 UnitUI* C_Unit::getUnitUI()
 {
-    return &m_ui;
+    return &m_unitUI;
 }
 
 const UnitUI* C_Unit::getUnitUI() const
 {
-    return &m_ui;
+    return &m_unitUI;
+}
+
+HealthUI* C_Unit::getHealthUI()
+{
+    return &m_healthUI;
+}
+
+const HealthUI* C_Unit::getHealthUI() const
+{
+    return &m_healthUI;
 }
 
 bool C_Unit::isLocallyHidden() const

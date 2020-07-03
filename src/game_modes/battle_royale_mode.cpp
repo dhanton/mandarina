@@ -5,6 +5,7 @@
 #include "tilemap.hpp"
 #include "texture_ids.hpp"
 #include "res_loader.hpp"
+#include "server_entity_manager.hpp"
 #include "buffs/storm_buff.hpp"
 
 void BattleRoyaleMode::loadFromJson(const rapidjson::Document& doc)
@@ -28,6 +29,7 @@ void BattleRoyaleMode::loadFromJson(const rapidjson::Document& doc)
         m_stormDamageMultiplier = 1.f;
     }
 
+    m_spawnPointsFilename = m_mapFilename + "_spawnpoints";
     m_spawnPointsLoaded = false;
     m_numberOfTeamsRemaining = 0;
 
@@ -90,13 +92,20 @@ void BattleRoyaleMode::drawGameEndInfo(sf::RenderWindow& window, const FontLoade
     window.setView(previousView);
 }
 
-void BattleRoyaleMode::onGameStarted(u8 numberOfPlayers)
+void BattleRoyaleMode::onGameStarted(u8 numberOfPlayers, const ManagersContext& context)
 {
-    GameMode::onGameStarted(numberOfPlayers);
+    GameMode::onGameStarted(numberOfPlayers, context);
 
     m_numberOfTeamsRemaining = numberOfPlayers;
 
     resetStorm(m_tileMap->getSize(), m_tileMap->getTileSize(), m_tileMap->getTileScale());
+
+    //load crates
+    std::list<Vector2> crates = m_tileMap->loadSpawnPoints(m_spawnPointsFilename, sf::Color::Blue);
+
+    for (const auto& cratePos : crates) {
+        context.entityManager->createEntity(ENTITY_NORMAL_CRATE, cratePos, 0);
+    }
 }
 
 void BattleRoyaleMode::C_onGameStarted()
@@ -139,7 +148,7 @@ void BattleRoyaleMode::onHeroCreated(Hero* hero)
     if (!hasGameStarted()) return;
 
     if (!m_spawnPointsLoaded) {
-        m_spawnPoints = m_tileMap->loadSpawnPoints(m_mapFilename + "_spawnpoints");
+        m_spawnPoints = m_tileMap->loadSpawnPoints(m_spawnPointsFilename, sf::Color::Yellow);
         m_spawnPointsLoaded = true;
     }
 

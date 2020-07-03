@@ -1,0 +1,9 @@
+{
+    "collision_radius": 20,
+    "scale": 2.5,
+
+    "min_possible_food": 5,
+    "max_possible_food": 8,
+    "min_possible_health": 700,
+    "max_possible_health": 1200
+}

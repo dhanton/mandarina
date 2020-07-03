@@ -3,3 +3,4 @@
 
 DoEntity(Hero, RED_DEMON, "red_demon")
 DoEntity(Food, FOOD, "food")
+DoEntity(Crate, NORMAL_CRATE, "normal_crate")

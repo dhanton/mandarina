@@ -48,7 +48,7 @@ public:
     //creates chests and other game mode specific entities
     //(called after heroes are created)
     //prepares the storm
-    virtual void onGameStarted(u8 numberOfPlayers);
+    virtual void onGameStarted(u8 numberOfPlayers, const ManagersContext& context);
 
     //only prepares the storm
     virtual void C_onGameStarted();

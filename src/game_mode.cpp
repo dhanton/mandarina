@@ -101,7 +101,7 @@ void GameMode::C_onUpdate(sf::Time eTime)
 
 }
 
-void GameMode::onGameStarted(u8 numberOfPlayers)
+void GameMode::onGameStarted(u8 numberOfPlayers, const ManagersContext& context)
 {
     //game mode specific entities can be created by child classes
 }

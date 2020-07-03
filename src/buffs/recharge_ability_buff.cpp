@@ -2,6 +2,7 @@
 
 #include "ability.hpp"
 #include "game_mode.hpp"
+#include "entities/crate.hpp"
 
 RechargeAbilityBuff* RechargeAbilityBuff::clone() const
 {
@@ -10,7 +11,8 @@ RechargeAbilityBuff* RechargeAbilityBuff::clone() const
 
 void RechargeAbilityBuff::onDealDamage(u16 damage, Entity* target)
 {
-    if (m_ability) {
+    //crates don't recharge abilities
+    if (m_ability && dynamic_cast<Crate*>(target) == nullptr) {
         //by default (multiplier=1) 200 damage = 10% charge
         m_ability->addToPercentage((static_cast<float>(damage)/2000.f) * getMultiplier());
     }

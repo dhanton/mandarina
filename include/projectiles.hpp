@@ -123,7 +123,7 @@ void C_Projectile_localUpdate(C_Projectile& projectile, sf::Time eTime, const C_
 //check collisions with units locally and remove the projectile if collision happens
 void C_Projectile_checkCollisions(C_Projectile& projectile, const C_ManagersContext& context);
 
-void Projectile_onHit(Projectile& projectile, Unit* unitHit, const ManagersContext& context);
+void Projectile_onHit(Projectile& projectile, Entity* unitHit, const ManagersContext& context);
 
 //hitting a wall/unit or 
 void Projectile_onDeath(Projectile& projectile);
