@@ -344,7 +344,6 @@ void GameClient::setupNextInterpolation()
         if (controlledUnit) {
             m_clientCaster->setCaster(controlledUnit, m_gameMode.get());
             controlledUnit->getUnitUI()->setClientCaster(m_clientCaster.get());
-            controlledUnit->getHealthUI()->setIsControlledEntity(true);
         }
     }
 

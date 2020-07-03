@@ -567,7 +567,7 @@ void C_Unit::copySnapshotData(const C_Entity* snapshotEntity, bool isControlled)
     UnitUI unitUI = m_unitUI;
     HealthUI healthUI = m_healthUI;
 
-    *this = *(static_cast<const C_Unit*>(snapshotEntity));
+    _doSnapshotCopy(snapshotEntity);
 
     m_unitUI = unitUI;
     m_healthUI = healthUI;
@@ -693,6 +693,8 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
         m_healthUI.setIsAlly(m_teamId == managersContext.entityManager->getLocalTeamId());
     }
 
+    m_healthUI.setIsControlledEntity(m_uniqueId == managersContext.entityManager->getControlledEntityUniqueId());
+
     uiRenderNodes.emplace_back(m_uniqueId);
     uiRenderNodes.back().usingSprite = false;
     uiRenderNodes.back().drawable = &m_unitUI;
@@ -794,6 +796,11 @@ bool C_Unit::shouldBeHiddenFrom(const C_Unit& unit) const
     } else {
         return m_inBush ? !unit.m_inBush : false;
     }
+}
+
+void C_Unit::_doSnapshotCopy(const C_Entity* snapshotEntity)
+{
+    *this = *(static_cast<const C_Unit*>(snapshotEntity));
 }
 
 void C_Unit::predictMovementLocally(const Vector2& oldPos, Vector2& newPos, const C_ManagersContext& context) const

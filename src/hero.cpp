@@ -2,6 +2,7 @@
 
 #include "bit_stream.hpp"
 #include "game_mode.hpp"
+#include "client_entity_manager.hpp"
 #include "entities/food.hpp"
 
 const u32 maxPower = 255000;
@@ -152,4 +153,36 @@ void C_Hero::loadFromData(u32 controlledEntityUniqueId, CRCPacket& inPacket, Cas
 
         m_power = static_cast<u32>(powerLevel) * 1000;
     }
+}
+
+void C_Hero::insertRenderNode(const C_ManagersContext& managersContext, const Context& context)
+{
+    C_Unit::insertRenderNode(managersContext, context);
+
+    std::vector<RenderNode>& uiRenderNodes = managersContext.entityManager->getUIRenderNodes();
+
+    //add unit UI
+    if (!m_ui.getHero()) {
+        m_ui.setHero(this);
+        m_ui.setFonts(context.fonts);
+        m_ui.setTextureLoader(context.textures);
+    }
+
+    m_ui.setIsControlledEntity(m_uniqueId == managersContext.entityManager->getControlledEntityUniqueId());
+
+    uiRenderNodes.emplace_back(m_uniqueId);
+    uiRenderNodes.back().usingSprite = false;
+    uiRenderNodes.back().drawable = &m_ui;
+    uiRenderNodes.back().height = getPosition().y;
+    uiRenderNodes.back().manualFilter = 10;
+}
+
+void C_Hero::_doSnapshotCopy(const C_Entity* snapshotEntity)
+{
+    HeroUI heroUI = m_ui;
+
+    //this method is needed to cast to C_Hero here (and copy data that is in Hero but not in Unit)
+    *this = *(static_cast<const C_Hero*>(snapshotEntity));
+
+    m_ui = heroUI;
 }

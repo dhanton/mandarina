@@ -131,6 +131,9 @@ public:
     void setServerRevealed(bool serverHidden);
     bool shouldBeHiddenFrom(const C_Unit& unit) const;
 
+protected:
+    virtual void _doSnapshotCopy(const C_Entity* snapshotEntity);
+
 private:
     void predictMovementLocally(const Vector2& oldPos, Vector2& newPos, const C_ManagersContext& context) const;
 

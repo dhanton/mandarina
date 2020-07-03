@@ -1,6 +1,7 @@
 #pragma once
 
 #include "unit.hpp"
+#include "hero_ui.hpp"
 
 class _HeroBase
 {
@@ -48,4 +49,12 @@ public:
 
     virtual void loadFromJson(const rapidjson::Document& doc, u16 textureId, const Context& context);
     virtual void loadFromData(u32 controlledEntityUniqueId, CRCPacket& inPacket, CasterSnapshot& casterSnapshot);
+
+    virtual void insertRenderNode(const C_ManagersContext& managersContext, const Context& context);
+
+protected:
+    virtual void _doSnapshotCopy(const C_Entity* snapshotEntity);
+
+private:
+    HeroUI m_ui;
 };
