@@ -111,25 +111,9 @@ GameServer::GameServer(const Context& context, u8 gameModeType):
     m_lastSnapshotId = 0;
     m_gameEnded = false;
 
-    //@TODO:
-    ////////////////////////// THINGS TO LOAD FROM JSON FILE ////////////////////////////////////
-    m_updateRate = sf::seconds(1.f/30.f);
-    m_snapshotRate = sf::seconds(1.f/20.f);
-    m_defaultInputRate = sf::seconds(1.f/30.f);
+    const rapidjson::Document& doc = *context.jsonParser->getDocument("server_config");
 
-    m_canClientsChangeInputRate = false;
-    m_canClientsChangeSnapshotRate = false;
-
-    m_maxInputRate = sf::seconds(1.f/120.f);
-    m_minInputRate = sf::seconds(1.f/20.f);
-    m_maxSnapshotRate = m_updateRate;
-    m_minSnapshotRate = sf::seconds(1.f/10.f);
-
-    m_maxPingCorrection = sf::milliseconds(70);
-
-    m_gameEndLingeringTime = sf::seconds(20.f);
-
-    /////////////////////////////////////////////////////////////////////////////////////////////
+    loadFromJson(doc);
 
     //Resize this vector to avoid dynamically adding elements
     //(this will still happen if more clients connect)
@@ -715,4 +699,50 @@ void GameServer::createGameMode(u8 gameModeType)
 std::string GameServer::getCurrentMapFilename() const
 {
     return (m_gameStarted ? m_gameMode->getMapFilename() : m_gameMode->getLobbyMapFilename());
+}
+
+void GameServer::loadFromJson(const rapidjson::Document& doc)
+{
+    m_updateRate = sf::seconds(1.f/doc["update_rate"].GetFloat());
+    m_snapshotRate = sf::seconds(1.f/doc["snapshot_rate"].GetFloat());
+    m_defaultInputRate = sf::seconds(1.f/doc["default_input_rate"].GetFloat());
+
+    m_canClientsChangeSnapshotRate = doc["can_clients_change_snapshot_rate"].GetBool();
+    m_canClientsChangeInputRate = doc["can_clients_change_input_rate"].GetBool();
+
+    if (doc.HasMember("max_input_rate")) {
+        m_maxInputRate = sf::seconds(1.f/doc["max_input_rate"].GetFloat());
+    } else {
+        m_maxInputRate = sf::seconds(1.f/120.f);
+    }
+
+    if (doc.HasMember("min_input_rate")) {
+        m_minInputRate = sf::seconds(1.f/doc["min_input_rate"].GetFloat());
+    } else {
+        m_minInputRate = sf::seconds(1.f/20.f);
+    }
+
+    if (doc.HasMember("max_snapshot_rate")) {
+        m_maxSnapshotRate = sf::seconds(1.f/doc["max_snapshot_rate"].GetFloat());
+    } else {
+        m_maxSnapshotRate = m_updateRate;
+    }
+
+    if (doc.HasMember("min_snapshot_rate")) {
+        m_minSnapshotRate = sf::seconds(1.f/doc["min_snapshot_rate"].GetFloat());
+    } else {
+        m_minSnapshotRate = sf::seconds(1.f/10.f);
+    }
+
+    if (doc.HasMember("max_ping_correction")) {
+        m_maxPingCorrection = sf::milliseconds(doc["max_ping_correction"].GetUint());
+    } else {
+        m_maxPingCorrection = sf::milliseconds(70);
+    }
+
+    if (doc.HasMember("game_end_lingering_time")) {
+        m_gameEndLingeringTime = sf::seconds(doc["game_end_lingering_time"].GetFloat());
+    } else {
+        m_gameEndLingeringTime = sf::seconds(20.f);
+    }
 }

@@ -96,6 +96,8 @@ public:
     void createGameMode(u8 gameModeType);
     std::string getCurrentMapFilename() const;
 
+    void loadFromJson(const rapidjson::Document& doc);
+
 private:
     GameServerCallbacks m_gameServerCallbacks;
 

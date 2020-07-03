@@ -1,0 +1,7 @@
+{
+    "update_rate": 30.0,
+    "snapshot_rate": 20.0,
+    "default_input_rate": 30.0,
+    "can_clients_change_snapshot_rate": false,
+    "can_clients_change_input_rate": false
+}

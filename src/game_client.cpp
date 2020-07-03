@@ -75,11 +75,15 @@ GameClient::GameClient(const Context& context, const SteamNetworkingIPAddr& endp
 
     readDisplayName("name.txt");
 
-    ////////////////////// THIINGS TO LOAD FROM JSON FILE ////////////////////////
-    m_updateRate = sf::seconds(1.f/30.f);
-    m_inputRate = sf::seconds(1.f/30.f);
+    const rapidjson::Document& doc = *context.jsonParser->getDocument("client_config");
 
-    //////////////////////////////////////////////////////////////////////////////
+    if (doc.HasMember("update_rate")) {
+        m_updateRate = sf::seconds(1.f/doc["update_rate"].GetFloat());
+    } else {
+        m_updateRate = sf::seconds(1.f/30.f);
+    }
+
+    m_inputRate = sf::seconds(1.f/30.f);
 
     if (!context.local) {
         m_serverConnectionId = connectToServer(endpoint);
