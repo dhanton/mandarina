@@ -276,10 +276,10 @@ void GameServer::update(const sf::Time& eTime, bool& running)
             // m_entityManager.createEntity(ENTITY_RED_DEMON, Vector2(1400.f, 1450.f), 1);
             for (int i = 0; i < 100; ++i) {
                 // m_entityManager.createEntity(ENTITY_RED_DEMON, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 2);
-                // Entity* entity = m_entityManager.createEntity(ENTITY_FOOD, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 2);
-                // Entity* entity = m_entityManager.createEntity(ENTITY_FOOD, Vector2(400.f + 30.f * i, 300.f), 2);
+                // Entity* entity = m_entityManager.createEntity(ENTITY_FOOD, Vector2(rand() % 500 + 200, rand() % 500 + 200.f), 2);
+                // Entity* entity = m_entityManager.createEntity(ENTITY_FOOD, Vector2(400.f + 20.f * i, 300.f), 2);
                 // Food* food = static_cast<Food*>(entity);
-                // food->setFoodType(FOOD_COFFEE);
+                // food->setFoodType(rand() % 2 ? FOOD_CANDY : FOOD_COKE);
             }
 #endif
         }

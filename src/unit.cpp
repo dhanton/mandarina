@@ -127,7 +127,7 @@ void Unit::update(sf::Time eTime, const ManagersContext& context)
         m_dead = true;
 
         //m_dead is passed as a reference so that buffs can prevent a unit from dying
-        onDeath(m_dead, context.gameMode);
+        onDeath(m_dead, context);
 
         if (m_dead) {
             u32 killerUniqueId = getLatestDamageDealer();
@@ -326,7 +326,7 @@ void Unit::onBeHealed(u16 amount, Entity* source)
     HealthComponent::onBeHealed(amount, source);
 }
 
-void Unit::onDeath(bool& dead, GameMode* gameMode)
+void Unit::onDeath(bool& dead, const ManagersContext& context)
 {
     BuffHolderComponent::onDeath(dead);
 }

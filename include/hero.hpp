@@ -31,7 +31,7 @@ public:
     virtual void loadFromJson(const rapidjson::Document& doc);
     virtual void packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUniqueId, CRCPacket& outPacket) const;
 
-    virtual void onDeath(bool& dead, GameMode* gameMode);
+    virtual void onDeath(bool& dead, const ManagersContext& context);
 
     virtual float getPowerDamageMultiplier() const;
     void increasePower(u32 amount);

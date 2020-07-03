@@ -74,16 +74,16 @@ void Hero::packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUni
     }
 }
 
-void Hero::onDeath(bool& dead, GameMode* gameMode)
+void Hero::onDeath(bool& dead, const ManagersContext& context)
 {
-    Unit::onDeath(dead, gameMode);
+    Unit::onDeath(dead, context);
 
     if (dead) {
-        if (gameMode) {
-            gameMode->onHeroDeath(this, m_dead);
+        if (context.gameMode) {
+            context.gameMode->onHeroDeath(this, m_dead);
         }
 
-        //drop all food
+        FoodBase::scatterFoods(getPosition(), m_consumedFood, context);
     }
 }
 

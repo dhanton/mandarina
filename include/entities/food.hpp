@@ -46,10 +46,10 @@ enum FoodType {
 };
 
 enum FoodRarityType {
-    FOOD_RARITY_MYTHIC,
-    FOOD_RARITY_RARE,
-    FOOD_RARITY_UNCOMMON,
     FOOD_RARITY_COMMON,
+    FOOD_RARITY_UNCOMMON,
+    FOOD_RARITY_RARE,
+    FOOD_RARITY_MYTHIC,
 
     MAX_FOOD_RARITY_TYPES
 };
@@ -59,20 +59,32 @@ public:
     u8 getFoodType() const;
     void setFoodType(u8 foodType);
 
+    u8 getRarity() const;
+
     static float getDropRate(u8 foodType);
     static u32 getPowerGiven(u8 foodType);
     static sf::Color getRarityColor(u8 foodType);
 
+    static u8 getRandomFood();
+    static void scatterFoods(const Vector2& pos, const std::vector<u8>& foods, const ManagersContext& context);
+    static void scatterRandomFoods(const Vector2& pos, int min, int max, const ManagersContext& context);
+
 protected:
     u8 m_foodType;
 
+    void loadFoodData(const rapidjson::Document& doc);
+
+private:
     static FoodRarityType m_rarityType[MAX_FOOD_TYPES];
-    static float m_dropRate[MAX_FOOD_RARITY_TYPES];
+    static u8 m_dropRate[MAX_FOOD_RARITY_TYPES];
     static u32 m_powerGiven[MAX_FOOD_RARITY_TYPES];
     static sf::Color m_color[MAX_FOOD_RARITY_TYPES];
-    static bool m_foodDataLoaded;
+    static u8 m_rarityOffset[MAX_FOOD_RARITY_TYPES + 1];
+    
+    //used internally by this class
+    static float m_collisionRadius;
 
-    void loadFoodData();
+    static bool m_foodDataLoaded;
 };
 
 class Food : public Entity, public FoodBase

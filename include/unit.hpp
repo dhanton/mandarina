@@ -66,7 +66,7 @@ public:
 
     virtual void onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId);
     virtual void onBeHealed(u16 amount, Entity* source);
-    virtual void onDeath(bool& dead, GameMode* gameMode);
+    virtual void onDeath(bool& dead, const ManagersContext& context);
 
     virtual void applyInput(const PlayerInput& input, const ManagersContext& context, u16 clientDelay);
 

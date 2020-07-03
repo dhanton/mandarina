@@ -9,9 +9,11 @@
 #include "hero.hpp"
 
 FoodRarityType FoodBase::m_rarityType[MAX_FOOD_TYPES];
-float FoodBase::m_dropRate[MAX_FOOD_RARITY_TYPES];
+u8 FoodBase::m_dropRate[MAX_FOOD_RARITY_TYPES];
 u32 FoodBase::m_powerGiven[MAX_FOOD_RARITY_TYPES];
 sf::Color FoodBase::m_color[MAX_FOOD_RARITY_TYPES];
+u8 FoodBase::m_rarityOffset[MAX_FOOD_RARITY_TYPES + 1];
+float FoodBase::m_collisionRadius = 0.f;
 bool FoodBase::m_foodDataLoaded = false;
 
 u8 FoodBase::getFoodType() const
@@ -22,6 +24,11 @@ u8 FoodBase::getFoodType() const
 void FoodBase::setFoodType(u8 foodType)
 {
     m_foodType = foodType;
+}
+
+u8 FoodBase::getRarity() const
+{
+    return m_rarityType[m_foodType];
 }
 
 float FoodBase::getDropRate(u8 foodType)
@@ -39,38 +46,114 @@ sf::Color FoodBase::getRarityColor(u8 foodType)
     return m_color[m_rarityType[foodType]];
 }
 
-void FoodBase::loadFoodData()
+u8 FoodBase::getRandomFood()
+{
+    u8 uniform = rand() % 100;
+    u8 rarity = 0xff;
+    u8 combinedPercentage = 0;
+
+    //Get a random type using the appropiate drop chance
+    for (int i = 0; i < MAX_FOOD_RARITY_TYPES; ++i) {
+        combinedPercentage += m_dropRate[i];
+
+        if (uniform < combinedPercentage) {
+            rarity = i;
+            break;
+        }
+    }
+
+    //Get a random food within the same type
+    return (rand() % (m_rarityOffset[rarity + 1] - m_rarityOffset[rarity])) + m_rarityOffset[rarity];
+}
+
+void FoodBase::scatterFoods(const Vector2& pos, const std::vector<u8>& foods, const ManagersContext& context)
+{
+    if (foods.empty()) return;
+    
+    const float scatterRadius = 60.f;
+
+    //don't scatter foods closer than this
+    const float offset = 25.f;
+
+    for (int i = 0; i < foods.size(); ++i) {
+        const float randAngle = (rand() % 360) * PI/180.0;
+        const float dist = static_cast<float>(rand() % static_cast<int>(scatterRadius - offset)) + offset;
+        const Vector2 randVec = Vector2(std::sin(randAngle) * dist, std::cos(randAngle) * dist);
+
+        Vector2 finalPos = randVec + pos;
+
+        //make sure the food doesn't get stuck in a wall or block
+        finalPos = _UnitBase::moveCollidingTilemap_impl(pos, finalPos, m_collisionRadius, context.tileMap);
+
+        Entity* entity = context.entityManager->createEntity(ENTITY_FOOD, finalPos, 0);
+
+        if (entity) {
+            Food* food = static_cast<Food*>(entity);
+            food->setFoodType(foods[i]);
+        }
+    }
+}
+
+void FoodBase::scatterRandomFoods(const Vector2& pos, int min, int max, const ManagersContext& context)
+{
+    if (min > max) return;
+
+    int N = (rand() % (max - min + 1)) + min;
+    std::vector<u8> foods;
+
+    for (int i = 0; i < N; ++i) {
+        foods.push_back(getRandomFood());
+    }
+
+    scatterFoods(pos, foods, context);
+}
+
+void FoodBase::loadFoodData(const rapidjson::Document& doc)
 {
     m_foodType = MAX_FOOD_TYPES;
 
     if (m_foodDataLoaded) return;
+    
+    //number of foods in each rarity
+    m_rarityOffset[FOOD_RARITY_COMMON] = 0;
+    m_rarityOffset[FOOD_RARITY_UNCOMMON] = 18;
+    m_rarityOffset[FOOD_RARITY_RARE] = 27;
+    m_rarityOffset[FOOD_RARITY_MYTHIC] = 30;
+    m_rarityOffset[MAX_FOOD_RARITY_TYPES] = MAX_FOOD_TYPES;    
 
     for (int i = 0; i < MAX_FOOD_TYPES; ++i) {
-        if (i < 18) {
+        if (i < m_rarityOffset[FOOD_RARITY_UNCOMMON]) {
             m_rarityType[i] = FOOD_RARITY_COMMON;
-        } else if (i < 27) {
+
+        } else if (i < m_rarityOffset[FOOD_RARITY_RARE]) {
             m_rarityType[i] = FOOD_RARITY_UNCOMMON;
-        } else if (i < 30) {
+
+        } else if (i < m_rarityOffset[FOOD_RARITY_MYTHIC]) {
             m_rarityType[i] = FOOD_RARITY_RARE;
+
         } else {
             m_rarityType[i] = FOOD_RARITY_MYTHIC;
         }
     }
 
-    m_dropRate[FOOD_RARITY_COMMON] = 0.60f;
-    m_dropRate[FOOD_RARITY_UNCOMMON] = 0.30f;
-    m_dropRate[FOOD_RARITY_RARE] = 0.09f;
-    m_dropRate[FOOD_RARITY_MYTHIC] = 0.01f;
+    //in percentage
+    m_dropRate[FOOD_RARITY_COMMON] = 60;
+    m_dropRate[FOOD_RARITY_UNCOMMON] = 30;
+    m_dropRate[FOOD_RARITY_RARE] = 9;
+    m_dropRate[FOOD_RARITY_MYTHIC] = 1;
 
     m_powerGiven[FOOD_RARITY_COMMON] = 200;
     m_powerGiven[FOOD_RARITY_UNCOMMON] = 400;
     m_powerGiven[FOOD_RARITY_RARE] = 900;
     m_powerGiven[FOOD_RARITY_MYTHIC] = 4000;
 
+    //glow color used for non common foods
     m_color[FOOD_RARITY_COMMON] = sf::Color::Black;
     m_color[FOOD_RARITY_UNCOMMON] = sf::Color(192, 192, 192);
     m_color[FOOD_RARITY_RARE] = sf::Color(255, 215, 0);
     m_color[FOOD_RARITY_MYTHIC] = sf::Color(97, 26, 98);
+
+    m_collisionRadius = doc["collision_radius"].GetFloat();
 
     m_foodDataLoaded = true;
 }
@@ -84,7 +167,7 @@ void Food::loadFromJson(const rapidjson::Document& doc)
 {
     Entity::loadFromJson(doc);
 
-    loadFoodData();
+    loadFoodData(doc);
 
     //@REMOVE
     m_foodType = FOOD_TOMATO;
@@ -158,7 +241,7 @@ void C_Food::loadFromJson(const rapidjson::Document& doc, u16 textureId, const C
 {
     C_Entity::loadFromJson(doc, textureId, context);
 
-    loadFoodData();
+    loadFoodData(doc);
 }
 
 void C_Food::update(sf::Time eTime, const C_ManagersContext& context)
@@ -209,7 +292,7 @@ void C_Food::insertRenderNode(const C_ManagersContext& managersContext, const Co
     C_Entity::insertRenderNode(managersContext, context);
 
     //foods rarer than common have a glow around them
-    if (m_rarityType[m_foodType] != FOOD_RARITY_COMMON) {
+    if (getRarity() != FOOD_RARITY_COMMON) {
         sf::Sprite& sprite = renderNodes.back().sprite;
         float height = renderNodes.back().height;
 
