@@ -51,7 +51,7 @@ public:
     };
 
 public:
-    GameClient(const Context& context, const SteamNetworkingIPAddr& endpoint);
+    GameClient(const Context& context);
     ~GameClient();
 
     void mainLoop(bool& running);
@@ -82,6 +82,8 @@ public:
 
     Snapshot* findSnapshotById(u32 snapshotId);
 
+    void loadFromJson(const rapidjson::Document& doc);
+
 private:
     void loadMap(const std::string& filename);
     void readDisplayName(const std::string& filename);
@@ -89,8 +91,13 @@ private:
 private:
     GameClientCallbacks m_gameClientCallbacks;
     HSteamNetConnection m_serverConnectionId;
+    SteamNetworkingIPAddr m_endpoint;
+
     bool m_connected;
     sf::Time m_infoTimer;
+
+    Vector2u m_screenSize;
+    u32 m_screenStyle;
 
     sf::RenderTexture m_canvas;
     bool m_canvasCreated;

@@ -48,7 +48,7 @@ void GameClientCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
     }
 }
 
-GameClient::GameClient(const Context& context, const SteamNetworkingIPAddr& endpoint):
+GameClient::GameClient(const Context& context):
     m_gameClientCallbacks(this),
     InContext(context),
     NetPeer(&m_gameClientCallbacks, false),
@@ -77,16 +77,12 @@ GameClient::GameClient(const Context& context, const SteamNetworkingIPAddr& endp
 
     const rapidjson::Document& doc = *context.jsonParser->getDocument("client_config");
 
-    if (doc.HasMember("update_rate")) {
-        m_updateRate = sf::seconds(1.f/doc["update_rate"].GetFloat());
-    } else {
-        m_updateRate = sf::seconds(1.f/30.f);
-    }
+    loadFromJson(doc);
 
     m_inputRate = sf::seconds(1.f/30.f);
 
     if (!context.local) {
-        m_serverConnectionId = connectToServer(endpoint);
+        m_serverConnectionId = connectToServer(m_endpoint);
         m_connected = false;
 
     } else {
@@ -104,8 +100,7 @@ GameClient::~GameClient()
 
 void GameClient::mainLoop(bool& running)
 {
-    // sf::RenderWindow window{{1080, 720}, "Mandarina Prototype", sf::Style::Fullscreen};
-    sf::RenderWindow window{{1080, 720}, "Mandarina Prototype", sf::Style::Titlebar | sf::Style::Close};
+    sf::RenderWindow window{{m_screenSize.x, m_screenSize.y}, "Mandarina Prototype", m_screenStyle};
     
     sf::View view = window.getDefaultView();
     view.zoom(m_camera.getZoom());
@@ -814,6 +809,45 @@ GameClient::Snapshot* GameClient::findSnapshotById(u32 snapshotId)
     }
 
     return nullptr;
+}
+
+void GameClient::loadFromJson(const rapidjson::Document& doc)
+{
+    if (doc.HasMember("update_rate")) {
+        m_updateRate = sf::seconds(1.f/doc["update_rate"].GetFloat());
+    } else {
+        m_updateRate = sf::seconds(1.f/30.f);
+    }
+
+    if (doc.HasMember("server_ip_address")) {
+        m_endpoint.ParseString(doc["server_ip_address"].GetString());
+    } else {
+        m_endpoint.ParseString("127.0.0.1");
+    }
+
+    if (doc.HasMember("server_port")) {
+        m_endpoint.m_port = doc["server_port"].GetUint();
+    } else {
+        m_endpoint.m_port = 7000;
+    }
+
+    if (doc.HasMember("resolution")) {
+        m_screenSize.x = doc["resolution"][0].GetUint();
+        m_screenSize.y = doc["resolution"][1].GetUint();
+    } else {
+        m_screenSize.x = 1080;
+        m_screenSize.y = 720;
+    }
+
+    if (doc.HasMember("fullscreen")) {
+        if (doc["fullscreen"].GetBool()) {
+            m_screenStyle = sf::Style::Fullscreen;
+        } else {
+            m_screenStyle = sf::Style::Titlebar | sf::Style::Close;
+        }
+    } else {
+        m_screenStyle = sf::Style::Titlebar | sf::Style::Close;
+    }
 }
 
 void GameClient::loadMap(const std::string& filename)

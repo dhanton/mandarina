@@ -110,16 +110,13 @@ int main(int argc, char* argv[])
     CasterComponent::loadAbilityData(&jsonParser);
     BuffHolderComponent::loadBuffData(&jsonParser);
 
-    SteamNetworkingIPAddr serverAddr;
-    serverAddr.ParseString("127.0.0.1:7000");
-
     //client and server are not created in the main context so that
     //they call their deleter before GameNetworkingSockets is killed
 
     switch (execMode) {
         case ExecMode::Client:
         {
-            GameClient client(context, serverAddr);
+            GameClient client(context);
             client.mainLoop(running);
 
             break;
@@ -139,7 +136,7 @@ int main(int argc, char* argv[])
 
             std::thread thread(&GameServer::mainLoop, &server, std::ref(running));
 
-            GameClient client(context, serverAddr);
+            GameClient client(context);
             client.mainLoop(running);
 
             thread.join();

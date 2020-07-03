@@ -126,7 +126,6 @@ GameServer::GameServer(const Context& context, u8 gameModeType):
     m_tileMap.loadFromFile(m_gameMode->getLobbyMapFilename());
 
     if (!context.local) {
-        m_endpoint.ParseString("127.0.0.1:7000");
         m_pollId = createListenSocket(m_endpoint);
 
     } else {
@@ -703,6 +702,18 @@ std::string GameServer::getCurrentMapFilename() const
 
 void GameServer::loadFromJson(const rapidjson::Document& doc)
 {
+    if (doc.HasMember("ip_address")) {
+        m_endpoint.ParseString(doc["ip_address"].GetString());
+    } else {
+        m_endpoint.ParseString("127.0.0.1");
+    }
+
+    if (doc.HasMember("port")) {
+        m_endpoint.m_port = doc["port"].GetUint();
+    } else {
+        m_endpoint.m_port = 7000;
+    }
+
     m_updateRate = sf::seconds(1.f/doc["update_rate"].GetFloat());
     m_snapshotRate = sf::seconds(1.f/doc["snapshot_rate"].GetFloat());
     m_defaultInputRate = sf::seconds(1.f/doc["default_input_rate"].GetFloat());
