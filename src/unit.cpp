@@ -118,6 +118,19 @@ void Unit::loadFromJson(const rapidjson::Document& doc)
     TrueSightComponent::loadFromJson(doc);
     CasterComponent::loadFromJson(doc);
 
+    if (doc.HasMember("time_to_passive_heal")) {
+        m_timeToPassiveHeal = sf::seconds(doc["time_to_passive_heal"].GetFloat());
+    } else {
+        m_timeToPassiveHeal = sf::seconds(3.5f);
+    }
+
+    //in max health percentage
+    if (doc.HasMember("passive_healing_per_second")) {
+        m_passiveHealingPerSecond = doc["passive_healing_per_second"].GetFloat();
+    } else {
+        m_passiveHealingPerSecond = 0.13;
+    }
+
     m_solid = true;
 }
 
@@ -193,6 +206,18 @@ void Unit::preUpdate(sf::Time eTime, const ManagersContext& context)
 
     //update parameters using buffs
     BuffHolderComponent::onPreUpdate(eTime);
+
+    m_timeSinceDamaged += eTime;
+
+    if (m_timeSinceDamaged >= m_timeToPassiveHeal) {
+        m_passiveHealingTimer += eTime;
+
+        if (m_passiveHealingTimer >= sf::seconds(1.f)) {
+            m_passiveHealingTimer -= sf::seconds(1.f);
+
+            beHealed(m_passiveHealingPerSecond * m_maxHealth, nullptr);
+        }
+    }
 }
 
 void Unit::postUpdate(sf::Time eTime, const ManagersContext& context)
@@ -300,6 +325,10 @@ void Unit::onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId)
 {
     BuffHolderComponent::onTakeDamage(damage, source, uniqueId, teamId);
     HealthComponent::onTakeDamage(damage, source, uniqueId, teamId);
+
+    if (damage > 0) {
+        m_timeSinceDamaged = sf::Time::Zero;
+    }
 }
 
 void Unit::onBeHealed(u16 amount, Entity* source)

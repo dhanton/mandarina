@@ -81,6 +81,11 @@ private:
 
     Vector2 m_prevPos;
     u8 m_prevCollisionRadius;
+
+    sf::Time m_timeSinceDamaged;
+    sf::Time m_timeToPassiveHeal;
+    float m_passiveHealingPerSecond;
+    sf::Time m_passiveHealingTimer;
 };
 
 struct RenderNode;
