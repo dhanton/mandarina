@@ -42,6 +42,8 @@ include_directories(~/Programacion/Librerias/GameNetworkingSockets/include)
 set(NETWORK_LIBS libGameNetworkingSockets.so)
 link_directories(~/Programacion/Librerias/GameNetworkingSockets/lib)
 
+include_directories(~/Programacion/Librerias/cpp-httplib)
+
 add_executable(mandarina ${SRC_FILES})
 target_link_libraries(mandarina stdc++fs ${SFML_LIBS} libGL.so ${NETWORK_LIBS} libssl.so libcrypto.so pthread)
 

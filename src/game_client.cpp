@@ -6,6 +6,13 @@
 #include "game_mode_loader.hpp"
 #include "texture_ids.hpp"
 
+#ifndef MANDARINA_DEBUG
+//Itchio auth
+#define CPPHTTPLIB_OPENSSL_SUPPORT //needed to use https
+#include <httplib.h>
+#include <cstdlib>
+#endif
+
 GameClientCallbacks::GameClientCallbacks(GameClient* p)
 {
     parent = p;
@@ -873,10 +880,40 @@ void GameClient::loadMap(const std::string& filename)
 
 void GameClient::readDisplayName(const std::string& filename)
 {
-    std::fstream nameFile(DATA_PATH + filename);
-    nameFile >> m_displayName;
+#ifndef MANDARINA_DEBUG
+    const char* itchioAPIKey = std::getenv("ITCHIO_API_KEY");
 
+    if (itchioAPIKey) {
+        std::string authString = "Bearer " + std::string(itchioAPIKey);
+
+        httplib::SSLClient itchioClient("itch.io");
+        httplib::Headers authHeader = {
+            { "Authorization", authString}
+        };
+
+        auto res = itchioClient.Get("/api/1/jwt/me", authHeader);
+
+        if (res && res->status == 200) {
+            rapidjson::Document doc;
+            doc.Parse(res->body.c_str());
+
+            if (doc.HasMember("user") && doc["user"].HasMember("display_name")) {
+                m_displayName = doc["user"]["display_name"].GetString();
+            }
+        }
+
+    } else {
+        std::fstream nameFile(DATA_PATH + filename);
+
+        if (nameFile.is_open()) {
+            std::getline(nameFile, m_displayName);
+        }
+    }
+    
     if (m_displayName.size() > HeroBase::maxDisplayNameSize) {
         m_displayName.resize(HeroBase::maxDisplayNameSize);
     }
+#else
+    m_displayName = "Debug";
+#endif
 }
