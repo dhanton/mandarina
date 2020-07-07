@@ -443,7 +443,7 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
         {
             PlayerInput playerInput;
 
-            float maxInputNumber = m_updateRate.asSeconds()/m_clients[index].inputRate.asSeconds();
+            float maxInputNumber = m_clients[index].inputRate.asSeconds()/m_updateRate.asSeconds();
 
             if (m_clients[index].inputsSent >= std::floor(maxInputNumber)) {
                 printMessage("Client %d has already sent too many inputs this update", index);
