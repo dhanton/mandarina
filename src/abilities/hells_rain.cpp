@@ -4,6 +4,7 @@
 #include "client_entity_manager.hpp"
 #include "server_entity_manager.hpp"
 #include "helper.hpp"
+#include "game_mode.hpp"
 
 HellsRainAbility* HellsRainAbility::clone() const
 {
@@ -15,10 +16,13 @@ void HellsRainAbility::onCast(Unit* caster, const ManagersContext& context, u16 
     RechargeAbility::onCastUpdate();
 
     Projectile* projectile = nullptr;
+    float multiplier = context.gameMode->getDamageMultiplier() * caster->getPowerDamageMultiplier();
 
     for (int i = 0; i < m_bubbleNumber; ++i) {
         ABILITY_CREATE_PROJECTILE(PROJECTILE_HELLS_BUBBLE, caster->getPosition() + calculateRndPos(), caster->getAimAngle(), caster->getTeamId());
         ABILITY_SET_PROJECTILE_SHOOTER(caster)
+
+        ABILITY_SET_PROJECTILE_DAMAGE_MULTIPLIER(multiplier)
 
         //no need to backtrack each projectile since they're not created in client
         // ABILITY_BACKTRACK_PROJECTILE(clientDelay)

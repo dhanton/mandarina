@@ -138,6 +138,7 @@ void GameClient::mainLoop(bool& running)
 
     sf::Time updateTimer;
     sf::Time inputTimer;
+    sf::Time renderTimer;
 
     bool focused = true;
 
@@ -146,6 +147,7 @@ void GameClient::mainLoop(bool& running)
 
         updateTimer += eTime;
         inputTimer += eTime;
+        renderTimer += eTime;
 
         receiveLoop();
 
@@ -181,45 +183,49 @@ void GameClient::mainLoop(bool& running)
             updateTimer -= m_inputRate;
         }
         
-        renderUpdate(eTime);
+        while (renderTimer >= m_renderRate) {
+            renderUpdate(m_renderRate == sf::Time::Zero ? eTime : m_renderRate);
 
-        window.clear();
-        window.setView(view);
+            window.clear();
+            window.setView(view);
 
-        if (m_canvasCreated) {
-            //draw everything to the canvas
-            m_canvas.clear();
+            if (m_canvasCreated) {
+                //draw everything to the canvas
+                m_canvas.clear();
 
-            m_tileMapRenderer.renderBeforeEntities(m_canvas);
-            m_entityManager.renderingEntitiesUI = false;
-            m_canvas.draw(m_entityManager);
-            m_tileMapRenderer.renderAfterEntities(m_canvas);
-            
-            if (m_gameMode) {
-                m_gameMode->draw(m_canvas, m_context.textures);
+                m_tileMapRenderer.renderBeforeEntities(m_canvas);
+                m_entityManager.renderingEntitiesUI = false;
+                m_canvas.draw(m_entityManager);
+                m_tileMapRenderer.renderAfterEntities(m_canvas);
+                
+                if (m_gameMode) {
+                    m_gameMode->draw(m_canvas, m_context.textures);
+                }
+
+                m_canvas.display();
+
+                //draw the canvas to the window
+                sf::Sprite sprite(m_canvas.getTexture());
+                window.draw(sprite);
+
+                //draw entity UIs
+                m_entityManager.renderingEntitiesUI = true;
+                window.draw(m_entityManager);
+
+                //draw UI elements
+                window.draw(*m_clientCaster);
+                
+                if (m_gameMode && m_gameMode->hasGameEnded()) {
+                    m_gameMode->drawGameEndInfo(window, m_context.fonts);
+                }
+
+                window.draw(m_mouseSprite);
             }
 
-            m_canvas.display();
+            window.display();
 
-            //draw the canvas to the window
-            sf::Sprite sprite(m_canvas.getTexture());
-            window.draw(sprite);
-
-            //draw entity UIs
-            m_entityManager.renderingEntitiesUI = true;
-            window.draw(m_entityManager);
-
-            //draw UI elements
-            window.draw(*m_clientCaster);
-            
-            if (m_gameMode && m_gameMode->hasGameEnded()) {
-                m_gameMode->drawGameEndInfo(window, m_context.fonts);
-            }
-
-            window.draw(m_mouseSprite);
+            renderTimer -= m_renderRate;
         }
-
-        window.display();
 
         eTime = clock.restart();
     }
@@ -836,6 +842,12 @@ void GameClient::loadFromJson(const rapidjson::Document& doc)
         m_updateRate = sf::seconds(1.f/doc["update_rate"].GetFloat());
     } else {
         m_updateRate = sf::seconds(1.f/30.f);
+    }
+
+    if (doc.HasMember("frames_per_second")) {
+        m_renderRate = sf::seconds(1.f/doc["frames_per_second"].GetFloat());
+    } else {
+        m_renderRate = sf::seconds(1.f/120.f);
     }
 
     if (doc.HasMember("server_ip_address")) {

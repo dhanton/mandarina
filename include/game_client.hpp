@@ -104,6 +104,7 @@ private:
 
     sf::Time m_updateRate;
     sf::Time m_inputRate;
+    sf::Time m_renderRate;
 
     C_EntityManager m_entityManager;
     std::list<Snapshot> m_snapshots;
