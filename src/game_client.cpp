@@ -67,8 +67,10 @@ GameClient::GameClient(const Context& context):
     m_entityManager(context),
     m_tileMapRenderer(context, &m_tileMap)
 {
-    // C_loadUnitsFromJson(context.jsonParser);
     C_loadProjectilesFromJson(context.jsonParser);
+
+    //force to update ping in 1 sec
+    m_infoTimer = sf::seconds(4.f);
 
     m_context.renderTarget = &m_canvas;
     m_canvasCreated = false;
@@ -125,9 +127,10 @@ void GameClient::mainLoop(bool& running)
     m_context.window = &window;
     m_context.view = &view;
 
-    //clientCaster is a pointer because we need to pass it the updated Context (with window and view)
-    //so it's construction must be here
+    //these two are a pointer because we need to pass them the updated Context (with window and view)
+    //so their construction must be here
     m_clientCaster = std::unique_ptr<ClientCaster>(new ClientCaster(m_context));
+    m_connectionStatusRender = std::unique_ptr<ConnectionStatusRender>(new ConnectionStatusRender(m_context));
 
     m_camera.setView(&view);
 
@@ -219,8 +222,10 @@ void GameClient::mainLoop(bool& running)
                     m_gameMode->drawGameEndInfo(window, m_context.fonts);
                 }
 
-                window.draw(m_mouseSprite);
             }
+
+            window.draw(*m_connectionStatusRender);
+            window.draw(m_mouseSprite);
 
             window.display();
 
@@ -244,10 +249,7 @@ void GameClient::update(sf::Time eTime)
         SteamNetworkingQuickConnectionStatus status;
         SteamNetworkingSockets()->GetQuickConnectionStatus(m_serverConnectionId, &status);
 
-        printMessage("-------------------------");
-        printMessage("Ping: %d", status.m_nPing);
-        printMessage("In/s: %f", status.m_flInBytesPerSec);
-        printMessage("Out/s: %f", status.m_flOutBytesPerSec);
+        m_connectionStatusRender->update(status);
 
         m_infoTimer = sf::Time::Zero;
     }

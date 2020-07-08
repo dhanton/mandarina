@@ -14,6 +14,7 @@
 #include "camera.hpp"
 #include "client_caster.hpp"
 #include "caster_snapshot.hpp"
+#include "connection_status_render.hpp"
 
 class GameClient;
 
@@ -143,4 +144,6 @@ private:
     std::string m_displayName;
 
     sf::Sprite m_mouseSprite;
+
+    std::unique_ptr<ConnectionStatusRender> m_connectionStatusRender;
 };
