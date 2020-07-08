@@ -2,9 +2,9 @@
     "max_players": 2,
     "can_join_mid_match": false,
     "players_per_team": 1,
-    "storm_tiles_per_second": 2.133,
-    "storm_damage_per_second": 30.0,
-    "storm_time_treshold": 4.0,
+    "storm_tiles_per_second": 3.413,
+    "storm_damage_per_second": 120.0,
+    "storm_time_treshold": 2.0,
     "storm_damage_multiplier": 2.0,
     "lobby_map_filename": "lobby_small",
     "map_filename": "ffa_small"

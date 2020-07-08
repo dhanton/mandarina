@@ -87,16 +87,16 @@ void Hero::onDeath(bool& dead, const ManagersContext& context)
 
 float Hero::getPowerDamageMultiplier() const
 {
-    //Each power level (1000 power) ~ 10% more = 1.10 multiplier
-    return (1.f + static_cast<float>(getPower()) * 0.0001);
+    //Each power level (1000 power) ~ 40% more = 1.10 multiplier
+    return (1.f + static_cast<float>(getPower()) * 0.0004);
 }
 
 void Hero::increasePower(u32 amount)
 {
     m_power = std::min(maxPower, m_power + amount);
 
-    //Each power level (1000 power) ~ 300 more health
-    increaseMaxHealth(static_cast<float>(amount) * 0.3);
+    //Each power level (1000 power) ~ 200 more health
+    increaseMaxHealth(static_cast<float>(amount) * 0.2);
 }
 
 void Hero::consumeFood(u8 foodType)

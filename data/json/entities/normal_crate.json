@@ -4,6 +4,6 @@
 
     "min_possible_food": 5,
     "max_possible_food": 8,
-    "min_possible_health": 700,
-    "max_possible_health": 1200
+    "min_possible_health": 450,
+    "max_possible_health": 800
 }
