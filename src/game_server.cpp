@@ -612,46 +612,71 @@ void GameServer::handleDeadHeroes()
         }
 
         if (index != -1) {
-            u32 spectateUniqueId = heroData.killerUniqueId;
-            u8 spectateTeamId = heroData.killerTeamId;
+            m_clients[index].heroDead = true;
 
-            //if the killer hero is dead we spectate whatever it's expectating
-            if (killerIndex != -1 && m_clients[killerIndex].heroDead) {
-                spectateUniqueId = m_clients[killerIndex].spectatingUniqueId;
-                spectateTeamId = m_clients[killerIndex].spectatingTeamId;
+            //next entity and team the dead player (and everyone that was spectating them)
+            //is going to spectate now
+            u32 spectateUniqueId;
+            u8 spectateTeamId;
+
+            if (!heroData.teamEliminated) {
+                //@TODO: Implement teams
+
+                //if the team is not eliminated, choose someone on the team
+                spectateTeamId = heroData.teamId;
+
+                //find next player on the team to spectate
+                //spectateUniqueId = ...
+
+            } else {
+                spectateUniqueId = heroData.killerUniqueId;
+                spectateTeamId = heroData.killerTeamId;
+
+                //if the killer hero is dead we spectate whatever they were spectating
+                if (killerIndex != -1 && m_clients[killerIndex].heroDead) {
+                    spectateUniqueId = m_clients[killerIndex].spectatingUniqueId;
+                    spectateTeamId = m_clients[killerIndex].spectatingTeamId;
+                }
+
+                //if the killer is a neutral entity or 
+                //if the killer was spectating us (cause we killed them first)
+                //choose new team and entity to spectate altogether
+                if (spectateTeamId == 0 || spectateUniqueId == heroData.uniqueId || spectateTeamId == heroData.teamId) {
+                    //choose the first client that qualifies
+                    for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
+                        if (!m_clients[i].heroDead) {
+                            spectateUniqueId = m_clients[i].controlledEntityUniqueId;
+                            spectateTeamId = m_clients[i].teamId;
+                            break;
+                        }
+                    }
+                }
             }
 
             for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
                 //if a client was spectating or controlling the hero that just died change spectator
                 if (i == index || m_clients[i].spectatingUniqueId == heroData.uniqueId) {
-                    if (heroData.teamEliminated) {
-                        bool changedTeam = (m_clients[i].spectatingTeamId != spectateTeamId);
+                    bool changedTeam = (m_clients[i].spectatingTeamId != spectateTeamId);
 
-                        m_clients[i].spectatingUniqueId = spectateUniqueId;
-                        m_clients[i].spectatingTeamId = spectateTeamId;
+                    m_clients[i].spectatingUniqueId = spectateUniqueId;
+                    m_clients[i].spectatingTeamId = spectateTeamId;
 
-                        CRCPacket outPacket;
-                        outPacket << (u8) ClientCommand::ChangeSpectator << spectateUniqueId << spectateTeamId;
+                    CRCPacket outPacket;
+                    outPacket << (u8) ClientCommand::ChangeSpectator << spectateUniqueId << spectateTeamId;
 
-                        if (m_clients[i].teamId == m_clients[index].teamId) {
-                            //tell all players of that team that they're eliminated
-                            outPacket << (u8) ClientCommand::TeamEliminated;
-                        }
+                    if (m_clients[i].teamId == m_clients[index].teamId) {
+                        //tell all players of that team that they're eliminated
+                        outPacket << (u8) ClientCommand::TeamEliminated;
+                    }
 
-                        sendPacket(outPacket, m_clients[i].connectionId, true);
+                    sendPacket(outPacket, m_clients[i].connectionId, true);
 
-                        if (changedTeam) {
-                            m_clients[i].snapshotId = 0;
-                            m_clients[i].forceFullUpdate = true;
-                        }
-
-                    } else {
-                        //@TODO: Spectate the next hero in the team
+                    if (changedTeam) {
+                        m_clients[i].snapshotId = 0;
+                        m_clients[i].forceFullUpdate = true;
                     }
                 }
             }
-
-            m_clients[index].heroDead = true;
         }
     }
 
