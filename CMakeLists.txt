@@ -29,8 +29,8 @@ set(SRC_DIR "./src")
 file(GLOB SRC_FILES "${SRC_DIR}/*.cpp" "${INCLUDE_DIR}/*.inl" "${SRC_DIR}/entities/*.cpp" "${SRC_DIR}/abilities/*.cpp" "${SRC_DIR}/buffs/*.cpp" "${SRC_DIR}/game_modes/*.cpp")
 
 include_directories(~/Programacion/Librerias/SFML/include)
-set(SFML_LIBS debug libsfml-audio-d.so libsfml-graphics-d.so libsfml-network-d.so libsfml-window-d.so libsfml-system-d.so
-			  optimized libsfml-audio.so libsfml-graphics.so libsfml-network.so libsfml-window.so libsfml-system.so)
+set(SFML_LIBS_D debug libsfml-audio-d.so debug libsfml-graphics-d.so debug libsfml-network-d.so debug libsfml-window-d.so debug libsfml-system-d.so)
+set(SFML_LIBS_R optimized libsfml-audio.so optimized libsfml-graphics.so optimized libsfml-network.so optimized libsfml-window.so optimized libsfml-system.so)
 link_directories(~/Programacion/Librerias/SFML/lib)
 
 #include_directories(~/Programacion/Librerias/sol2)
@@ -45,7 +45,7 @@ link_directories(~/Programacion/Librerias/GameNetworkingSockets/lib)
 include_directories(~/Programacion/Librerias/cpp-httplib)
 
 add_executable(mandarina ${SRC_FILES})
-target_link_libraries(mandarina stdc++fs ${SFML_LIBS} libGL.so ${NETWORK_LIBS} libssl.so libcrypto.so pthread)
+target_link_libraries(mandarina stdc++fs ${SFML_LIBS_D} ${SFML_LIBS_R} libGL.so ${NETWORK_LIBS} libssl.so libcrypto.so pthread)
 
 # add_executable(mandarina_tests "include/quadtree.inl" "tests/test_main.cpp")
 # target_link_libraries(mandarina stdc++fs ${SFML_LIBS} libGL.so ${LUA_LIBS} ${NETWORK_LIBS} libssl.so libcrypto.so)
