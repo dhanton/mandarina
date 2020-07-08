@@ -189,6 +189,10 @@ u16 CooldownAbility::getMaxTime() const
 
 float CooldownAbility::getTotalPercentage() const
 {
+    if (m_currentCharges == m_maxCharges) {
+        return 1.f;
+    }
+    
     return (1.f - m_currentCooldown/m_cooldown)/static_cast<float>(m_maxCharges) + static_cast<float>(m_currentCharges)/static_cast<float>(m_maxCharges);
 }
 
