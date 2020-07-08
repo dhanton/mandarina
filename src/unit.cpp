@@ -70,29 +70,35 @@ const Status& _UnitBase::getStatus() const
 
 Vector2 _UnitBase::moveCollidingTilemap_impl(const Vector2& oldPos, Vector2 newPos, float collisionRadius, TileMap* map)
 {
-    const Vector2 posMovingX = {newPos.x, oldPos.y};
-    const Vector2 posMovingY = {oldPos.x, newPos.y};
-
     sf::FloatRect collidingTile;
 
-    if (map->getCollidingTileRect(TILE_BLOCK | TILE_WALL, Circlef(posMovingX, collisionRadius), collidingTile)) {
-        //we assume if there's collision there was movement 
+    int i = 0;
 
-        if (oldPos.x > newPos.x) {
-            newPos.x = collidingTile.left + collidingTile.width + collisionRadius;
+    while (map->getCollidingTileRect(TILE_BLOCK | TILE_WALL, Circlef(newPos, collisionRadius), collidingTile)) {
+        const Vector2 dir = Helper_vec2unitary(newPos - Vector2(collidingTile.left + collidingTile.width/2.f, collidingTile.top + collidingTile.height/2.f));
 
-        } else if (oldPos.x < newPos.x) {
-            newPos.x = collidingTile.left - collisionRadius;
+        //calculate where the unit is coming from to know which side of
+        //the tile it's gonna block its movement
+        //(might fail if distance is too high)
+
+        if (dir.y < SQRT2_INV && dir.y > -SQRT2_INV) {
+            if (dir.x >= 0.f) {
+                newPos.x = collidingTile.left + collidingTile.width + collisionRadius;
+            } else {
+                newPos.x = collidingTile.left - collisionRadius;
+            }
+
+        } else if (dir.x < SQRT2_INV && dir.x > -SQRT2_INV) {
+            if (dir.y >= 0.f) {
+                newPos.y = collidingTile.top + collidingTile.height + collisionRadius;
+            } else {
+                newPos.y = collidingTile.top - collisionRadius;
+            }
         }
-    }
 
-    if (map->getCollidingTileRect(TILE_BLOCK | TILE_WALL, Circlef(posMovingY, collisionRadius), collidingTile)) {
-        if (oldPos.y > newPos.y) {
-            newPos.y = collidingTile.top + collidingTile.height + collisionRadius;
-
-        } else if (oldPos.y < newPos.y) {
-            newPos.y = collidingTile.top - collisionRadius;
-        }
+        //just in case, this shouldn't happen normally
+        //(units perform only 1 iteration for walls, and 2 for corners)
+        if (++i > 4) break;
     }
 
     return newPos;
@@ -711,10 +717,12 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
     uiRenderNodes.back().position = getPosition();
     std::string& dataString = uiRenderNodes.back().debugDisplayData;
     dataString += std::to_string(m_uniqueId) + "\n";
-    dataString += "Team: " + std::to_string(m_teamId) + "\n";
+    // dataString += "Team: " + std::to_string(m_teamId) + "\n";
     // dataString += "ServerRevealed: " + std::to_string(isServerRevealed()) + "\n";
     // dataString += "LocallyHidden: " + std::to_string(m_locallyHidden) + "\n";
-    dataString += "Is Solid: " + std::to_string(m_solid) + "\n";
+    // dataString += "Is Solid: " + std::to_string(m_solid) + "\n";
+    dataString += std::to_string(getPosition().x) + "\n";
+    dataString += std::to_string(getPosition().y) + "\n";
 #endif
 
     //setup the weapon node if equipped

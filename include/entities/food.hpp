@@ -55,6 +55,8 @@ public:
 
     u8 getRarity() const;
 
+    static Vector2 moveCollidingTilemap_impl(const Vector2& oldPos, Vector2 newPos, float collisionRadius, TileMap* map);
+
     static float getDropRate(u8 foodType);
     static u32 getPowerGiven(u8 foodType);
     static sf::Color getRarityColor(u8 foodType);

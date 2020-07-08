@@ -7,6 +7,7 @@
 #include "server_entity_manager.hpp"
 #include "client_entity_manager.hpp"
 #include "hero.hpp"
+#include "tilemap.hpp"
 
 FoodRarityType FoodBase::m_rarityType[MAX_FOOD_TYPES];
 u8 FoodBase::m_dropRate[MAX_FOOD_RARITY_TYPES];
@@ -29,6 +30,34 @@ void FoodBase::setFoodType(u8 foodType)
 u8 FoodBase::getRarity() const
 {
     return m_rarityType[m_foodType];
+}
+
+Vector2 FoodBase::moveCollidingTilemap_impl(const Vector2& oldPos, Vector2 newPos, float collisionRadius, TileMap* map)
+{
+    const Vector2 posMovingX = {newPos.x, oldPos.y};
+    const Vector2 posMovingY = {oldPos.x, newPos.y};
+
+    sf::FloatRect collidingTile;
+
+    if (map->getCollidingTileRect(TILE_BLOCK | TILE_WALL, Circlef(posMovingX, collisionRadius), collidingTile)) {
+        if (oldPos.x > newPos.x) {
+            newPos.x = collidingTile.left + collidingTile.width + collisionRadius;
+
+        } else if (oldPos.x < newPos.x) {
+            newPos.x = collidingTile.left - collisionRadius;
+        }
+    }
+
+    if (map->getCollidingTileRect(TILE_BLOCK | TILE_WALL, Circlef(posMovingY, collisionRadius), collidingTile)) {
+        if (oldPos.y > newPos.y) {
+            newPos.y = collidingTile.top + collidingTile.height + collisionRadius;
+
+        } else if (oldPos.y < newPos.y) {
+            newPos.y = collidingTile.top - collisionRadius;
+        }
+    }
+
+    return newPos;
 }
 
 float FoodBase::getDropRate(u8 foodType)
@@ -83,7 +112,7 @@ void FoodBase::scatterFood(const Vector2& pos, const std::vector<u8>& foodVec, c
         Vector2 finalPos = randVec + pos;
 
         //make sure the food doesn't get stuck in a wall or block
-        finalPos = _UnitBase::moveCollidingTilemap_impl(pos, finalPos, m_collisionRadius, context.tileMap);
+        finalPos = moveCollidingTilemap_impl(pos, finalPos, m_collisionRadius, context.tileMap);
 
         Entity* entity = context.entityManager->createEntity(ENTITY_FOOD, finalPos, 0);
 
