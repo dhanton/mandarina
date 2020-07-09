@@ -519,12 +519,15 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
     //if there's no input, that means it was already checked
     if (it == m_inputSnapshots.end()) return;
 
-    //Correct the position
-
     Vector2 predictedEndPos = it->endPosition;
     CasterSnapshot predictedCaster = it->caster;
 
-    //correct wrong predictions
+    if (m_inputSnapshots.size() > 2) {
+        //delete it since it's already confirmed by server
+        it = m_inputSnapshots.erase(it);
+    }
+
+    //Correct position
     if (predictedEndPos != endPosition) {
 
 #if 0 && defined MANDARINA_DEBUG
@@ -582,7 +585,7 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
     //reset the iterator to start correcting abilities from the beginning
     it = m_inputSnapshots.begin();
 
-    //Correct the abilities
+    //Correct abilities
     if (predictedCaster.valid) {
         float delta = 0.015;
         CasterSnapshot diffSnapshot = casterSnapshot.getDiff(predictedCaster, delta);
