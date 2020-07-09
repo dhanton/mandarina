@@ -524,11 +524,6 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
     Vector2 predictedEndPos = it->endPosition;
     CasterSnapshot predictedCaster = it->caster;
 
-    //we want to leave at least two inputs to interpolate properly
-    if (m_inputSnapshots.size() > 2) {
-        it = m_inputSnapshots.erase(it);
-    }
-
     //correct wrong predictions
     if (predictedEndPos != endPosition) {
 
@@ -583,6 +578,9 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
             it = std::next(it);
         }
     }
+
+    //reset the iterator to start correcting abilities from the beginning
+    it = m_inputSnapshots.begin();
 
     //Correct the abilities
     if (predictedCaster.valid) {
