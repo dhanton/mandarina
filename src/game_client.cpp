@@ -461,13 +461,13 @@ void GameClient::saveCurrentInput()
         manager = &m_snapshots.back().entityManager;
     }
 
-    //we dont modify the unit since we intepolate its position
-    //between two inputs (result is stored in entityPos)
-    entity->applyMovementInput(entityPos, m_currentInput, C_ManagersContext(manager, &m_tileMap, m_gameMode.get()), m_inputRate);
-
     //when casting abilities we use the normal entity manager
     //since local entities might be created
     m_clientCaster->applyInputs(m_currentInput, entityPos, C_ManagersContext(&m_entityManager, &m_tileMap, m_gameMode.get()));
+    
+    //we dont modify the unit since we intepolate its position
+    //between two inputs (result is stored in entityPos)
+    entity->applyMovementInput(entityPos, m_currentInput, C_ManagersContext(manager, &m_tileMap, m_gameMode.get()), m_inputRate);
 
     //send this input
     if (m_connected) {
@@ -568,10 +568,10 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
             Vector2 dirVec = newPos - it->endPosition;
             float distance = Helper_vec2length(dirVec);
 
-            //@TODO: These values (0.5, 10, 200) have to be tinkered to make it look as smooth as possible
+            //@TODO: These values (0.5, 10, 40) have to be tinkered to make it look as smooth as possible
             //The method used could also change if this one's not good enough
-            if (!forceSnap && distance < 200.f) {
-                float offset = std::max(0.5, Helper_lerp(0.0, 10.0, distance, 200.0));
+            if (!forceSnap && distance < 40.f) {
+                float offset = std::max(0.5, Helper_lerp(0.0, 10.0, distance, 40.0));
                 it->endPosition += Helper_vec2unitary(dirVec) * std::min(offset, distance);
 
             } else {
@@ -592,10 +592,10 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
 
         if (!diffSnapshot.isAllZero()) {
             while (it != m_inputSnapshots.end()) {
-                it->caster.primaryPercentage += diffSnapshot.primaryPercentage;
-                it->caster.secondaryPercentage += diffSnapshot.secondaryPercentage;
-                it->caster.altPercentage += diffSnapshot.altPercentage;
-                it->caster.ultimatePercentage += diffSnapshot.ultimatePercentage;
+                it->caster.primaryPercentage = Helper_clamp(it->caster.primaryPercentage + diffSnapshot.primaryPercentage, 0.f, 1.f);
+                it->caster.secondaryPercentage = Helper_clamp(it->caster.secondaryPercentage + diffSnapshot.secondaryPercentage, 0.f, 1.f);
+                it->caster.altPercentage = Helper_clamp(it->caster.altPercentage + diffSnapshot.altPercentage, 0.f, 1.f);
+                it->caster.ultimatePercentage = Helper_clamp(it->caster.ultimatePercentage + diffSnapshot.ultimatePercentage, 0.f, 1.f);
 
                 it = std::next(it);
             }

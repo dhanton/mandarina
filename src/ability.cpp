@@ -120,8 +120,8 @@ void CooldownAbility::applyServerCorrection(float diff)
     int chargeDiff = diff * static_cast<float>(m_maxCharges);
     float percentageDiff = diff - static_cast<float>(chargeDiff);
 
-    m_currentCharges += chargeDiff;
-    m_currentCooldown -= m_cooldown * percentageDiff;
+    m_currentCharges = Helper_clamp(m_currentCharges + chargeDiff, 0, static_cast<int>(m_maxCharges));
+    m_currentCooldown = Helper_clamp(m_currentCooldown - m_cooldown * percentageDiff, 0.f, m_cooldown);
 }
 
 u16 CooldownAbility::takeSnapshot() const
@@ -227,7 +227,7 @@ bool RechargeAbility::canBeCasted(const Status& status) const
 
 void RechargeAbility::applyServerCorrection(float diff)
 {
-    m_percentage += diff;
+    m_percentage = Helper_clamp(m_percentage + diff, 0.f, 1.f);
 }
 
 u16 RechargeAbility::takeSnapshot() const
