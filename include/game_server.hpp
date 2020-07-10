@@ -35,6 +35,7 @@ public:
     struct ClientInfo {
         u32 uniqueId = 0;
         HSteamNetConnection connectionId = k_HSteamNetConnection_Invalid;
+        bool connectionCompleted = false;
 
         u32 snapshotId = 0;
         bool forceFullUpdate = false;
@@ -50,6 +51,9 @@ public:
 
         u8 spectatingTeamId = 0;
         u32 spectatingUniqueId = 0;
+
+        //this is true by default since heroes are
+        //created on connection completed
         bool heroDead = true;
 
         //EntityType of hero selected (before/after matchmaking)
@@ -62,6 +66,7 @@ public:
     //@TODO: Should we use this??
     struct ClientInfo_cold {
         //display name
+        //selectedHeroType
         //cosmetics??
     };
 

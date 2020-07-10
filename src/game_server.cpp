@@ -216,9 +216,15 @@ void GameServer::update(const sf::Time& eTime, bool& running)
 #endif //_WIN32
 
     if (!m_gameStarted) {
+        int clientsReady = 0;
+
+        for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
+            if (m_clients[i].connectionCompleted) clientsReady++;
+        }
+
         //@WIP: Add other ways to start the game (when the host wants)
         //This condition should still be met though
-        if (m_clients.firstInvalidIndex() >= m_gameMode->getRequiredPlayers()) {
+        if (clientsReady >= m_gameMode->getRequiredPlayers()) {
             m_gameStarted = true;
 
             printMessage("Game starting!");
@@ -524,6 +530,8 @@ void GameServer::onConnectionCompleted(HSteamNetConnection connectionId)
     int index = getIndexByConnectionId(connectionId);
 
     if (index != -1) {
+        m_clients[index].connectionCompleted = true;
+
         m_clients[index].snapshotRate = m_snapshotRate;
         m_clients[index].inputRate = m_defaultInputRate;
 
