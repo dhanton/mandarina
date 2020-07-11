@@ -263,7 +263,7 @@ void GameServer::update(const sf::Time& eTime, bool& running)
 #ifdef MANDARINA_DEBUG
             //@DELETE (TESTING)
             // m_entityManager.createEntity(ENTITY_RED_DEMON, Vector2(1400.f, 1450.f), 1);
-            for (int i = 0; i < 100; ++i) {
+            for (int i = 0; i < 10; ++i) {
                 // m_entityManager.createEntity(ENTITY_RED_DEMON, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 2);
                 // Entity* entity = m_entityManager.createEntity(ENTITY_FOOD, Vector2(rand() % 500 + 200, rand() % 500 + 200.f), 2);
                 // Entity* entity = m_entityManager.createEntity(ENTITY_FOOD, Vector2(400.f + 20.f * i, 300.f), 2);
@@ -536,7 +536,10 @@ void GameServer::onConnectionCompleted(HSteamNetConnection connectionId)
         m_clients[index].inputRate = m_defaultInputRate;
 
         //@TODO: Choose unit type based on player hero selection (done before matchmaking in client)
-        m_clients[index].selectedHeroType = ENTITY_RED_DEMON;
+        const size_t _heroesNum = 2;
+        u8 _heroes[_heroesNum] = {ENTITY_RED_DEMON, ENTITY_BLONDIE};
+
+        m_clients[index].selectedHeroType = _heroes[rand() % _heroesNum];
         m_clients[index].heroDead = false;
 
         Hero* hero = createClientHeroEntity(index);

@@ -9,6 +9,9 @@
 #include "abilities/single_shot_ability.hpp"
 #include "abilities/hells_dash.hpp"
 #include "abilities/hells_rain.hpp"
+#include "abilities/natures_rage.hpp"
+#include "abilities/self_buff_ability.hpp"
+#include "abilities/golden_leaf_ability.hpp"
 
 bool CasterComponent::m_abilitiesLoaded = false;
 std::unique_ptr<Ability> CasterComponent::m_abilityData[ABILITY_MAX_TYPES];

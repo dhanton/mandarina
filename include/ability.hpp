@@ -79,6 +79,8 @@ public:
 
     virtual u16 takeSnapshot() const;
 
+    void toZero();
+
     virtual float getPercentage() const;
     virtual u16 getMaxTime() const;
 

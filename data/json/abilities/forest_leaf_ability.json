@@ -1,0 +1,6 @@
+{
+    "charges": 3,
+    "cooldown": 4,
+    "next_charge_delay": 0.7,
+    "projectile": "FOREST_LEAF"
+}

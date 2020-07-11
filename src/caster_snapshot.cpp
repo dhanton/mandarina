@@ -36,19 +36,19 @@ CasterSnapshot CasterSnapshot::getDiff(const CasterSnapshot& other, float delta)
 {
     CasterSnapshot diff = (*this) - other;
 
-    if (diff.primaryPercentage < delta) {
+    if (std::abs(diff.primaryPercentage) < delta) {
         diff.primaryPercentage = 0.f;
     }
 
-    if (diff.secondaryPercentage < delta) {
+    if (std::abs(diff.secondaryPercentage) < delta) {
         diff.secondaryPercentage = 0.f;
     }
 
-    if (diff.altPercentage < delta) {
+    if (std::abs(diff.altPercentage) < delta) {
         diff.altPercentage = 0.f;
     }
 
-    if (diff.ultimatePercentage < delta) {
+    if (std::abs(diff.ultimatePercentage) < delta) {
         diff.ultimatePercentage = 0.f;
     }
 

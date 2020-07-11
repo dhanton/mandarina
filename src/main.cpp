@@ -80,19 +80,33 @@ int main(int argc, char* argv[])
         textures->loadResource(TEXTURES_PATH + "rooted.png", TextureId::ROOTED);
         textures->loadResource(TEXTURES_PATH + "slowed.png", TextureId::SLOWED);
 
+        //Red Demon
         textures->loadResource(TEXTURES_PATH + "diablo.png", TextureId::RED_DEMON);
         textures->loadResource(TEXTURES_PATH + "devils_bow.png", TextureId::DEVILS_BOW);
         textures->loadResource(TEXTURES_PATH + "hells_bubble.png", TextureId::HELLS_BUBBLE);
         textures->loadResource(TEXTURES_PATH + "hells_dart.png", TextureId::HELLS_DART);
+        textures->loadResource(ICONS_PATH + "hells_bubble.png", TextureId::ICON_HELLS_BUBBLE);
+        textures->loadResource(ICONS_PATH + "hells_dart.png", TextureId::ICON_HELLS_DART);
+        textures->loadResource(ICONS_PATH + "hells_dash.png", TextureId::ICON_HELLS_DASH);
+        textures->loadResource(ICONS_PATH + "hells_rain.png", TextureId::ICON_HELLS_RAIN);
+
+        //Blondie
+        textures->loadResource(TEXTURES_PATH + "blondie.png", TextureId::BLONDIE);
+        textures->loadResource(TEXTURES_PATH + "golden_scepter.png", TextureId::GOLDEN_SCEPTER);
+        textures->loadResource(TEXTURES_PATH + "natures_rock.png", TextureId::NATURES_ROCK);
+        textures->loadResource(TEXTURES_PATH + "forest_leaf.png", TextureId::FOREST_LEAF);
+        textures->loadResource(TEXTURES_PATH + "golden_leaf.png", TextureId::GOLDEN_LEAF);
+        textures->loadResource(ICONS_PATH + "natures_rage.png", TextureId::ICON_NATURES_RAGE);
+        textures->loadResource(ICONS_PATH + "forest_leaf.png", TextureId::ICON_FOREST_LEAF);
+        textures->loadResource(ICONS_PATH + "forest_night.png", TextureId::ICON_FOREST_NIGHT);
+        textures->loadResource(ICONS_PATH + "golden_leaf.png", TextureId::ICON_GOLDEN_LEAF);
+
+
         textures->loadResource(TEXTURES_PATH + "food.png", TextureId::FOOD);
         textures->loadResource(TEXTURES_PATH + "normal_crate.png", TextureId::NORMAL_CRATE);
 
         textures->loadResource(TEXTURES_PATH + "storm.png", TextureId::STORM);
 
-        textures->loadResource(ICONS_PATH + "hells_bubble.png", TextureId::ICON_HELLS_BUBBLE);
-        textures->loadResource(ICONS_PATH + "hells_dart.png", TextureId::ICON_HELLS_DART);
-        textures->loadResource(ICONS_PATH + "hells_dash.png", TextureId::ICON_HELLS_DASH);
-        textures->loadResource(ICONS_PATH + "hells_rain.png", TextureId::ICON_HELLS_RAIN);
 
         context.textures = textures.get();
     }

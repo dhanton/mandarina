@@ -35,7 +35,7 @@ void HellsRainAbility::C_onCast(C_Unit* caster, Vector2& casterPos, const C_Mana
 
     RechargeAbility::onCastUpdate();
 
-    C_Projectile* projectile = nullptr;
+    // C_Projectile* projectile = nullptr;
 
     //We don't create anything in client since the spread is random
     // for (int i = 0; i < m_bubbleNumber; ++i) {

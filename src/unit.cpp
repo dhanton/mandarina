@@ -210,6 +210,7 @@ void Unit::preUpdate(sf::Time eTime, const ManagersContext& context)
     //reset parameters
     resetInvisibleFlags();
     m_status.preUpdate();
+    m_solid = true;
 
     m_movementSpeed = m_baseMovementSpeed;
 
@@ -318,6 +319,8 @@ void Unit::packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUni
     }
 
     if (m_uniqueId == controlledEntityUniqueId) {
+        outPacket << m_movementSpeed;
+
         m_primaryFire->packData(outPacket);
         m_secondaryFire->packData(outPacket);
         m_altAbility->packData(outPacket);
@@ -565,6 +568,8 @@ void C_Unit::loadFromData(u32 controlledEntityUniqueId, CRCPacket& inPacket, Cas
     }
 
     if (m_uniqueId == controlledEntityUniqueId) {
+        inPacket >> m_movementSpeed;
+
         casterSnapshot.loadFromData(inPacket);
     }
 }
@@ -745,11 +750,9 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
     std::string& dataString = uiRenderNodes.back().debugDisplayData;
     dataString += std::to_string(m_uniqueId) + "\n";
     // dataString += "Team: " + std::to_string(m_teamId) + "\n";
-    // dataString += "ServerRevealed: " + std::to_string(isServerRevealed()) + "\n";
-    // dataString += "LocallyHidden: " + std::to_string(m_locallyHidden) + "\n";
-    // dataString += "Is Solid: " + std::to_string(m_solid) + "\n";
-    dataString += std::to_string(getPosition().x) + "\n";
-    dataString += std::to_string(getPosition().y) + "\n";
+    // dataString += std::to_string(getPosition().x) + "\n";
+    // dataString += std::to_string(getPosition().y) + "\n";
+    dataString += std::to_string(getMovementSpeed()) + "\n";
 #endif
 
     //setup the weapon node if equipped

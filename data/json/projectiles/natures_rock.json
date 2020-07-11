@@ -1,0 +1,9 @@
+{
+    "scale": 1.0,
+    "movement_speed": 300,
+    "collision_radius": 10,
+    "range": 400,
+    "hit_flags": "ENEMIES",
+    "render_rotation": false,
+    "buff_applied": "NATURES_ROCK_STUN"
+}

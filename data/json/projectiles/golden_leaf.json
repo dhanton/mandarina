@@ -1,0 +1,10 @@
+{
+    "scale": 1.2,
+    "movement_speed": 360,
+    "collision_radius": 11,
+    "range": 450,
+    "hit_flags": "ENEMIES",
+    "rotation_offset": 225.0,
+    "damage": 20,
+    "buff_applied": "FOREST_SLOW"
+}
