@@ -10,7 +10,7 @@ public:
     bool canBeCasted(const Status& status) const;
 
     void onCast(Unit* caster, const ManagersContext& context, u16 clientDelay);
-    void C_onCast(C_Unit* caster, Vector2& casterPos, const C_ManagersContext& context, u32 inputId, bool repeating);
+    void C_onCast(C_Unit* unit, CasterComponent* caster, Vector2& casterPos, const C_ManagersContext& context, u32 inputId, bool repeating);
 
     void loadFromJson(const rapidjson::Document& doc);
 

@@ -8,6 +8,7 @@
 
 class Unit;
 class C_Unit;
+class CasterComponent;
 
 enum AbilityType {
     ABILITY_NONE,
@@ -34,8 +35,10 @@ public:
     void setIconTextureId(u8 iconTextureId);
 
     virtual void onCast(Unit* caster, const ManagersContext& context, u16 clientDelay) = 0;
-    virtual void C_onCast(C_Unit* caster, Vector2& pos, const C_ManagersContext& context, u32 inputId, bool repeating) = 0;
+    virtual void C_onCast(C_Unit* unit, CasterComponent* caster, Vector2& pos, const C_ManagersContext& context, u32 inputId, bool repeating) = 0;
     virtual void update(sf::Time eTime, GameMode* gameMode) = 0;
+
+    virtual void refresh() = 0;
     
     //casting should depend only on internals of ability and the status of the unit
     //(both of which are displayed in client, which is important)
@@ -75,6 +78,8 @@ public:
     virtual void update(sf::Time eTime, GameMode* gameMode);
     virtual bool canBeCasted(const Status& status) const;
 
+    virtual void refresh();
+
     virtual void applyServerCorrection(float diff);
 
     virtual u16 takeSnapshot() const;
@@ -113,6 +118,7 @@ public:
 
     virtual void update(sf::Time eTime, GameMode* gameMode);
     virtual bool canBeCasted(const Status& status) const;
+    virtual void refresh();
 
     virtual void applyServerCorrection(float diff);
 
@@ -150,6 +156,7 @@ public:
 
     virtual void update(sf::Time eTime, GameMode* gameMode);
     virtual bool canBeCasted(const Status& status) const;
+    virtual void refresh();
 
     virtual void loadFromJson(const rapidjson::Document& doc);
 

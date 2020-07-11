@@ -8,5 +8,5 @@
     "collision_radius": 23,
     "scale": 4.1,
     "health_per_level": 200,
-    "damage_multiplier_per_level": 0.18
+    "damage_multiplier_per_level": 0.28
 }

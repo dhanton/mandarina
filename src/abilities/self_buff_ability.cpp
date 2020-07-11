@@ -14,7 +14,7 @@ void SelfBuffAbility::onCast(Unit* caster, const ManagersContext& context, u16 c
     caster->addBuff(m_buffType);
 }
 
-void SelfBuffAbility::C_onCast(C_Unit* caster, Vector2& casterPos, const C_ManagersContext& context, u32 inputId, bool repeating)
+void SelfBuffAbility::C_onCast(C_Unit* unit, CasterComponent* caster, Vector2& casterPos, const C_ManagersContext& context, u32 inputId, bool repeating)
 {
     if (!repeating) {
         CooldownAbility::onCastUpdate();

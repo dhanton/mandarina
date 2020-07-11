@@ -1,5 +1,5 @@
 {
     "charges": 1,
-    "cooldown": 12,
-    "damage_multiplier": 1.5
+    "cooldown": 20,
+    "damage_multiplier": 3.5
 }

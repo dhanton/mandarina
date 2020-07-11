@@ -24,8 +24,13 @@ void GoldenLeafAbility::onCast(Unit* caster, const ManagersContext& context, u16
     float chargesLeft = static_cast<float>(primaryFire->getCurrentCharges());
 
     if (chargesLeft > 0) {
-        float baseMultiplier = context.gameMode->getDamageMultiplier() * caster->getDamageMultiplier() + m_damageMultiplier;
-        projectile->damage = (projectile->damage + g_initialProjectileData[PROJECTILE_FOREST_LEAF].damage * chargesLeft) * baseMultiplier;
+        //don't deal damage in lobby
+        if (context.gameMode->getDamageMultiplier() == 0) {
+            projectile->damage = 0.f;
+        } else {
+            float baseMultiplier = context.gameMode->getDamageMultiplier() * caster->getDamageMultiplier() + m_damageMultiplier;
+            projectile->damage = (projectile->damage + g_initialProjectileData[PROJECTILE_FOREST_LEAF].damage * chargesLeft) * baseMultiplier;
+        }
 
         primaryFire->toZero();
     }
@@ -34,7 +39,7 @@ void GoldenLeafAbility::onCast(Unit* caster, const ManagersContext& context, u16
     ABILITY_BACKTRACK_PROJECTILE(clientDelay)
 }
 
-void GoldenLeafAbility::C_onCast(C_Unit* caster, Vector2& casterPos, const C_ManagersContext& context, u32 inputId, bool repeating)
+void GoldenLeafAbility::C_onCast(C_Unit* unit, CasterComponent* caster, Vector2& casterPos, const C_ManagersContext& context, u32 inputId, bool repeating)
 {
     if (repeating) return;
     
@@ -42,10 +47,10 @@ void GoldenLeafAbility::C_onCast(C_Unit* caster, Vector2& casterPos, const C_Man
 
     C_Projectile* projectile = nullptr;
     
-    ABILITY_CREATE_PROJECTILE(PROJECTILE_GOLDEN_LEAF, caster->getPosition(), caster->getAimAngle(), caster->getTeamId())
+    ABILITY_CREATE_PROJECTILE(PROJECTILE_GOLDEN_LEAF, unit->getPosition(), unit->getAimAngle(), unit->getTeamId())
     ABILITY_SET_PROJECTILE_INPUT_ID(inputId)
 
-    //calling primaryFire->toZero() is complicated in client, but the input will be corrected so it's fine
+    caster->getPrimaryFire()->toZero();
 }
 
 void GoldenLeafAbility::loadFromJson(const rapidjson::Document& doc)

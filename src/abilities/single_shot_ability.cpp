@@ -26,7 +26,7 @@ void SingleShotAbility::onCast(Unit* caster, const ManagersContext& context, u16
     ABILITY_BACKTRACK_PROJECTILE(clientDelay)
 }
 
-void SingleShotAbility::C_onCast(C_Unit* caster, Vector2& casterPos, const C_ManagersContext& context, u32 inputId, bool repeating)
+void SingleShotAbility::C_onCast(C_Unit* unit, CasterComponent* caster, Vector2& casterPos, const C_ManagersContext& context, u32 inputId, bool repeating)
 {
     if (repeating) return;
     
@@ -35,7 +35,7 @@ void SingleShotAbility::C_onCast(C_Unit* caster, Vector2& casterPos, const C_Man
     C_Projectile* projectile = nullptr;
 
     //Using casterPos here doesn't look as good as using caster->getPosition() for some reason
-    ABILITY_CREATE_PROJECTILE(m_projectileType, caster->getPosition(), caster->getAimAngle(), caster->getTeamId())
+    ABILITY_CREATE_PROJECTILE(m_projectileType, unit->getPosition(), unit->getAimAngle(), unit->getTeamId())
     ABILITY_SET_PROJECTILE_INPUT_ID(inputId)
 }
 

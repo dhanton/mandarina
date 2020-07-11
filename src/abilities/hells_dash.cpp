@@ -21,9 +21,9 @@ void HellsDashAbility::onCast(Unit* caster, const ManagersContext& context, u16 
     caster->setPosition(dashColliding_impl(caster->getAimAngle(), caster->getPosition(), caster->getCollisionRadius(), context.tileMap));
 }
 
-void HellsDashAbility::C_onCast(C_Unit* caster, Vector2& casterPos, const C_ManagersContext& context, u32 inputId, bool repeating)
+void HellsDashAbility::C_onCast(C_Unit* unit, CasterComponent* caster, Vector2& casterPos, const C_ManagersContext& context, u32 inputId, bool repeating)
 {
-    casterPos = dashColliding_impl(caster->getAimAngle(), casterPos, caster->getCollisionRadius(), context.tileMap);
+    casterPos = dashColliding_impl(unit->getAimAngle(), casterPos, unit->getCollisionRadius(), context.tileMap);
 
     if (!repeating) {
         CooldownAbility::onCastUpdate();

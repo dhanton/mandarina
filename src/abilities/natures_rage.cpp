@@ -28,9 +28,13 @@ void NaturesRageAbility::onCast(Unit* caster, const ManagersContext& context, u1
         ABILITY_CREATE_PROJECTILE(PROJECTILE_NATURES_ROCK, pos, (aimAngle + extraAngle) * 180.f/PI, caster->getTeamId())
         ABILITY_SET_PROJECTILE_SHOOTER(caster)
     }
+
+    caster->getPrimaryFire()->refresh();
+    caster->getSecondaryFire()->refresh();
+    caster->getAltAbility()->refresh();
 }
 
-void NaturesRageAbility::C_onCast(C_Unit* caster, Vector2& casterPos, const C_ManagersContext& context, u32 inputId, bool repeating)
+void NaturesRageAbility::C_onCast(C_Unit* unit, CasterComponent* caster, Vector2& casterPos, const C_ManagersContext& context, u32 inputId, bool repeating)
 {
     if (repeating) return;
 

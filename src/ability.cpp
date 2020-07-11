@@ -83,13 +83,13 @@ void Ability::loadFromJson(const rapidjson::Document& doc)
 
 void CooldownAbility::update(sf::Time eTime, GameMode* gameMode)
 {
+    float globalTimeMultiplier = 1.f;
+
+    if (gameMode) {
+        globalTimeMultiplier = gameMode->getAbilityTimeMultiplier();
+    }
+
     if (m_currentCharges < m_maxCharges) {
-        float globalTimeMultiplier = 1.f;
-
-        if (gameMode) {
-            globalTimeMultiplier = gameMode->getAbilityTimeMultiplier();
-        }
-
         float delta = m_currentCooldown - eTime.asSeconds() * globalTimeMultiplier;
 
         if (delta <= 0.f) {
@@ -106,7 +106,7 @@ void CooldownAbility::update(sf::Time eTime, GameMode* gameMode)
     }
 
     if (m_currentNextChargeDelay < m_nextChargeDelay) {
-        m_currentNextChargeDelay += eTime.asSeconds();
+        m_currentNextChargeDelay += eTime.asSeconds() * globalTimeMultiplier;
     }
 }
 
@@ -115,12 +115,23 @@ bool CooldownAbility::canBeCasted(const Status& status) const
     return m_currentCharges > 0 && m_currentNextChargeDelay >= m_nextChargeDelay;
 }
 
+void CooldownAbility::refresh()
+{
+    m_currentCharges = m_maxCharges;
+    m_currentCooldown = 0.f;
+}
+
 void CooldownAbility::applyServerCorrection(float diff)
 {
     const float finalPercentage = Helper_clamp(getTotalPercentage() + diff, 0.f, 1.f);
 
-    m_currentCharges = finalPercentage * m_maxCharges;
-    m_currentCooldown = (1.f - finalPercentage * static_cast<float>(m_maxCharges) - static_cast<float>(m_currentCharges)) * m_cooldown;
+    m_currentCharges = std::floor(finalPercentage * static_cast<float>(m_maxCharges));
+
+    if (m_currentCharges < m_maxCharges) {
+        m_currentCooldown = (1.f - finalPercentage * static_cast<float>(m_maxCharges) + static_cast<float>(m_currentCharges)) * m_cooldown;
+    } else {
+        m_currentCooldown = 0;
+    }
 }
 
 u16 CooldownAbility::takeSnapshot() const
@@ -230,6 +241,11 @@ bool RechargeAbility::canBeCasted(const Status& status) const
     return m_percentage >= 1.f;
 }
 
+void RechargeAbility::refresh()
+{
+    m_percentage = 1.f;
+}
+
 void RechargeAbility::applyServerCorrection(float diff)
 {
     m_percentage = Helper_clamp(m_percentage + diff, 0.f, 1.f);
@@ -313,6 +329,11 @@ void PassiveAbility::update(sf::Time eTime, GameMode* gameMode)
 bool PassiveAbility::canBeCasted(const Status& status) const
 {
     return true;
+}
+
+void PassiveAbility::refresh()
+{
+
 }
 
 void PassiveAbility::loadFromJson(const rapidjson::Document& doc)

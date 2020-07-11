@@ -1,7 +1,7 @@
 {
     "duration": 5,
     "unit_solid": false,
-    "damage_multiplier": 1.0,
+    "damage_multiplier": 2.0,
     "alt_ability_breaks_invis": false,
     "ultimate_breaks_invis": false,
     "bonus_movement_speed": 40
