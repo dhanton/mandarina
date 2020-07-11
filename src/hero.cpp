@@ -46,6 +46,9 @@ void Hero::loadFromJson(const rapidjson::Document& doc)
 {
     Unit::loadFromJson(doc);
     HeroBase::loadFromJson(doc);
+
+    m_powerHealthMultiplier = doc["health_per_level"].GetFloat()/1000.f;
+    m_powerDamageMultiplier = doc["damage_multiplier_per_level"].GetFloat()/1000.f;
 }
 
 void Hero::packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUniqueId, CRCPacket& outPacket) const
@@ -85,18 +88,18 @@ void Hero::onDeath(bool& dead, const ManagersContext& context)
     }
 }
 
-float Hero::getPowerDamageMultiplier() const
+float Hero::getDamageMultiplier() const
 {
-    //Each power level (1000 power) ~ 40% more = 1.10 multiplier
-    return (1.f + static_cast<float>(getPower()) * 0.0004);
+    float damageMultiplier = Unit::getDamageMultiplier();
+
+    return (damageMultiplier + static_cast<float>(getPower()) * m_powerDamageMultiplier);
 }
 
 void Hero::increasePower(u32 amount)
 {
     m_power = std::min(maxPower, m_power + amount);
 
-    //Each power level (1000 power) ~ 200 more health
-    increaseMaxHealth(static_cast<float>(amount) * 0.2);
+    increaseMaxHealth(static_cast<float>(amount) * m_powerHealthMultiplier);
 }
 
 void Hero::consumeFood(u8 foodType)

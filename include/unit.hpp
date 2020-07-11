@@ -17,8 +17,8 @@ public:
     float getAimAngle() const;
     void setAimAngle(float aimAngle);
 
-    u8 getMovementSpeed() const;
-    void setMovementSpeed(u8 movementSpeed);
+    u16 getMovementSpeed() const;
+    void setMovementSpeed(u16 movementSpeed);
 
     Status& getStatus();
     const Status& getStatus() const;
@@ -32,6 +32,7 @@ protected:
     float m_aimAngle;
     u8 m_weaponId;
     u16 m_movementSpeed;
+    u16 m_baseMovementSpeed;
 
     Status m_status;
 
@@ -63,7 +64,7 @@ public:
     virtual void postUpdate(sf::Time eTime, const ManagersContext& context);
     virtual void packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUniqueId, CRCPacket& outPacket) const;
 
-    virtual float getPowerDamageMultiplier() const;
+    virtual float getDamageMultiplier() const;
 
     virtual void onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId);
     virtual void onBeHealed(u16 amount, Entity* source);
@@ -76,6 +77,11 @@ public:
     virtual void onQuadtreeInserted(const ManagersContext& context);
 
 private:
+    virtual void onPrimaryFireCasted();
+    virtual void onSecondaryFireCasted();
+    virtual void onAltAbilityCasted();
+    virtual void onUltimateCasted();
+
     void moveColliding(Vector2 newPos, const ManagersContext& context, bool force = false);
     void checkDead(const ManagersContext& context);
 

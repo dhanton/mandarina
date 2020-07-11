@@ -19,7 +19,7 @@ void SingleShotAbility::onCast(Unit* caster, const ManagersContext& context, u16
     ABILITY_CREATE_PROJECTILE(m_projectileType, caster->getPosition(), caster->getAimAngle(), caster->getTeamId())
     ABILITY_SET_PROJECTILE_SHOOTER(caster)
 
-    float multiplier = context.gameMode->getDamageMultiplier() * caster->getPowerDamageMultiplier();
+    float multiplier = context.gameMode->getDamageMultiplier() * caster->getDamageMultiplier();
     ABILITY_SET_PROJECTILE_DAMAGE_MULTIPLIER(multiplier)
 
     //backtracking has to be done after damage multiplier is set

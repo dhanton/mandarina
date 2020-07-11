@@ -16,7 +16,7 @@ void HellsRainAbility::onCast(Unit* caster, const ManagersContext& context, u16 
     RechargeAbility::onCastUpdate();
 
     Projectile* projectile = nullptr;
-    float multiplier = context.gameMode->getDamageMultiplier() * caster->getPowerDamageMultiplier();
+    float multiplier = context.gameMode->getDamageMultiplier() * caster->getDamageMultiplier();
 
     for (int i = 0; i < m_bubbleNumber; ++i) {
         ABILITY_CREATE_PROJECTILE(PROJECTILE_HELLS_BUBBLE, caster->getPosition() + calculateRndPos(), caster->getAimAngle(), caster->getTeamId());

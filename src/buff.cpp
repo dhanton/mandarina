@@ -114,6 +114,35 @@ void Buff::onEntityKill(Entity* target)
 
 }
 
+void Buff::onGetDamageMultiplier(float& multiplier)
+{
+
+}
+
+void Buff::onMovement()
+{
+
+}
+void Buff::onPrimaryFireCasted()
+{
+
+}
+
+void Buff::onSecondaryFireCasted()
+{
+
+}
+
+void Buff::onAltAbilityCasted()
+{
+
+}
+
+void Buff::onUltimateCasted()
+{
+
+}
+
 void Buff::setUnit(Unit* unit)
 {
     m_unit = unit;

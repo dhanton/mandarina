@@ -48,12 +48,12 @@ void _UnitBase::setAimAngle(float aimAngle)
     m_aimAngle = aimAngle;
 }
 
-u8 _UnitBase::getMovementSpeed() const
+u16 _UnitBase::getMovementSpeed() const
 {
     return m_movementSpeed;
 }
 
-void _UnitBase::setMovementSpeed(u8 movementSpeed)
+void _UnitBase::setMovementSpeed(u16 movementSpeed)
 {
     m_movementSpeed = movementSpeed;
 }
@@ -109,6 +109,7 @@ void _UnitBase::loadFromJson(const rapidjson::Document& doc)
     m_aimAngle = 0.f;
     m_weaponId = Weapon_stringToType(doc["weapon"].GetString());
     m_movementSpeed = doc["movement_speed"].GetUint();
+    m_baseMovementSpeed = m_movementSpeed;
 }
 
 Unit* Unit::clone() const
@@ -209,6 +210,8 @@ void Unit::preUpdate(sf::Time eTime, const ManagersContext& context)
     //reset parameters
     resetInvisibleFlags();
     m_status.preUpdate();
+
+    m_movementSpeed = m_baseMovementSpeed;
 
     //update parameters using buffs
     BuffHolderComponent::onPreUpdate(eTime);
@@ -322,9 +325,12 @@ void Unit::packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUni
     }
 }
 
-float Unit::getPowerDamageMultiplier() const
+float Unit::getDamageMultiplier() const
 {
-    return 1.f;
+    float damageMultiplier = 1.f;
+
+    BuffHolderComponent::onGetDamageMultiplier(damageMultiplier);
+    return damageMultiplier;
 }
 
 void Unit::onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId)
@@ -370,6 +376,7 @@ void Unit::applyInput(const PlayerInput& input, const ManagersContext& context, 
         bool moved = PlayerInput_repeatAppliedInput(input, newPos, m_movementSpeed);
 
         if (moved) {
+            onMovement();
             moveColliding(newPos, context);
         }
     }
@@ -383,6 +390,26 @@ bool Unit::shouldSendToTeam(u8 teamId) const
 void Unit::onQuadtreeInserted(const ManagersContext& context)
 {
 
+}
+
+void Unit::onPrimaryFireCasted()
+{
+    BuffHolderComponent::onPrimaryFireCasted();
+}
+
+void Unit::onSecondaryFireCasted()
+{
+    BuffHolderComponent::onSecondaryFireCasted();
+}
+
+void Unit::onAltAbilityCasted()
+{
+    BuffHolderComponent::onAltAbilityCasted();
+}
+
+void Unit::onUltimateCasted()
+{
+    BuffHolderComponent::onUltimateCasted();
 }
 
 void Unit::moveColliding(Vector2 newPos, const ManagersContext& context, bool force)

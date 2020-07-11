@@ -8,6 +8,9 @@
 #include "buffs/reveal_buff.hpp"
 #include "buffs/recharge_ability_buff.hpp"
 #include "buffs/storm_buff.hpp"
+#include "buffs/invis_buff.hpp"
+#include "buffs/stun_buff.hpp"
+#include "buffs/slow_buff.hpp"
 
 bool BuffHolderComponent::m_buffsLoaded = false;
 std::unique_ptr<Buff> BuffHolderComponent::m_buffData[BUFF_MAX_TYPES];
@@ -78,6 +81,31 @@ void BuffHolderComponent::removeUniqueBuff(u8 buffType)
         buff->function_string; \
     }
 
+void BuffHolderComponent::onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId)
+{
+    FOR_ALL_BUFFS(onTakeDamage(damage, source, uniqueId, teamId))
+}
+
+void BuffHolderComponent::onDealDamage(u16 damage, Entity* target)
+{
+    FOR_ALL_BUFFS(onDealDamage(damage, target))
+}
+
+void BuffHolderComponent::onBeHealed(u16 amount, Entity* source)
+{
+    FOR_ALL_BUFFS(onBeHealed(amount, source))
+}
+
+void BuffHolderComponent::onHeal(u16 amount, Entity* target)
+{
+    FOR_ALL_BUFFS(onHeal(amount, target))
+}
+
+void BuffHolderComponent::onEntityKill(Entity* target)
+{
+    FOR_ALL_BUFFS(onEntityKill(target))
+}
+
 void BuffHolderComponent::onPreUpdate(sf::Time eTime)
 {
     auto it = m_buffs.begin();
@@ -105,30 +133,35 @@ void BuffHolderComponent::onDeath(bool& dead)
     FOR_ALL_BUFFS(onDeath(dead))
 }
 
-void BuffHolderComponent::onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId)
+void BuffHolderComponent::onGetDamageMultiplier(float& multiplier) const
 {
-    FOR_ALL_BUFFS(onTakeDamage(damage, source, uniqueId, teamId))
+    FOR_ALL_BUFFS(onGetDamageMultiplier(multiplier))
+}
+void BuffHolderComponent::onMovement()
+{
+    FOR_ALL_BUFFS(onMovement())
 }
 
-void BuffHolderComponent::onDealDamage(u16 damage, Entity* target)
+void BuffHolderComponent::onPrimaryFireCasted()
 {
-    FOR_ALL_BUFFS(onDealDamage(damage, target))
+    FOR_ALL_BUFFS(onPrimaryFireCasted())
 }
 
-void BuffHolderComponent::onBeHealed(u16 amount, Entity* source)
+void BuffHolderComponent::onSecondaryFireCasted()
 {
-    FOR_ALL_BUFFS(onBeHealed(amount, source))
+    FOR_ALL_BUFFS(onSecondaryFireCasted())
 }
 
-void BuffHolderComponent::onHeal(u16 amount, Entity* target)
+void BuffHolderComponent::onAltAbilityCasted()
 {
-    FOR_ALL_BUFFS(onHeal(amount, target))
+    FOR_ALL_BUFFS(onAltAbilityCasted())
 }
 
-void BuffHolderComponent::onEntityKill(Entity* target)
+void BuffHolderComponent::onUltimateCasted()
 {
-    FOR_ALL_BUFFS(onEntityKill(target))
+    FOR_ALL_BUFFS(onUltimateCasted())
 }
+
 
 // void BuffHolderComponent::onAbilityCasted(Ability* ability)
 // {

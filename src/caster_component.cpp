@@ -69,18 +69,22 @@ void CasterComponent::applyInput(Unit* caster, const PlayerInput& input, const M
 {
     if (input.primaryFire && extraFlags.primaryFire && m_primaryFire && m_primaryFire->canBeCasted(caster->getStatus())) {
         m_primaryFire->onCast(caster, context, clientDelay);
+        onPrimaryFireCasted();
     }
 
     if (input.secondaryFire && extraFlags.secondaryFire && m_secondaryFire && m_secondaryFire->canBeCasted(caster->getStatus())) {
         m_secondaryFire->onCast(caster, context, clientDelay);
+        onSecondaryFireCasted();
     }
 
     if (input.altAbility && extraFlags.altAbility && m_altAbility && m_altAbility->canBeCasted(caster->getStatus())) {
         m_altAbility->onCast(caster, context, clientDelay);
+        onAltAbilityCasted();
     }
 
     if (input.ultimate && extraFlags.ultimate && m_ultimate && m_ultimate->canBeCasted(caster->getStatus())) {
         m_ultimate->onCast(caster, context, clientDelay);
+        onUltimateCasted();
     }
 }
 
@@ -157,4 +161,24 @@ void CasterComponent::loadFromJson(const rapidjson::Document& doc)
             m_ultimate = std::unique_ptr<Ability>(m_abilityData[abilityType]->clone());
         }
     }
+}
+
+void CasterComponent::onPrimaryFireCasted()
+{
+
+}
+
+void CasterComponent::onSecondaryFireCasted()
+{
+
+}
+
+void CasterComponent::onAltAbilityCasted()
+{
+
+}
+
+void CasterComponent::onUltimateCasted()
+{
+
 }

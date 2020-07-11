@@ -36,12 +36,15 @@ public:
 
     virtual void onDeath(bool& dead, const ManagersContext& context);
 
-    virtual float getPowerDamageMultiplier() const;
+    virtual float getDamageMultiplier() const;
     void increasePower(u32 amount);
     void consumeFood(u8 foodType);
 
 private:
     std::vector<u8> m_consumedFood;
+
+    float m_powerHealthMultiplier;
+    float m_powerDamageMultiplier;
 };
 
 class C_Hero : public C_Unit, public HeroBase

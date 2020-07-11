@@ -330,8 +330,6 @@ void TrueSightComponent::loadFromJson(const rapidjson::Document& doc)
 InvisibleComponent::InvisibleComponent()
 {
     resetInvisibleFlags();
-
-    m_invisible = false;
 }
 
 void InvisibleComponent::resetInvisibleFlags()
@@ -339,6 +337,7 @@ void InvisibleComponent::resetInvisibleFlags()
     m_visionFlags = 0;
     m_teamSentFlags = 0;
     m_teamSentCloserFlags = 0;
+    m_invisible = false;
 }
 
 void InvisibleComponent::markToSend(u8 teamId)

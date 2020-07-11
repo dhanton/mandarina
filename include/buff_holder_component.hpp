@@ -33,15 +33,23 @@ public:
     //there are more callbacks that don't get called at the same time for all the buffs
     //onEnd() onStart() onPurged()
 
-    void onPreUpdate(sf::Time eTime);
-    void onUpdate(sf::Time eTime);
-    void onDeath(bool& dead);
     void onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId);
     void onDealDamage(u16 damage, Entity* target);
     void onBeHealed(u16 amount, Entity* source);
     void onHeal(u16 amount, Entity* target);
     void onEntityKill(Entity* target);
     // void onAbilityCasted(Ability* ability);
+
+protected:
+    void onPreUpdate(sf::Time eTime);
+    void onUpdate(sf::Time eTime);
+    void onDeath(bool& dead);
+    void onGetDamageMultiplier(float& multiplier) const;
+    void onMovement();
+    void onPrimaryFireCasted();
+    void onSecondaryFireCasted();
+    void onAltAbilityCasted();
+    void onUltimateCasted();
 
 private:
     static std::unique_ptr<Buff> m_buffData[BUFF_MAX_TYPES];

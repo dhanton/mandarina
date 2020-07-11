@@ -70,6 +70,16 @@ public:
     virtual void onBeHealed(u16 amount, Entity* source);
     virtual void onHeal(u16 amount, Entity* target);
     virtual void onEntityKill(Entity* target);
+
+    virtual void onGetDamageMultiplier(float& multiplier);
+
+    //we might need to pass some arguments to these (endPos, which ability was casted, etc)
+    virtual void onMovement();
+    virtual void onPrimaryFireCasted();
+    virtual void onSecondaryFireCasted();
+    virtual void onAltAbilityCasted();
+    virtual void onUltimateCasted();
+
     // virtual void onAbilityCasted(Ability* ability);
     //onGoingHidden onGoingInvis onBreakingInvis
 

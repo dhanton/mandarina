@@ -6,5 +6,7 @@
     "passive_healing_per_second": 0.10,
     "movement_speed": 200,
     "collision_radius": 20,
-    "scale": 4
+    "scale": 4,
+    "health_per_level": 200,
+    "damage_multiplier_per_level": 0.40
 }

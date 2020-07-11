@@ -45,6 +45,11 @@ public:
 protected:
     void loadFromJson(const rapidjson::Document& doc);
 
+    virtual void onPrimaryFireCasted();
+    virtual void onSecondaryFireCasted();
+    virtual void onAltAbilityCasted();
+    virtual void onUltimateCasted();
+
     std::unique_ptr<CooldownAbility> m_primaryFire;
     std::unique_ptr<Ability> m_secondaryFire;
     std::unique_ptr<Ability> m_altAbility;
