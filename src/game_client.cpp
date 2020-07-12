@@ -225,7 +225,10 @@ void GameClient::mainLoop(bool& running)
             }
 
             window.draw(*m_connectionStatusRender);
-            window.draw(m_mouseSprite);
+
+            if (!m_entityManager.isHeroDead()) {
+                window.draw(m_mouseSprite);
+            }
 
             window.display();
 
