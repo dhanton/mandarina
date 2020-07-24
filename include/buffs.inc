@@ -2,6 +2,7 @@
 
 DoBuff(RechargeAbilityBuff, RECHARGE_ABILITY, "recharge_ability")
 DoBuff(StormBuff, STORM, "storm")
+DoBuff(PhasedBuff, LOBBY_PHASED, "lobby_phased")
 DoBuff(RevealBuff, STANDARD_REVEAL, "standard_reveal")
 DoBuff(RootBuff, HELLS_DART_ROOT, "hells_dart_root")
 DoBuff(SlowBuff, FOREST_SLOW, "forest_slow")

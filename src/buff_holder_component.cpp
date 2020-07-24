@@ -11,6 +11,7 @@
 #include "buffs/invis_buff.hpp"
 #include "buffs/stun_buff.hpp"
 #include "buffs/slow_buff.hpp"
+#include "buffs/phased_buff.hpp"
 
 bool BuffHolderComponent::m_buffsLoaded = false;
 std::unique_ptr<Buff> BuffHolderComponent::m_buffData[BUFF_MAX_TYPES];

@@ -118,7 +118,7 @@ void GameMode::onHeroCreated(Hero* hero)
         //so that the game mode can create teams appropiately
 
     } else {
-        hero->setSolid(false);
+        hero->addBuff(BUFF_LOBBY_PHASED);
         hero->setPosition({100.f, 100.f});
 
         //each player is their own team in the lobby
