@@ -34,7 +34,7 @@ You can run the game in client/server mode doing
 ./mandarina --client
 ./mandarina --server
 ```
-This of course requires additional setup.
+You can set different client/server options (like framerate, snapshot rate, etc) in [client_config.json](data/json/client_config.json) and [server_config.json](data/json/server_config.json) respectively. If you want to run the game for multiple clients, you need to make sure that the ip/port set in all client config files match the one in the server.
 
 ## Other platforms
 
