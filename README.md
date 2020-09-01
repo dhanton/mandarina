@@ -19,9 +19,9 @@ The game has been tested and proven to work on a custom at-home server with up t
 See [BUILDING](BUILDING.md).
 
 ## Textures
-Most of the textures used in this project were made by talented creators who shared them online for free. See [TEXTURES](TEXTURES) for more information.
+Most of the textures used in this project were made by talented creators who shared them online for free. See [TEXTURES](TEXTURES.md) for more information.
 
 ## License
 See [LICENSE](LICENSE).
 
-All textures are licensed by their respective creators. See [TEXTURES](TEXTURES) for details.
+All textures are licensed by their respective creators. See [TEXTURES](TEXTURES.md) for details.
