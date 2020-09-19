@@ -1,5 +1,7 @@
 # mandarina
 
+![mandarina gif!](https://github.com/Dhanton/mandarina/blob/assets/mandarina.gif)
+
 ## About
 Mandarina is a personal project that I worked on during the first half of 2020. It's an online multiplayer action game for PC, and it was made in C++ using a handful of relatively low-level libraries. The gameplay is heavily inspired by Brawl Stars, but includes elements of MOBAS and bullet hell games.
 

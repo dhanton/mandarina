@@ -4,6 +4,6 @@
 * [Ability icons](https://game-icons.net/)
 * [Weapons](https://babysamurai.itch.io/super-epic-fantasy-weapons-pack)
 * [Misc. effects](https://codemanu.itch.io/pixelart-effect-pack)
-* [Bush tileset](https://bakudas.itch.io/generic-rpg-pack)
+* [Bush tileset and crates](https://bakudas.itch.io/generic-rpg-pack)
 * [Cursor](https://finalbossblues.itch.io/pixel-shooter-towers-asset-pack)
 * [Font](https://www.dafont.com/keep-calm.font)
