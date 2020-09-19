@@ -46,10 +46,7 @@ if (UNIX AND NOT APPLE)
 	endif()
 endif ()
 
-include_directories(include)
-
-set(SRC_DIR "./src")
-file(GLOB SRC_FILES "${SRC_DIR}/*.cpp" "${INCLUDE_DIR}/*.inl")
+include_directories("../include")
 
 #SFML
 include_directories(${PATH_SFML_include})
@@ -65,5 +62,5 @@ include_directories(${PATH_sockets_include})
 set(NETWORK_LIBS libGameNetworkingSockets.so)
 link_directories(${PATH_sockets_lib})
 
-add_executable(mandarina_tests "tests_main.cpp")
-target_link_libraries(mandarina_tests stdc++fs ${SFML_LIBS} libGL.so ${NETWORK_LIBS} libssl.so libcrypto.so pthread)
+add_executable(mandarina_tests "../src/packet.cpp" "test_packet.cpp")
+target_link_libraries(mandarina_tests stdc++fs ${SFML_LIBS_D} ${SFML_LIBS_R} libGL.so ${NETWORK_LIBS} libssl.so libcrypto.so pthread)

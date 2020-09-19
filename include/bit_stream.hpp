@@ -11,6 +11,8 @@
  * Keep in mind that the least amount of data that can be sent over the network is 1 byte.
  * This means that this is only efficient for more than 2 booleans that are sent together.
  * Also be careful not to mix calls to bit/byte, as the data can be corrupted.
+ * 
+ * @REMOVE (since our custom implementation of sf::Packet now does this automatically)
 */
 
 class BitStream

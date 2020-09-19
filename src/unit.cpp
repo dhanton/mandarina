@@ -238,52 +238,41 @@ void Unit::postUpdate(sf::Time eTime, const ManagersContext& context)
 void Unit::packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUniqueId, CRCPacket& outPacket) const
 {
     const Unit* prevUnit = static_cast<const Unit*>(prevEntity);
-
-    BitStream mainBits;
     
-    mainBits.pushBit(isInvisible());
-    mainBits.pushBit(isSolid());
-    mainBits.pushBit(m_status.stunned);
-    mainBits.pushBit(m_status.silenced);
-    mainBits.pushBit(m_status.disarmed);
-    mainBits.pushBit(m_status.rooted);
-    mainBits.pushBit(m_status.slowed);
+    outPacket << isInvisible();
+    outPacket << isSolid();
+    outPacket << m_status.stunned;
+    outPacket << m_status.silenced;
+    outPacket << m_status.disarmed;
+    outPacket << m_status.rooted;
+    outPacket << m_status.slowed;
 
     bool posXChanged = !prevUnit || m_pos.x != prevUnit->getPosition().x;
-    mainBits.pushBit(posXChanged);
+    outPacket << posXChanged;
 
     bool posYChanged = !prevUnit || m_pos.y != prevUnit->getPosition().y;
-    mainBits.pushBit(posYChanged);
+    outPacket << posYChanged;
 
     bool teamIdChanged = !prevUnit || teamId != prevUnit->getTeamId();
-    mainBits.pushBit(teamIdChanged);
+    outPacket << teamIdChanged;
 
     bool flyingHeightChanged = !prevUnit || m_flyingHeight != prevUnit->getFlyingHeight();
-    mainBits.pushBit(flyingHeightChanged);
+    outPacket << flyingHeightChanged;
     
     bool maxHealthChanged = !prevUnit || m_maxHealth != prevUnit->getMaxHealth();
-    mainBits.pushBit(maxHealthChanged);
+    outPacket << maxHealthChanged;
 
     bool healthChanged = !prevUnit || m_health != prevUnit->getHealth();
-    mainBits.pushBit(healthChanged);
+    outPacket << healthChanged;
 
     bool aimAngleChanged = !prevUnit || m_aimAngle != prevUnit->getAimAngle();
-    mainBits.pushBit(aimAngleChanged);
+    outPacket << aimAngleChanged;
 
     bool collisionRadiusChanged = !prevUnit || m_collisionRadius != prevUnit->getCollisionRadius();
-    mainBits.pushBit(collisionRadiusChanged);
+    outPacket << collisionRadiusChanged;
 
     //tell the client if the unit is being revealed by some other method that's not close proximity
-    mainBits.pushBit(isRevealedForTeam(teamId) && !isMarkedToSendCloserForTeam(teamId));
-
-    //send the flags
-    u8 byte1 = mainBits.popByte();
-    u8 byte2 = mainBits.popByte();
-    outPacket << byte1;
-    outPacket << byte2;
-
-    //this didn't work (probably the order was incorrect??)
-    // outPacket << mainBits.popByte() << mainBits.popByte();
+    outPacket << (isRevealedForTeam(teamId) && !isMarkedToSendCloserForTeam(teamId));
 
     //send the data if it has changed
     if (posXChanged) {
@@ -507,31 +496,34 @@ void C_Unit::update(sf::Time eTime, const C_ManagersContext& context)
 
 void C_Unit::loadFromData(u32 controlledEntityUniqueId, CRCPacket& inPacket, CasterSnapshot& casterSnapshot)
 {
-    BitStream mainBits;
+    bool posXChanged;
+    bool posYChanged;
+    bool teamIdChanged;
+    bool flyingHeightChanged;
+    bool maxHealthChanged;
+    bool healthChanged;
+    bool aimAngleChanged;
+    bool collisionRadiusChanged;
+    bool serverRevealed;
 
-    u8 byte;
-    inPacket >> byte;
-    mainBits.pushByte(byte);
-    inPacket >> byte;
-    mainBits.pushByte(byte);
+    inPacket >> m_invisible;
+    inPacket >> m_solid;
+    inPacket >> m_status.stunned;
+    inPacket >> m_status.silenced;
+    inPacket >> m_status.disarmed;
+    inPacket >> m_status.rooted;
+    inPacket >> m_status.slowed;
+    inPacket >> posXChanged;
+    inPacket >> posYChanged;
+    inPacket >> teamIdChanged;
+    inPacket >> flyingHeightChanged;
+    inPacket >> maxHealthChanged;
+    inPacket >> healthChanged;
+    inPacket >> aimAngleChanged;
+    inPacket >> collisionRadiusChanged;
+    inPacket >> serverRevealed;
 
-    m_invisible = mainBits.popBit();
-    setSolid(mainBits.popBit());
-    m_status.stunned = mainBits.popBit();
-    m_status.silenced = mainBits.popBit();
-    m_status.disarmed = mainBits.popBit();
-    m_status.rooted = mainBits.popBit();
-    m_status.slowed = mainBits.popBit();
-
-    bool posXChanged = mainBits.popBit();
-    bool posYChanged = mainBits.popBit();
-    bool teamIdChanged = mainBits.popBit();
-    bool flyingHeightChanged = mainBits.popBit();
-    bool maxHealthChanged = mainBits.popBit();
-    bool healthChanged = mainBits.popBit();
-    bool aimAngleChanged = mainBits.popBit();
-    bool collisionRadiusChanged = mainBits.popBit();
-    setServerRevealed(mainBits.popBit());
+    setServerRevealed(serverRevealed);
 
     if (posXChanged) {
         inPacket >> m_pos.x;

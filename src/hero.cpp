@@ -55,16 +55,13 @@ void Hero::packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUni
 {
     Unit::packData(prevEntity, teamId, controlledEntityUniqueId, outPacket);
 
-    BitStream bits;
     const Hero* prevHero = static_cast<const Hero*>(prevEntity);
 
     bool displayNameChanged = !prevHero || prevHero->getDisplayName() != m_displayName;
-    bits.pushBit(displayNameChanged);
+    outPacket << displayNameChanged;
 
     bool powerLevelChanged = !prevHero || prevHero->getPowerLevel() != getPowerLevel();
-    bits.pushBit(powerLevelChanged);
-
-    outPacket << bits.popByte();
+    outPacket << powerLevelChanged;
 
     if (displayNameChanged) {
         outPacket << m_displayName;
@@ -124,14 +121,11 @@ void C_Hero::loadFromData(u32 controlledEntityUniqueId, CRCPacket& inPacket, Cas
 {
     C_Unit::loadFromData(controlledEntityUniqueId, inPacket, casterSnapshot);
 
-    BitStream bits;
+    bool displayNameChanged;
+    bool powerLevelChanged;
 
-    u8 byte;
-    inPacket >> byte;
-    bits.pushByte(byte);
-
-    bool displayNameChanged = bits.popBit();
-    bool powerLevelChanged = bits.popBit();
+    inPacket >> displayNameChanged;
+    inPacket >> powerLevelChanged;
 
     if (displayNameChanged) {
         m_displayName.clear();

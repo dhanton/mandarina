@@ -180,10 +180,10 @@ void rotating_and_circle_test()
     //////////////////////////////////////////////////////IMPORTANT////////////////////////////////////////////////////
     //it has to be stored dynamically
     //probably because of how the quadtree internally allocates memory
-    using fuck = std::unique_ptr<QuadtreeEntity<float>>;
+    using TestType = std::unique_ptr<QuadtreeEntity<float>>;
 
     std::vector<Circlef> circles;
-    std::vector<fuck> entities;
+    std::vector<TestType> entities;
     std::vector<u32> ids;
     std::vector<bool> hits;
     u32 lastId = 0;
@@ -194,7 +194,7 @@ void rotating_and_circle_test()
     for (int i = 0; i < NUM; ++i) {
         circles.push_back(Circlef(rand() % 1200, rand() % 800, rand() % 20 + 30));
         hits.push_back(false);
-        entities.push_back(fuck(new QuadtreeEntity<float>(++lastId, circles[i])));
+        entities.push_back(TestType(new QuadtreeEntity<float>(++lastId, circles[i])));
         
         quadtree.Insert(entities[i].get());
 
@@ -214,7 +214,6 @@ void rotating_and_circle_test()
         }
 
         rect.angle += 10 * eTime.asSeconds();
-        // rect.top += 10 * eTime.asSeconds();
 
         //clear current hits
         for (int i = 0; i < NUM; ++i) {
@@ -244,8 +243,6 @@ void rotating_and_circle_test()
         shape.setFillColor(sf::Color::Green);
         window.draw(shape);
 
-        // int m = 0;
-
         for (int i = 0; i < NUM; ++i) {
             Circlef& circle = circles[i];
 
@@ -256,23 +253,10 @@ void rotating_and_circle_test()
 
             circleShape.setFillColor(hits[i] ? sf::Color::Red : sf::Color::Cyan);
 
-            // if (rect.intersects(circle)) {
-                // m++;
-                // circleShape.setFillColor(sf::Color::Red);
-            // } else {
-                // circleShape.setFillColor(sf::Color::Cyan);
-            // }
-
             window.draw(circleShape);
         }
 
         window.display();
-
-        // std::cout << n << ' ' << m << std::endl;
-
-        // if (n != m) {
-            // std::cout << "FUCKKKKKKKKKKKKKKKKKKKKKK" << std::endl;
-        // }
     }
 }
 

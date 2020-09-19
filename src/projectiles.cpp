@@ -181,22 +181,17 @@ void C_Projectile_init(C_Projectile& projectile, u8 type, const Vector2& pos, fl
 
 void Projectile_packData(const Projectile& projectile, const Projectile* prevProj, u8 teamId, CRCPacket& outPacket, const EntityManager* entityManager)
 {
-    BitStream bits;
-
     bool posXChanged = !prevProj || projectile.pos.x != prevProj->pos.x;
-    bits.pushBit(posXChanged);
+    outPacket << posXChanged;
 
     bool posYChanged = !prevProj || projectile.pos.y != prevProj->pos.y;
-    bits.pushBit(posYChanged);
+    outPacket << posYChanged;
 
     bool collisionRadiusChanged = !prevProj || projectile.collisionRadius != prevProj->collisionRadius;
-    bits.pushBit(collisionRadiusChanged);
+    outPacket << collisionRadiusChanged;
 
     bool rotationChanged = !prevProj || projectile.rotation != prevProj->rotation;
-    bits.pushBit(rotationChanged);
-
-    u8 byte = bits.popByte();
-    outPacket << byte;
+    outPacket << rotationChanged;
 
     if (posXChanged) {
         outPacket << projectile.pos.x;
@@ -217,16 +212,15 @@ void Projectile_packData(const Projectile& projectile, const Projectile* prevPro
 
 void C_Projectile_loadFromData(C_Projectile& projectile, CRCPacket& inPacket)
 {
-    BitStream bits;
+    bool posXChanged;
+    bool posYChanged;
+    bool collisionRadiusChanged;
+    bool rotationChanged;
 
-    u8 byte;
-    inPacket >> byte;
-    bits.pushByte(byte);
-
-    bool posXChanged = bits.popBit();
-    bool posYChanged = bits.popBit();
-    bool collisionRadiusChanged = bits.popBit();
-    bool rotationChanged = bits.popBit();
+    inPacket >> posXChanged;
+    inPacket >> posYChanged;
+    inPacket >> collisionRadiusChanged;
+    inPacket >> rotationChanged;
 
     if (posXChanged) {
         inPacket >> projectile.pos.x;

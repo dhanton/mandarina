@@ -239,15 +239,11 @@ void Food::packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUni
 {
     outPacket << m_foodType;
 
-    BitStream bits;
-
     bool posXChanged = !prevEntity || m_pos.x != prevEntity->getPosition().x;
-    bits.pushBit(posXChanged);
+    outPacket << posXChanged;
 
     bool posYChanged = !prevEntity || m_pos.y != prevEntity->getPosition().y;
-    bits.pushBit(posYChanged);
-
-    outPacket << bits.popByte();
+    outPacket << posYChanged;
 
     if (posXChanged) {
         outPacket << m_pos.x;
@@ -283,15 +279,12 @@ void C_Food::loadFromData(u32 controlledEntityUniqueId, CRCPacket& inPacket, Cas
     if (prevFoodType != m_foodType) {
         updateTextureSubRect();
     }
+    
+    bool posXChanged;
+    bool posYChanged;
 
-    BitStream bits;
-
-    u8 byte;
-    inPacket >> byte;
-    bits.pushByte(byte);
-
-    bool posXChanged = bits.popBit();
-    bool posYChanged = bits.popBit();
+    inPacket >> posXChanged;
+    inPacket >> posYChanged;
 
     if (posXChanged) {
         inPacket >> m_pos.x;

@@ -51,24 +51,20 @@ void Crate::packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUn
 {
     const Crate* prevCrate = static_cast<const Crate*>(prevEntity);
 
-    BitStream bits;
-
     bool posXChanged = !prevCrate || m_pos.x != prevCrate->getPosition().x;
-    bits.pushBit(posXChanged);
+    outPacket << posXChanged;
 
     bool posYChanged = !prevCrate || m_pos.y != prevCrate->getPosition().y;
-    bits.pushBit(posYChanged);
+    outPacket << posYChanged;
 
     bool teamIdChanged = !prevCrate || teamId != prevCrate->getTeamId();
-    bits.pushBit(teamIdChanged);
+    outPacket << teamIdChanged;
 
     bool maxHealthChanged = !prevCrate || m_maxHealth != prevCrate->getMaxHealth();
-    bits.pushBit(maxHealthChanged);
+    outPacket << maxHealthChanged;
 
     bool healthChanged = !prevCrate || m_health != prevCrate->getHealth();
-    bits.pushBit(healthChanged);
-
-    outPacket << bits.popByte();
+    outPacket << healthChanged;
 
     if (posXChanged) {
         outPacket << m_pos.x;
@@ -135,17 +131,17 @@ void C_Crate::update(sf::Time eTime, const C_ManagersContext& context)
 
 void C_Crate::loadFromData(u32 controlledEntityUniqueId, CRCPacket& inPacket, CasterSnapshot& casterSnapshot)
 {
-    BitStream bits;
-
-    u8 byte;
-    inPacket >> byte;
-    bits.pushByte(byte);
-
-    bool posXChanged = bits.popBit();
-    bool posYChanged = bits.popBit();
-    bool teamIdChanged = bits.popBit();
-    bool maxHealthChanged = bits.popBit();
-    bool healthChanged = bits.popBit();
+    bool posXChanged;
+    bool posYChanged;
+    bool teamIdChanged;
+    bool maxHealthChanged;
+    bool healthChanged;
+    
+    inPacket >> posXChanged;
+    inPacket >> posYChanged;
+    inPacket >> teamIdChanged;
+    inPacket >> maxHealthChanged;
+    inPacket >> healthChanged;
 
     if (posXChanged) {
         inPacket >> m_pos.x;

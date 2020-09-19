@@ -7,14 +7,15 @@
 #include "texture_ids.hpp"
 
 #ifndef MANDARINA_DEBUG
-#include <cstdlib>
+    #include <cstdlib>
 
-//Itchio auth
-#define CPPHTTPLIB_OPENSSL_SUPPORT //needed to use https
-#include <httplib.h>
-#ifdef _WIN32
-#include <Windows.h>
-#endif
+    //Itchio auth
+    #define CPPHTTPLIB_OPENSSL_SUPPORT //needed to use https
+    #include <httplib.h>
+    
+    #ifdef _WIN32
+        #include <Windows.h>
+    #endif
 #endif
 
 GameClientCallbacks::GameClientCallbacks(GameClient* p)

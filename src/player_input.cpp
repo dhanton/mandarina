@@ -9,26 +9,24 @@
 
 void PlayerInput_packData(PlayerInput& playerInput, CRCPacket& outPacket, const Status& status)
 {
-    BitStream stream;
-
     //If we don't check this here then the unit in the server will start moving before
     //the unit in the client, creating prediction errors
     bool canMove = status.canMove();
     bool canCast = status.canCast();
 
-    stream.pushBit(canMove ? playerInput.left : false);
-    stream.pushBit(canMove ? playerInput.right : false);
-    stream.pushBit(canMove ? playerInput.up : false);
-    stream.pushBit(canMove ? playerInput.down : false);
-
-    stream.pushBit(status.canAttack() ? playerInput.primaryFire : false);
-
-    stream.pushBit(canCast ? playerInput.secondaryFire : false);
-    stream.pushBit(canCast ? playerInput.altAbility : false);
-    stream.pushBit(canCast ? playerInput.ultimate : false);
-
     outPacket << playerInput.id;
-    outPacket << stream.popByte();
+
+    outPacket << (canMove ? playerInput.left : false);
+    outPacket << (canMove ? playerInput.right : false);
+    outPacket << (canMove ? playerInput.up : false);
+    outPacket << (canMove ? playerInput.down : false);
+
+    outPacket << (status.canAttack() ? playerInput.primaryFire : false);
+
+    outPacket << (canCast ? playerInput.secondaryFire : false);
+    outPacket << (canCast ? playerInput.altAbility : false);
+    outPacket << (canCast ? playerInput.ultimate : false);
+
     outPacket << Helper_angleTo16bit(playerInput.aimAngle);
 }
 
@@ -36,21 +34,15 @@ void PlayerInput_loadFromData(PlayerInput& playerInput, CRCPacket& inPacket)
 {
     inPacket >> playerInput.id;
 
-    BitStream stream;
+    inPacket >> playerInput.left;
+    inPacket >> playerInput.right;
+    inPacket >> playerInput.up;
+    inPacket >> playerInput.down;
 
-    u8 byte;
-    inPacket >> byte;
-    stream.pushByte(byte);
-
-    playerInput.left = stream.popBit();
-    playerInput.right = stream.popBit();
-    playerInput.up = stream.popBit();
-    playerInput.down = stream.popBit();
-
-    playerInput.primaryFire = stream.popBit();
-    playerInput.secondaryFire = stream.popBit();
-    playerInput.altAbility = stream.popBit();
-    playerInput.ultimate = stream.popBit();
+    inPacket >> playerInput.primaryFire;
+    inPacket >> playerInput.secondaryFire;
+    inPacket >> playerInput.altAbility;
+    inPacket >> playerInput.ultimate;
 
     u16 angle16bit;
     inPacket >> angle16bit;
