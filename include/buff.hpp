@@ -5,6 +5,7 @@
 #include "json_parser.hpp"
 #include "crcpacket.hpp"
 #include "managers_context.hpp"
+#include "status.hpp"
 
 enum BuffType {
     BUFF_NONE, 
@@ -15,27 +16,6 @@ enum BuffType {
     #undef DoBuff
 
     BUFF_MAX_TYPES
-};
-
-//Status is like a buffer that buffs can write to
-//it's used to quickly check if a unit is being affected in a certain way
-//and is the only buff information a client receives
-struct Status
-{
-    //@TODO: This should probably be done using an array and a type enum
-    //so that adding new status variables is easier
-
-    bool stunned = false;
-    bool silenced = false;
-    bool disarmed = false;
-    bool rooted = false;
-    bool slowed = false;
-
-    void preUpdate();
-
-    bool canMove() const;
-    bool canAttack() const;
-    bool canCast() const;
 };
 
 class Entity;

@@ -241,11 +241,8 @@ void Unit::packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUni
     
     outPacket << isInvisible();
     outPacket << isSolid();
-    outPacket << m_status.stunned;
-    outPacket << m_status.silenced;
-    outPacket << m_status.disarmed;
-    outPacket << m_status.rooted;
-    outPacket << m_status.slowed;
+
+	m_status.packData(outPacket);
 
     bool posXChanged = !prevUnit || m_pos.x != prevUnit->getPosition().x;
     outPacket << posXChanged;
@@ -508,12 +505,10 @@ void C_Unit::loadFromData(u32 controlledEntityUniqueId, CRCPacket& inPacket, Cas
 
     inPacket >> m_invisible;
     inPacket >> m_solid;
-    inPacket >> m_status.stunned;
-    inPacket >> m_status.silenced;
-    inPacket >> m_status.disarmed;
-    inPacket >> m_status.rooted;
-    inPacket >> m_status.slowed;
-    inPacket >> posXChanged;
+
+	m_status.loadFromData(inPacket);
+
+	inPacket >> posXChanged;
     inPacket >> posYChanged;
     inPacket >> teamIdChanged;
     inPacket >> flyingHeightChanged;
@@ -717,6 +712,8 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
         m_healthUI.setHealthComponent(this);
         m_healthUI.setFonts(context.fonts);
     }
+
+	m_unitUI.updateStatus(getStatus());
 
     //isAlly can change if the client changes the team its spectating
     bool isAlly = (m_teamId == managersContext.entityManager->getLocalTeamId());

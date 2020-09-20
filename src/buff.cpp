@@ -4,30 +4,6 @@
 #include "ability.hpp"
 #include "bit_stream.hpp"
 
-void Status::preUpdate()
-{
-    stunned = false;
-    silenced = false;
-    disarmed = false;
-    rooted = false;
-    slowed = false;
-}
-
-bool Status::canMove() const
-{
-    return !stunned && !rooted;
-}
-
-bool Status::canAttack() const
-{
-    return !stunned && !disarmed;
-}
-
-bool Status::canCast() const
-{
-    return !stunned && !silenced;
-}
-
 u8 Buff::stringToType(const std::string& typeStr)
 {
     if (typeStr == "NONE") return BUFF_NONE;

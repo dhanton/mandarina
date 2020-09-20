@@ -9,5 +9,5 @@ StunBuff* StunBuff::clone() const
 
 void StunBuff::onPreUpdate(sf::Time eTime)
 {
-    m_unit->getStatus().stunned = true;
+    m_unit->getStatus()[STATUS_STUNNED] = true;
 }

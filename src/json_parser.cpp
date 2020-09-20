@@ -83,3 +83,8 @@ const rapidjson::Document* JsonParser::getDocument(const std::string& id) const
 
     return found->second.get();
 }
+
+bool JsonParser::isLoaded(const std::string& id) const
+{
+	return (m_documents.find(id) != m_documents.end());
+}

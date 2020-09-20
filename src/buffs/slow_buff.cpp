@@ -16,6 +16,6 @@ void SlowBuff::loadFromJson(const rapidjson::Document& doc)
 
 void SlowBuff::onPreUpdate(sf::Time eTime)
 {
-    m_unit->getStatus().slowed = true;
+    m_unit->getStatus()[STATUS_SLOWED] = true;
     m_unit->setMovementSpeed(std::max(0, static_cast<int>(m_unit->getMovementSpeed()) - m_slowAmount));
 }

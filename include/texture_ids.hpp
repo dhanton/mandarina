@@ -13,11 +13,10 @@ namespace TextureId
         CROSSHAIR,
 
         //textures used to display buffs in client
-        STUNNED,
-        SILENCED,
-        DISARMED,
-        ROOTED,
-        SLOWED,
+		#define DoStatus(type, json_id) \
+			type,
+		#include "status.inc"
+		#undef DoStatus
 
         //storm modifier
         STORM,

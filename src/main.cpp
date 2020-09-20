@@ -124,6 +124,7 @@ int main(int argc, char* argv[])
 
     CasterComponent::loadAbilityData(&jsonParser);
     BuffHolderComponent::loadBuffData(&jsonParser);
+	Status::loadJsonData(&jsonParser);
 
     //client and server are not created in the main context so that
     //they call their deleter before GameNetworkingSockets is killed

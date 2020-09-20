@@ -9,5 +9,5 @@ RootBuff* RootBuff::clone() const
 
 void RootBuff::onPreUpdate(sf::Time eTime)
 {
-    m_unit->getStatus().rooted = true;
+    m_unit->getStatus()[STATUS_ROOTED] = true;
 }
