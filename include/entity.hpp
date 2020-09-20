@@ -71,7 +71,8 @@ class Entity : public BaseEntityComponent
 public:
     virtual Entity* clone() const = 0;
 
-    //a virtual destructor is required to properly destroy unique_ptrs
+	//virtual destructor is required to delete an instance of a derived class through a pointer to this class
+	//(even if delete is handled by unique_ptr)
     virtual ~Entity() = default;
 
     virtual void loadFromJson(const rapidjson::Document& doc);
@@ -104,7 +105,8 @@ class C_Entity : public BaseEntityComponent
 public:
     virtual C_Entity* clone() const = 0;
 
-	//a virtual destructor is required to properly destroy unique_ptrs
+	//virtual destructor is required to delete an instance of a derived class through a pointer to this class
+	//(even if delete is handled by unique_ptr)
 	virtual ~C_Entity() = default;
 
     virtual void loadFromJson(const rapidjson::Document& doc, u16 textureId, const Context& context);
