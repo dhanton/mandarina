@@ -104,6 +104,9 @@ class C_Entity : public BaseEntityComponent
 public:
     virtual C_Entity* clone() const = 0;
 
+	//a virtual destructor is required to properly destroy unique_ptrs
+	virtual ~C_Entity() = default;
+
     virtual void loadFromJson(const rapidjson::Document& doc, u16 textureId, const Context& context);
 
     virtual void update(sf::Time eTime, const C_ManagersContext& context) = 0;
