@@ -67,6 +67,7 @@ int main(int argc, char* argv[])
     context.localCon2 = localCon2;
 
     std::unique_ptr<TextureLoader> textures;
+	std::unique_ptr<FontLoader> fonts;
     
     //only load textures in client
     if ((execMode & ExecMode::Client) != 0) {
@@ -104,19 +105,17 @@ int main(int argc, char* argv[])
         textures->loadResource(ICONS_PATH + "forest_night.png", TextureId::ICON_FOREST_NIGHT);
         textures->loadResource(ICONS_PATH + "golden_leaf.png", TextureId::ICON_GOLDEN_LEAF);
 
-
         textures->loadResource(TEXTURES_PATH + "food.png", TextureId::FOOD);
         textures->loadResource(TEXTURES_PATH + "normal_crate.png", TextureId::NORMAL_CRATE);
 
         textures->loadResource(TEXTURES_PATH + "storm.png", TextureId::STORM);
 
-
         context.textures = textures.get();
-    }
 
-    FontLoader fonts;
-    fonts.loadResource(FONTS_PATH + "Keep Calm.ttf", "keep_calm_font");
-    context.fonts = &fonts;
+		fonts = std::unique_ptr<FontLoader>(new FontLoader());
+		fonts->loadResource(FONTS_PATH + "Keep Calm.ttf", "keep_calm_font");
+		context.fonts = fonts.get();
+    }
 
     JsonParser jsonParser;
     jsonParser.loadAll(JSON_PATH);

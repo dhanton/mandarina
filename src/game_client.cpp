@@ -481,7 +481,7 @@ void GameClient::saveCurrentInput()
         sendPacket(outPacket, m_serverConnectionId, false);
     }
 
-    m_inputSnapshots.push_back(InputSnapshot());
+    m_inputSnapshots.emplace_back();
     m_inputSnapshots.back().input = m_currentInput;
     m_inputSnapshots.back().endPosition = entityPos;
     m_inputSnapshots.back().forceSnap = false;

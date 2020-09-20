@@ -26,7 +26,7 @@ int StaticBucket<T, N>::addElement(u32 uniqueId)
     m_elements[m_firstInvalidIndex] = T();
 
     int index = m_firstInvalidIndex++;
-    m_hashTable.insert(std::make_pair(uniqueId, index));
+    m_hashTable.emplace(uniqueId, index);
 
     return index;
 }
@@ -63,7 +63,7 @@ void StaticBucket<T, N>::copyValidDataTo(Bucket<OtherT>& otherBucket) const
 
     for (int i = 0; i < m_firstInvalidIndex; ++i) {
         otherBucket.m_elements[i] = m_elements[i];
-        otherBucket.m_hashTable.insert(std::make_pair(m_elements[i].uniqueId, i));
+        otherBucket.m_hashTable.emplace(m_elements[i].uniqueId, i);
     }
 }
 

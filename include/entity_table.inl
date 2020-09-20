@@ -39,7 +39,7 @@ _Entity_Type* EntityTable<_Entity_Type>::addEntity(_Entity_Type* entity)
         return nullptr;
     }
 
-    m_table.insert(std::make_pair(entity->getUniqueId(), std::move(std::unique_ptr<_Entity_Type>(entity))));
+    m_table.emplace(entity->getUniqueId(), std::unique_ptr<_Entity_Type>(entity));
 
     return entity;
 }

@@ -42,7 +42,7 @@ void ResLoader<Res, Id>::loadResource(const std::string& filename, Id id, const 
     if (!resource->loadFromFile(filename, param))
         throw std::runtime_error("ResourceHandler::loadResource - Failed to load " + filename + '\n');
 
-    auto inserted = m_resourceMap.insert(std::make_pair(id, std::move(resource)));
+    auto inserted = m_resourceMap.emplace(id, std::move(resource));
 
     assert(inserted.second);
 }
