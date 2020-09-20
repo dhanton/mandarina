@@ -32,7 +32,7 @@ enum ProjectileType {
 
 namespace HitFlags 
 {
-    enum _HitFlags{
+    enum _HitFlags {
         None    = 0b00,
         Allies  = 0b01,
         Enemies = 0b10,

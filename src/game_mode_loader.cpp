@@ -6,7 +6,8 @@
 //There's no need to create an array to hold all types and then use clone()
 //since game there's only game mode per game
 
-namespace GameModeLoader {
+namespace GameModeLoader 
+{
 
 GameMode* create(u8 gameModeType, const Context& context)
 {

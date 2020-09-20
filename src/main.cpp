@@ -13,15 +13,18 @@
 #include "weapon.hpp"
 #include "ability.hpp"
 
-enum class ExecMode {
-    Client,
-    Server,
-    LocalConnection 
-};
+namespace ExecMode 
+{
+	enum _ExecMode {
+		Client          = 0b01,
+		Server          = 0b10,
+		LocalConnection = 0b11 
+	};
+}
 
 int main(int argc, char* argv[])
 {
-    ExecMode execMode = ExecMode::Client;
+    int execMode = ExecMode::Client;
 
     SteamDatagramErrMsg error;
     if (!GameNetworkingSockets_Init(nullptr, error)) {
@@ -66,7 +69,7 @@ int main(int argc, char* argv[])
     std::unique_ptr<TextureLoader> textures;
     
     //only load textures in client
-    if (execMode == ExecMode::Client || execMode == ExecMode::LocalConnection) {
+    if ((execMode & ExecMode::Client) != 0) {
         textures = std::unique_ptr<TextureLoader>(new TextureLoader());
         
         //@TODO: Load textures automatically

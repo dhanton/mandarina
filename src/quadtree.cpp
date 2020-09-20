@@ -1,6 +1,7 @@
 #include "quadtree.hpp"
 
-namespace detail {
+namespace detail 
+{
 
 BlocksAllocator::BlocksAllocator() {}
 
