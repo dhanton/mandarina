@@ -41,7 +41,6 @@ void NaturesRageAbility::C_onCast(C_Unit* unit, CasterComponent* caster, Vector2
     RechargeAbility::onCastUpdate();
 }
 
-
 void NaturesRageAbility::loadFromJson(const rapidjson::Document& doc)
 {
     RechargeAbility::loadFromJson(doc);

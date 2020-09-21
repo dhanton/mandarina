@@ -1,0 +1,9 @@
+{
+    "charges": 3,
+    "cooldown": 3,
+    "next_charge_delay": 0.75,
+    "projectile": "FISH_SHELL",
+	"projectile_number": 3,
+	"initial_distance": 10,
+	"spread_angle": 45
+}

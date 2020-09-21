@@ -263,14 +263,9 @@ void GameServer::update(const sf::Time& eTime, bool& running)
 #ifdef MANDARINA_DEBUG
             //@DELETE (TESTING)
             // m_entityManager.createEntity(ENTITY_RED_DEMON, Vector2(1400.f, 1450.f), 1);
-            for (int i = 0; i < 10; ++i) {
-                Hero* blondie = static_cast<Hero*>(m_entityManager.createEntity(ENTITY_BLONDIE, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 2));
-                blondie->setDisplayName("hola");
-                // Entity* entity = m_entityManager.createEntity(ENTITY_FOOD, Vector2(rand() % 500 + 200, rand() % 500 + 200.f), 2);
-                Entity* entity = m_entityManager.createEntity(ENTITY_FOOD, Vector2(400.f + 20.f * i, 300.f), 2);
-                Food* food = static_cast<Food*>(entity);
-                food->setFoodType(rand() % 2 ? FOOD_CANDY : FOOD_COKE);
-            }
+            for (int i = 0; i < 30; ++i) {
+                m_entityManager.createEntity(ENTITY_BLONDIE, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 2);
+                m_entityManager.createEntity(ENTITY_RED_DEMON, Vector2(rand() % 1500 + 200, rand() % 1500 + 200.f), 2); }
 #endif
         }
     }
@@ -540,7 +535,7 @@ void GameServer::onConnectionCompleted(HSteamNetConnection connectionId)
         const size_t _heroesNum = 2;
         u8 _heroes[_heroesNum] = {ENTITY_RED_DEMON, ENTITY_BLONDIE};
 
-        m_clients[index].selectedHeroType = _heroes[rand() % _heroesNum];
+        m_clients[index].selectedHeroType = ENTITY_FISH_OGRE;//_heroes[rand() % _heroesNum];
         m_clients[index].heroDead = false;
 
         Hero* hero = createClientHeroEntity(index);

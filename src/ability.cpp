@@ -320,6 +320,15 @@ float RechargeAbility::getTimeRechargeMultiplier() const
     return m_timeRechargeMultiplier;
 }
 
+void PassiveAbility::onCast(Unit* caster, const ManagersContext& context, u16 clientDelay)
+{
+
+}
+
+void PassiveAbility::C_onCast(C_Unit* unit, CasterComponent* caster, Vector2& pos, const C_ManagersContext& context, u32 inputId, bool repeating)
+{
+
+}
 
 void PassiveAbility::update(sf::Time eTime, GameMode* gameMode)
 {

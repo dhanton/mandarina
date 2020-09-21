@@ -2,3 +2,4 @@
 
 DoWeapon(DEVILS_BOW, "devils_bow")
 DoWeapon(GOLDEN_SCEPTER, "golden_scepter")
+DoWeapon(SCYTHE, "scythe")

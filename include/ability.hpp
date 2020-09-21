@@ -154,6 +154,9 @@ class PassiveAbility : public Ability
 public:
     virtual PassiveAbility* clone() const = 0;
 
+	virtual void onCast(Unit* caster, const ManagersContext& context, u16 clientDelay);
+    virtual void C_onCast(C_Unit* unit, CasterComponent* caster, Vector2& pos, const C_ManagersContext& context, u32 inputId, bool repeating);
+
     virtual void update(sf::Time eTime, GameMode* gameMode);
     virtual bool canBeCasted(const Status& status) const;
     virtual void refresh();

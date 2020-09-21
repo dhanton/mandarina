@@ -1,0 +1,9 @@
+{
+    "scale": 1.0,
+    "movement_speed": 360,
+    "collision_radius": 10,
+    "range": 400,
+    "hit_flags": "ENEMIES",
+    "rotation_offset": 145.0,
+    "damage": 40
+}
