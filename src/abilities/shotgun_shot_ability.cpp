@@ -16,13 +16,17 @@ void ShotgunShotAbility::onCast(Unit* caster, const ManagersContext& context, u1
 
 	Projectile* projectile = nullptr;
 	float multiplier = context.gameMode->getDamageMultiplier() * caster->getDamageMultiplier();
+
+	float angle = caster->getAimAngle() - static_cast<float>(m_spreadAngle)/2;
 	
 	for (int i = 0; i < m_projectileNumber; ++i) {
-		ABILITY_CREATE_PROJECTILE(m_projectileType, caster->getPosition(), caster->getAimAngle(), caster->getTeamId())
+		ABILITY_CREATE_PROJECTILE(m_projectileType, caster->getPosition(), angle, caster->getTeamId())
 		ABILITY_SET_PROJECTILE_SHOOTER(caster)
 
 		ABILITY_SET_PROJECTILE_DAMAGE_MULTIPLIER(multiplier)
 		ABILITY_BACKTRACK_PROJECTILE(clientDelay)
+		
+		angle += m_angleStep;
 	}
 }
 
@@ -34,10 +38,13 @@ void ShotgunShotAbility::C_onCast(C_Unit* unit, CasterComponent* caster, Vector2
 
 	C_Projectile* projectile = nullptr;
 
+	float angle = unit->getAimAngle() - static_cast<float>(m_spreadAngle)/2;
+
 	for (int i = 0; i < m_projectileNumber; ++i) {
-		//const float angle = caster->getAimAngle() + 
-		ABILITY_CREATE_PROJECTILE(m_projectileType, unit->getPosition(), unit->getAimAngle(), unit->getTeamId())
+		ABILITY_CREATE_PROJECTILE(m_projectileType, unit->getPosition(), angle, unit->getTeamId())
 		ABILITY_SET_PROJECTILE_INPUT_ID(inputId)
+
+		angle += m_angleStep;
 	}
 }
 
@@ -48,11 +55,11 @@ void ShotgunShotAbility::loadFromJson(const rapidjson::Document& doc)
 	m_projectileType = Projectile_stringToType(doc["projectile"].GetString());
 	m_projectileNumber = doc["projectile_number"].GetUint();
 
-	if (doc.HasMember("initial_distance")) {
-		m_initialDistance = doc["initial_distance"].GetFloat();
+	if (m_projectileNumber < 2) {
+		m_spreadAngle = 0;
+		m_angleStep = 0.f;
 	} else {
-		m_initialDistance = 0.f;
+		m_spreadAngle = std::min(doc["spread_angle"].GetUint(), 360u);
+		m_angleStep = static_cast<float>(m_spreadAngle)/static_cast<float>(m_projectileNumber - 1);
 	}
-
-	m_spreadAngle = std::min(doc["spread_angle"].GetUint(), 360u);
 }

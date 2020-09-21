@@ -15,6 +15,6 @@ private:
 	u8 m_projectileType;
 	u8 m_projectileNumber;
 
-	float m_initialDistance;
 	u16 m_spreadAngle;
+	float m_angleStep;
 };
