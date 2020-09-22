@@ -3,6 +3,7 @@
 #include "helper.hpp"
 #include "unit.hpp"
 #include "game_mode.hpp"
+#include "buff.hpp"
 
 u8 Ability::stringToType(const std::string& typeStr)
 {
@@ -34,6 +35,11 @@ u8 Ability::getIconTextureId() const
 void Ability::setIconTextureId(u8 iconTextureId)
 {
     m_iconTextureId = iconTextureId;
+}
+
+bool Ability::hasHotkey() const
+{
+	return true;
 }
 
 void Ability::applyServerCorrection(float diff)
@@ -320,6 +326,11 @@ float RechargeAbility::getTimeRechargeMultiplier() const
     return m_timeRechargeMultiplier;
 }
 
+PassiveAbility* PassiveAbility::clone() const
+{
+	return new PassiveAbility(*this);
+}
+
 void PassiveAbility::onCast(Unit* caster, const ManagersContext& context, u16 clientDelay)
 {
 
@@ -345,7 +356,29 @@ void PassiveAbility::refresh()
 
 }
 
+bool PassiveAbility::hasHotkey() const
+{
+	return false;
+}
+
+void PassiveAbility::addBuffsToCaster(Unit* unit, const ManagersContext& context)
+{
+	Ability::addBuffsToCaster(unit, context);
+
+	Buff* buff = unit->addBuff(m_buffType);
+    
+    if (buff) {
+        buff->setCreator(this, context);
+    }
+}
+
 void PassiveAbility::loadFromJson(const rapidjson::Document& doc)
 {
     Ability::loadFromJson(doc);
+
+	if (doc.HasMember("buff")) {
+		m_buffType = Buff::stringToType(doc["buff"].GetString());	
+	} else {
+		m_buffType = BUFF_NONE;
+	}
 }

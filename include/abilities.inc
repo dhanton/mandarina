@@ -12,5 +12,5 @@ DoAbility(GoldenLeafAbility, GOLDEN_LEAF, "golden_leaf_ability")
 
 DoAbility(ShotgunShotAbility, FISH_SHOTGUN, "fish_shotgun")
 DoAbility(FishingGaunletAbility, FISHING_GAUNLET, "fishing_gaunlet_ability")
-DoAbility(LifestealAbility, FISH_LIFESTEAL, "fish_lifesteal")
+DoAbility(PassiveAbility, FISH_LIFESTEAL, "fish_lifesteal_ability")
 DoAbility(MeatShieldAbility, MEAT_SHIELD, "meat_shield_ability")

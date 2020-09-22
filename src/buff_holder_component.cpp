@@ -12,6 +12,7 @@
 #include "buffs/stun_buff.hpp"
 #include "buffs/slow_buff.hpp"
 #include "buffs/phased_buff.hpp"
+#include "buffs/lifesteal_buff.hpp"
 
 bool BuffHolderComponent::m_buffsLoaded = false;
 std::unique_ptr<Buff> BuffHolderComponent::m_buffData[BUFF_MAX_TYPES];
@@ -43,7 +44,7 @@ BuffHolderComponent& BuffHolderComponent::operator=(BuffHolderComponent const& o
 Buff* BuffHolderComponent::addBuff(u8 buffType)
 {
     if (!m_buffsLoaded) return nullptr;
-    if (buffType >= BUFF_MAX_TYPES) return nullptr;
+    if (buffType == BUFF_NONE || buffType >= BUFF_MAX_TYPES) return nullptr;
 
     m_buffs.emplace_back(m_buffData[buffType]->clone());
 
@@ -56,7 +57,7 @@ Buff* BuffHolderComponent::addBuff(u8 buffType)
 Buff* BuffHolderComponent::addUniqueBuff(u8 buffType)
 {
     if (!m_buffsLoaded) return nullptr;
-    if (buffType >= BUFF_MAX_TYPES) return nullptr;
+    if (buffType == BUFF_NONE || buffType >= BUFF_MAX_TYPES) return nullptr;
     
     for (const auto& buff : m_buffs) {
         if (buff->getType() == buffType) {

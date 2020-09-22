@@ -14,7 +14,6 @@
 #include "abilities/golden_leaf_ability.hpp"
 #include "abilities/shotgun_shot_ability.hpp"
 #include "abilities/fishing_gaunlet_ability.hpp"
-#include "abilities/lifesteal_ability.hpp"
 #include "abilities/meat_shield_ability.hpp"
 
 bool CasterComponent::m_abilitiesLoaded = false;

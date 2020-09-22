@@ -125,25 +125,26 @@ void AbilityUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
             }
 
             //@TODO: Render available charges as well (with a little circle)
+			if (!m_hotkey.empty()) {
+				sf::RectangleShape hotkeyShape;
+				hotkeyShape.setSize({m_boxBoundingSize, 25.f});
+				hotkeyShape.setPosition(m_pos + Vector2(0.f, m_boxBoundingSize + 10.f));
+				hotkeyShape.setFillColor(greyColor);
 
-            sf::RectangleShape hotkeyShape;
-            hotkeyShape.setSize({m_boxBoundingSize, 25.f});
-            hotkeyShape.setPosition(m_pos + Vector2(0.f, m_boxBoundingSize + 10.f));
-            hotkeyShape.setFillColor(greyColor);
-
-            sf::Text hotkeyText;
-            hotkeyText.setFont(m_context.fonts->getResource("keep_calm_font"));
-            hotkeyText.setCharacterSize(16);
-            hotkeyText.setString(m_hotkey);
-            hotkeyText.setFillColor(sf::Color::White);
-            hotkeyText.setOutlineColor(sf::Color::Black);
-            hotkeyText.setOutlineThickness(2.f);
-            hotkeyText.setOrigin(hotkeyText.getLocalBounds().width/2.f + hotkeyText.getLocalBounds().left, 
-                                   hotkeyText.getLocalBounds().height/2.f + hotkeyText.getLocalBounds().top);
-            hotkeyText.setPosition(hotkeyShape.getPosition() + hotkeyShape.getSize()/2.f);
-            
-            target.draw(hotkeyShape, states);
-            target.draw(hotkeyText, states);
+				sf::Text hotkeyText;
+				hotkeyText.setFont(m_context.fonts->getResource("keep_calm_font"));
+				hotkeyText.setCharacterSize(16);
+				hotkeyText.setString(m_hotkey);
+				hotkeyText.setFillColor(sf::Color::White);
+				hotkeyText.setOutlineColor(sf::Color::Black);
+				hotkeyText.setOutlineThickness(2.f);
+				hotkeyText.setOrigin(hotkeyText.getLocalBounds().width/2.f + hotkeyText.getLocalBounds().left, 
+									   hotkeyText.getLocalBounds().height/2.f + hotkeyText.getLocalBounds().top);
+				hotkeyText.setPosition(hotkeyShape.getPosition() + hotkeyShape.getSize()/2.f);
+				
+				target.draw(hotkeyShape, states);
+				target.draw(hotkeyText, states);
+			}
 
             break;
         }
