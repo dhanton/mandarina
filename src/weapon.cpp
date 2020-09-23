@@ -38,6 +38,11 @@ void _loadWeapon(JsonParser* jsonParser, Weapon& weapon, const char* json_id, u1
     } else {
         weapon.angleOffset = 0.f;
     }
+
+	if (doc->HasMember("origin_offset")) {
+		weapon.originOffset.x = (*doc)["origin_offset"][0].GetFloat();
+		weapon.originOffset.y = (*doc)["origin_offset"][1].GetFloat();
+	}
 }
 
 u8 Weapon_stringToType(const std::string& typeStr)

@@ -1,0 +1,9 @@
+{
+    "scale": 2.0,
+    "movement_speed": 560,
+    "collision_radius": 16,
+    "range": 600,
+    "hit_flags": "ENEMIES",
+    "rotation_offset": -45.0,
+	"buff_applied": "GAUNLET_SILENCE" 
+}

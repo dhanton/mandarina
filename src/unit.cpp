@@ -754,7 +754,7 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
 
         weaponSprite.setTexture(context.textures->getResource(weapon.textureId));
         weaponSprite.setScale(weapon.scale, weapon.scale);
-        weaponSprite.setOrigin(weaponSprite.getLocalBounds().width/2.f, weaponSprite.getLocalBounds().height/2.f);
+        weaponSprite.setOrigin(Vector2(weaponSprite.getLocalBounds().width/2.f, weaponSprite.getLocalBounds().height/2.f) + weapon.originOffset);
         weaponSprite.setPosition(getPosition());
         weaponSprite.setRotation(-getAimAngle() - weapon.angleOffset);
 

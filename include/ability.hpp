@@ -44,6 +44,9 @@ public:
     //(both of which are displayed in client, which is important)
     virtual bool canBeCasted(const Status& status) const = 0;
 
+	//passive abilities don't render any hotkey info
+	virtual bool hasHotkey() const;
+
     virtual void applyServerCorrection(float diff);
 
     virtual u16 takeSnapshot() const;
@@ -152,16 +155,23 @@ private:
 class PassiveAbility : public Ability
 {
 public:
-    virtual PassiveAbility* clone() const = 0;
+    virtual PassiveAbility* clone() const;
+
+	virtual void onCast(Unit* caster, const ManagersContext& context, u16 clientDelay);
+    virtual void C_onCast(C_Unit* unit, CasterComponent* caster, Vector2& pos, const C_ManagersContext& context, u32 inputId, bool repeating);
 
     virtual void update(sf::Time eTime, GameMode* gameMode);
     virtual bool canBeCasted(const Status& status) const;
     virtual void refresh();
 
+	virtual bool hasHotkey() const;
+
+    virtual void addBuffsToCaster(Unit* unit, const ManagersContext& context);
+
     virtual void loadFromJson(const rapidjson::Document& doc);
 
 private:
-    //passive buff to be applied to the unit 
+	u8 m_buffType;
 };
 
 //These macros can be used by both onCast and C_onCast to create projectiles

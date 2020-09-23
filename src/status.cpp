@@ -4,7 +4,7 @@
 
 bool Status::m_jsonLoaded = false;
 bool Status::m_inStatusBar[STATUS_MAX_TYPES];
-bool Status::m_scale[STATUS_MAX_TYPES];
+float Status::m_scale[STATUS_MAX_TYPES];
 Vector2 Status::m_offset[STATUS_MAX_TYPES];
 
 Status::Status()

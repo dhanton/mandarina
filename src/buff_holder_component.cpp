@@ -2,6 +2,7 @@
 
 #include "unit.hpp"
 #include "ability.hpp"
+#include "projectiles.hpp"
 
 //all buffs have to be included for loadBuffData to work
 #include "buffs/root_buff.hpp"
@@ -11,7 +12,11 @@
 #include "buffs/invis_buff.hpp"
 #include "buffs/stun_buff.hpp"
 #include "buffs/slow_buff.hpp"
+#include "buffs/silence_buff.hpp"
 #include "buffs/phased_buff.hpp"
+#include "buffs/lifesteal_buff.hpp"
+#include "buffs/fishing_gaunlet_buff.hpp"
+#include "buffs/meat_shield_buff.hpp"
 
 bool BuffHolderComponent::m_buffsLoaded = false;
 std::unique_ptr<Buff> BuffHolderComponent::m_buffData[BUFF_MAX_TYPES];
@@ -43,7 +48,7 @@ BuffHolderComponent& BuffHolderComponent::operator=(BuffHolderComponent const& o
 Buff* BuffHolderComponent::addBuff(u8 buffType)
 {
     if (!m_buffsLoaded) return nullptr;
-    if (buffType >= BUFF_MAX_TYPES) return nullptr;
+    if (buffType == BUFF_NONE || buffType >= BUFF_MAX_TYPES) return nullptr;
 
     m_buffs.emplace_back(m_buffData[buffType]->clone());
 
@@ -56,7 +61,7 @@ Buff* BuffHolderComponent::addBuff(u8 buffType)
 Buff* BuffHolderComponent::addUniqueBuff(u8 buffType)
 {
     if (!m_buffsLoaded) return nullptr;
-    if (buffType >= BUFF_MAX_TYPES) return nullptr;
+    if (buffType == BUFF_NONE || buffType >= BUFF_MAX_TYPES) return nullptr;
     
     for (const auto& buff : m_buffs) {
         if (buff->getType() == buffType) {
@@ -87,9 +92,13 @@ void BuffHolderComponent::onTakeDamage(u16 damage, Entity* source, u32 uniqueId,
     FOR_ALL_BUFFS(onTakeDamage(damage, source, uniqueId, teamId))
 }
 
-void BuffHolderComponent::onDealDamage(u16 damage, Entity* target)
+void BuffHolderComponent::onProjectileHit(Projectile& projectile, Entity* target)
 {
-    FOR_ALL_BUFFS(onDealDamage(damage, target))
+	FOR_ALL_BUFFS(onProjectileHit(projectile, target))
+	
+	if (projectile.damage > 0) {
+		onDealDamage(projectile.damage, target);
+	}
 }
 
 void BuffHolderComponent::onBeHealed(u16 amount, Entity* source)
@@ -163,6 +172,10 @@ void BuffHolderComponent::onUltimateCasted()
     FOR_ALL_BUFFS(onUltimateCasted())
 }
 
+void BuffHolderComponent::onDealDamage(u16 damage, Entity* target)
+{
+    FOR_ALL_BUFFS(onDealDamage(damage, target))
+}
 
 // void BuffHolderComponent::onAbilityCasted(Ability* ability)
 // {

@@ -8,9 +8,10 @@ class JsonParser;
 struct Weapon {
     u8 primaryFire;
     u8 secondaryFire;
+    u16 textureId;
     float scale;
     float angleOffset;
-    u16 textureId;
+	Vector2 originOffset;
 };
 
 enum WeaponType {
