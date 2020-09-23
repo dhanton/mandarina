@@ -2,7 +2,8 @@
 enum class ClientCommand {
     Null,
     Snapshot,
-    InitialInfo,
+    RequestInitialInfo,
+	HeroCreated,
     PlayerCoords,
     GameModeType,
     GameStarted,
@@ -18,5 +19,6 @@ enum class ServerCommand {
     PlayerInput,
     ChangeInputRate,
     ChangeSnapshotRate,
-    DisplayName
+    DisplayName,
+	SelectedHero
 };

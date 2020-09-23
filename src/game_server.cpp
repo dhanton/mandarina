@@ -518,6 +518,34 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
 
             break;
         }
+
+		case ServerCommand::SelectedHero:
+		{
+			u8 selectedHero;
+			packet >> selectedHero;
+
+			//@TODO: Automate this for new heroes
+			const u8 numberOfHeroes = 3;
+			const u8 heroTypes[numberOfHeroes] = {ENTITY_RED_DEMON, ENTITY_BLONDIE, ENTITY_FISH_OGRE};
+
+			if (selectedHero == 0 || selectedHero > numberOfHeroes) {
+				selectedHero = rand() % numberOfHeroes;
+			} 
+
+			m_clients[index].selectedHeroType = heroTypes[selectedHero - 1];
+			m_clients[index].heroDead = false;
+			
+			Hero* hero = createClientHeroEntity(index);
+
+			if (hero) {
+				CRCPacket outPacket;
+				outPacket << (u8) ClientCommand::HeroCreated << m_clients[index].controlledEntityUniqueId << m_clients[index].teamId;
+				outPacket << (u8) ClientCommand::PlayerCoords << hero->getPosition().x << hero->getPosition().y;
+				sendPacket(outPacket, m_clients[index].connectionId, true);
+			}
+
+			break;
+		}
     }
 }
 
@@ -531,22 +559,9 @@ void GameServer::onConnectionCompleted(HSteamNetConnection connectionId)
         m_clients[index].snapshotRate = m_snapshotRate;
         m_clients[index].inputRate = m_defaultInputRate;
 
-        //@TODO: Choose unit type based on player hero selection (done before matchmaking in client)
-        const size_t _heroesNum = 3;
-        u8 _heroes[_heroesNum] = {ENTITY_RED_DEMON, ENTITY_BLONDIE, ENTITY_FISH_OGRE};
-
-        m_clients[index].selectedHeroType = _heroes[rand() % _heroesNum];
-        m_clients[index].heroDead = false;
-
-        Hero* hero = createClientHeroEntity(index);
-
         CRCPacket outPacket;
-        outPacket << (u8) ClientCommand::InitialInfo << m_clients[index].controlledEntityUniqueId << m_clients[index].teamId;
+        outPacket << (u8) ClientCommand::RequestInitialInfo; 
         outPacket << (u8) ClientCommand::GameModeType << m_gameMode->getType() << m_gameStarted;
-
-        if (hero) {
-            outPacket << (u8) ClientCommand::PlayerCoords << hero->getPosition().x << hero->getPosition().y;
-        }
 
         sendPacket(outPacket, connectionId, true);
         printMessage("Connection completed with client %d", m_clients[index].uniqueId);

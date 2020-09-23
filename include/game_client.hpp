@@ -73,7 +73,7 @@ public:
     //check server input was correct and redo all inputs otherwise
     void checkServerInput(u32 inputId, const Vector2& endPosition, u16 movementSpeed, const CasterSnapshot& casterSnapshot);
 
-    void sendDisplayName();
+    void sendInitialInfo();
 
     void processPacket(HSteamNetConnection connectionId, CRCPacket& packet);
     void handleCommand(u8 command, CRCPacket& packet);
@@ -88,6 +88,7 @@ public:
 private:
     void loadMap(const std::string& filename);
     void readDisplayName(const std::string& filename);
+	void readSelectedHero(const std::string& filename);
 
 private:
     GameClientCallbacks m_gameClientCallbacks;
@@ -142,6 +143,7 @@ private:
     bool m_fullUpdateReceived;
 
     std::string m_displayName;
+	int m_selectedHero;
 
     sf::Sprite m_mouseSprite;
 

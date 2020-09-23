@@ -88,6 +88,7 @@ GameClient::GameClient(const Context& context):
     m_forceFullSnapshotUpdate = false;
     m_fullUpdateReceived = false;
 
+	readSelectedHero("hero.txt");
     readDisplayName("name.txt");
 
     const rapidjson::Document& doc = *context.jsonParser->getDocument("client_config");
@@ -610,13 +611,17 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
     }
 }
 
-void GameClient::sendDisplayName()
+void GameClient::sendInitialInfo()
 {
+	CRCPacket outPacket;
+
+	outPacket << (u8) ServerCommand::SelectedHero << static_cast<u8>(m_selectedHero);
+
     if (!m_displayName.empty()) {
-        CRCPacket outPacket;
         outPacket << (u8) ServerCommand::DisplayName << m_displayName;
-        sendPacket(outPacket, m_serverConnectionId, true);
     }
+
+	sendPacket(outPacket, m_serverConnectionId, true);
 }
 
 void GameClient::processPacket(HSteamNetConnection connectionId, CRCPacket& packet)
@@ -698,21 +703,26 @@ void GameClient::handleCommand(u8 command, CRCPacket& packet)
             break;
         }
 
-        case ClientCommand::InitialInfo:
+        case ClientCommand::RequestInitialInfo:
         {
-            u32 uniqueId;
-            packet >> uniqueId;
-
-            u8 teamId;
-            packet >> teamId;
-
-            m_entityManager.setControlledEntityUniqueId(uniqueId);
-            m_entityManager.setControlledEntityTeamId(teamId);
-
-            sendDisplayName();
+			sendInitialInfo();
 
             break;
         }
+
+		case ClientCommand::HeroCreated:
+		{
+			u32 uniqueId;
+			packet >> uniqueId;
+
+			u8 teamId;
+			packet >> teamId;
+
+			m_entityManager.setControlledEntityUniqueId(uniqueId);
+            m_entityManager.setControlledEntityTeamId(teamId);
+
+			break;
+		}
 
         case ClientCommand::PlayerCoords:
         {
@@ -939,4 +949,16 @@ void GameClient::readDisplayName(const std::string& filename)
 #else
     m_displayName = "Debug";
 #endif
+}
+
+void GameClient::readSelectedHero(const std::string& filename)
+{
+    //@TODO: Select hero using a menu instead of a file
+	std::fstream heroFile(DATA_PATH + filename);
+
+	if (heroFile.is_open()) {
+		heroFile >> m_selectedHero;
+	} else {
+		m_selectedHero = 0;
+	}
 }
