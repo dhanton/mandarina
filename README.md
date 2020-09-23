@@ -7,7 +7,7 @@ Mandarina is a personal project that I worked on during the first half of 2020. 
 
 At the moment of writing this the project is in indefinite hold. Maybe some day I'll return to it. For now it has the following features
 * Custom Client/Server multiplayer engine
-* Two fully playable characters with four different abilities each
+* Three fully playable characters with four different abilities each
 * One game mode for up to 8 players (free for all)
 * A bush that makes characters invisible (similar to starcraft, LOL and many other games)
 * Chests that spawn food that can be eaten to gain level and increase your character's power
