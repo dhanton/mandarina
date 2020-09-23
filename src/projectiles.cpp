@@ -378,12 +378,12 @@ void Projectile_onHit(Projectile& projectile, Entity* entityHit, const ManagersC
         }
     }
 
-    //damage dealt callbacks
+    //projectile hit callbacks
     if (shooter) {
         Unit* shooterUnit = dynamic_cast<Unit*>(shooter);
 
         if (shooterUnit) {
-            shooterUnit->onDealDamage(projectile.damage, entityHit);
+			shooterUnit->onProjectileHit(projectile, entityHit);
         }
     }
 }

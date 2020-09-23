@@ -34,7 +34,7 @@ public:
     //onEnd() onStart() onPurged()
 
     void onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId);
-    void onDealDamage(u16 damage, Entity* target);
+	void onProjectileHit(Projectile& projectile, Entity* target);
     void onBeHealed(u16 amount, Entity* source);
     void onHeal(u16 amount, Entity* target);
     void onEntityKill(Entity* target);
@@ -50,6 +50,7 @@ protected:
     void onSecondaryFireCasted();
     void onAltAbilityCasted();
     void onUltimateCasted();
+    void onDealDamage(u16 damage, Entity* target);
 
 private:
     static std::unique_ptr<Buff> m_buffData[BUFF_MAX_TYPES];
