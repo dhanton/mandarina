@@ -110,7 +110,7 @@ int main(int argc, char* argv[])
 		textures->loadResource(TEXTURES_PATH + "fish_shell.png", TextureId::FISH_SHELL);
 		textures->loadResource(TEXTURES_PATH + "scythe.png", TextureId::SCYTHE);
 		textures->loadResource(TEXTURES_PATH + "fishing_gaunlet.png", TextureId::FISHING_GAUNLET);
-		//textures->loadResource(TEXTURES_PATH + "meat_shield.png", TextureId::MEAT_SHIELD);
+		textures->loadResource(TEXTURES_PATH + "meat_shield.png", TextureId::MEAT_SHIELD);
 		textures->loadResource(ICONS_PATH + "fish_shell.png", TextureId::ICON_FISH_SHOTGUN);
 		textures->loadResource(ICONS_PATH + "fishing_gaunlet.png", TextureId::ICON_FISHING_GAUNLET);
 		textures->loadResource(ICONS_PATH + "fish_lifesteal.png", TextureId::ICON_FISH_LIFESTEAL);

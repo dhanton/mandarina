@@ -16,6 +16,7 @@
 #include "buffs/phased_buff.hpp"
 #include "buffs/lifesteal_buff.hpp"
 #include "buffs/fishing_gaunlet_buff.hpp"
+#include "buffs/meat_shield_buff.hpp"
 
 bool BuffHolderComponent::m_buffsLoaded = false;
 std::unique_ptr<Buff> BuffHolderComponent::m_buffData[BUFF_MAX_TYPES];

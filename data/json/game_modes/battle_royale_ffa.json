@@ -1,5 +1,5 @@
 {
-    "max_players": 1,
+    "max_players": 2,
     "can_join_mid_match": false,
     "players_per_team": 1,
     "storm_tiles_per_second": 3.413,

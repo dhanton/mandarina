@@ -49,6 +49,6 @@ private:
 
     static bool m_jsonLoaded;
     static bool m_inStatusBar[STATUS_MAX_TYPES];
-    static bool m_scale[STATUS_MAX_TYPES];
+    static float m_scale[STATUS_MAX_TYPES];
     static Vector2 m_offset[STATUS_MAX_TYPES];
 };

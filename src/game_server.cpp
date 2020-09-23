@@ -532,10 +532,10 @@ void GameServer::onConnectionCompleted(HSteamNetConnection connectionId)
         m_clients[index].inputRate = m_defaultInputRate;
 
         //@TODO: Choose unit type based on player hero selection (done before matchmaking in client)
-        const size_t _heroesNum = 2;
-        u8 _heroes[_heroesNum] = {ENTITY_RED_DEMON, ENTITY_BLONDIE};
+        const size_t _heroesNum = 3;
+        u8 _heroes[_heroesNum] = {ENTITY_RED_DEMON, ENTITY_BLONDIE, ENTITY_FISH_OGRE};
 
-        m_clients[index].selectedHeroType = ENTITY_FISH_OGRE;//_heroes[rand() % _heroesNum];
+        m_clients[index].selectedHeroType = _heroes[rand() % _heroesNum];
         m_clients[index].heroDead = false;
 
         Hero* hero = createClientHeroEntity(index);
