@@ -27,6 +27,7 @@ public:
     static u8 stringToType(const std::string& typeStr);
 
     virtual Ability* clone() const = 0;
+	virtual ~Ability() = default;
 
     u8 getAbilityType() const;
     void setAbilityType(u8 abilityType);
@@ -77,6 +78,7 @@ class CooldownAbility : public Ability
 {
 public:
     virtual CooldownAbility* clone() const = 0;
+	virtual ~CooldownAbility() = default;
 
     virtual void update(sf::Time eTime, GameMode* gameMode);
     virtual bool canBeCasted(const Status& status) const;
@@ -118,6 +120,7 @@ class RechargeAbility : public Ability
 {
 public:
     virtual RechargeAbility* clone() const = 0;
+	virtual ~RechargeAbility() = default;
 
     virtual void update(sf::Time eTime, GameMode* gameMode);
     virtual bool canBeCasted(const Status& status) const;
@@ -156,6 +159,7 @@ class PassiveAbility : public Ability
 {
 public:
     virtual PassiveAbility* clone() const;
+	virtual ~PassiveAbility() = default;
 
 	virtual void onCast(Unit* caster, const ManagersContext& context, u16 clientDelay);
     virtual void C_onCast(C_Unit* unit, CasterComponent* caster, Vector2& pos, const C_ManagersContext& context, u32 inputId, bool repeating);
