@@ -530,7 +530,7 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
 
 			if (selectedHero == 0 || selectedHero > numberOfHeroes) {
 				selectedHero = rand() % numberOfHeroes;
-			} 
+			}
 
 			m_clients[index].selectedHeroType = heroTypes[selectedHero - 1];
 			m_clients[index].heroDead = false;
@@ -541,6 +541,9 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
 				CRCPacket outPacket;
 				outPacket << (u8) ClientCommand::HeroCreated << m_clients[index].controlledEntityUniqueId << m_clients[index].teamId;
 				outPacket << (u8) ClientCommand::PlayerCoords << hero->getPosition().x << hero->getPosition().y;
+
+                m_clients[index].connectionCompleted = true;
+
 				sendPacket(outPacket, m_clients[index].connectionId, true);
 			}
 
@@ -554,8 +557,6 @@ void GameServer::onConnectionCompleted(HSteamNetConnection connectionId)
     int index = getIndexByConnectionId(connectionId);
 
     if (index != -1) {
-        m_clients[index].connectionCompleted = true;
-
         m_clients[index].snapshotRate = m_snapshotRate;
         m_clients[index].inputRate = m_defaultInputRate;
 
