@@ -529,7 +529,7 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
 			const u8 heroTypes[numberOfHeroes] = {ENTITY_RED_DEMON, ENTITY_BLONDIE, ENTITY_FISH_OGRE};
 
 			if (selectedHero == 0 || selectedHero > numberOfHeroes) {
-				selectedHero = rand() % numberOfHeroes;
+				selectedHero = rand() % numberOfHeroes + 1;
 			}
 
 			m_clients[index].selectedHeroType = heroTypes[selectedHero - 1];
