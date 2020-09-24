@@ -49,9 +49,10 @@ private:
 
     std::string m_hotkey;
 
-    static const float m_circleScale;
-    static const float m_boxScale;
-    static const float m_boxBoundingSize;
-    static const float m_circleBoundingSize;
-    static const u8 m_alphaColor;
+    static constexpr float m_circleScale = 0.23f;
+    static constexpr float m_boxScale = 0.19f;
+    static constexpr float m_iconSize = 512.f;
+    static constexpr float m_boxBoundingSize = m_boxScale * m_iconSize;
+    static constexpr float m_circleBoundingSize = m_circleScale * m_iconSize;
+    static constexpr u8 m_alphaColor= 190;
 };

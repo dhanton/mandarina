@@ -28,7 +28,7 @@ enum ProjectileType {
 //projectiles are collisionObject, movement pattern, speed, rendering
 //damage is provided by their respective units
 //other things can be provided by their units as well (overwriting the defaults)
-#define MAX_PROJECTILES 2000
+constexpr size_t MAX_PROJECTILES = 2000;
 
 namespace HitFlags 
 {

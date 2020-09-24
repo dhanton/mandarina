@@ -6,13 +6,6 @@
 #include <SFML/Graphics/RectangleShape.hpp>
 #include "helper.hpp"
 
-
-//icons are 512x512 pixels
-const float AbilityUI::m_circleScale = 0.23f;
-const float AbilityUI::m_boxScale = 0.19f;
-const float AbilityUI::m_boxBoundingSize = AbilityUI::m_boxScale * 512.f;
-const float AbilityUI::m_circleBoundingSize = AbilityUI::m_circleScale * 512.f;
-const u8 AbilityUI::m_alphaColor = 190;
 const sf::Color AbilityUI::cooldownColor = sf::Color(255, 126, 0);
 const sf::Color AbilityUI::readyColor = sf::Color(0, 210, 255);
 const sf::Color AbilityUI::dimGreyColor = sf::Color(169, 169, 169, AbilityUI::m_alphaColor);

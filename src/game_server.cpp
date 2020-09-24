@@ -525,8 +525,8 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
 			packet >> selectedHero;
 
 			//@TODO: Automate this for new heroes
-			const u8 numberOfHeroes = 3;
-			const u8 heroTypes[numberOfHeroes] = {ENTITY_RED_DEMON, ENTITY_BLONDIE, ENTITY_FISH_OGRE};
+			constexpr u8 numberOfHeroes = 3;
+			constexpr u8 heroTypes[numberOfHeroes] = {ENTITY_RED_DEMON, ENTITY_BLONDIE, ENTITY_FISH_OGRE};
 
 			if (selectedHero == 0 || selectedHero > numberOfHeroes) {
 				selectedHero = rand() % numberOfHeroes + 1;

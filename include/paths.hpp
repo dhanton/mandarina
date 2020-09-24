@@ -3,6 +3,8 @@
 //we use strings instead of defines to be able to concatenate between them
 #include <string>
 
+//strings cannot be constexpr as of C++11
+
 const std::string DATA_PATH = "../data/";
 
 const std::string TEXTURES_PATH = DATA_PATH + "textures/";

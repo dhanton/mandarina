@@ -99,10 +99,10 @@ void FoodBase::scatterFood(const Vector2& pos, const std::vector<u8>& foodVec, c
 {
     if (foodVec.empty()) return;
     
-    const float scatterRadius = 60.f;
+    constexpr float scatterRadius = 60.f;
 
     //don't scatter food closer than this
-    const float offset = 25.f;
+    constexpr float offset = 25.f;
 
     for (int i = 0; i < foodVec.size(); ++i) {
         const float randAngle = (rand() % 360) * PI/180.0;

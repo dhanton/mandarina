@@ -122,8 +122,8 @@ void ClientCaster::setCaster(C_Unit* caster, GameMode* gameMode)
 
     //@TODO: Update position when window size changes
     const Vector2u windowSize = m_context.window->getSize();
-    const float xPadding = 10.f;
-    const float yPadding = 20.f;
+    constexpr float xPadding = 10.f;
+    constexpr float yPadding = 20.f;
 
     m_secondaryUI.setPosition({15.f * xPadding, windowSize.y - m_secondaryUI.getBoundingSize().y - 2.5f*yPadding});
     m_altAbilityUI.setPosition({m_secondaryUI.getPosition().x + m_secondaryUI.getBoundingSize().x + 2.f*xPadding, m_secondaryUI.getPosition().y});

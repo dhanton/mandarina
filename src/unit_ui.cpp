@@ -111,7 +111,7 @@ void UnitUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
     //draw primary fire (only the controlled unit has a valid m_clientCaster)
     if (m_clientCaster) {
         const CooldownAbility* primaryFire = m_clientCaster->getPrimaryFire();
-        const float xDistance = 2.f;
+        constexpr float xDistance = 2.f;
         const u8 maxCharges = primaryFire->getMaxCharges();
         const u8 currentCharges = primaryFire->getCurrentCharges();
         const float chargeSize = (barSize.x + xDistance)/maxCharges - xDistance;

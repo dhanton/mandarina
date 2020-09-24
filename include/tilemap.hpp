@@ -15,8 +15,8 @@ enum TileType {
     TILE_MAX_TYPES
 };
 
-#define DEFAULT_TILE_SIZE 16
-#define TILE_SCALE 4
+constexpr size_t DEFAULT_TILE_SIZE = 16;
+constexpr size_t TILE_SCALE = 4;
 
 class TileMap
 {

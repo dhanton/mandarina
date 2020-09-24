@@ -175,7 +175,7 @@ void rotating_and_circle_test()
 
     sf::Clock clock;
 
-    const size_t NUM = 50;
+    constexpr size_t NUM = 50;
 
     //////////////////////////////////////////////////////IMPORTANT////////////////////////////////////////////////////
     //it has to be stored dynamically

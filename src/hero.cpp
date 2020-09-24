@@ -5,7 +5,7 @@
 #include "client_entity_manager.hpp"
 #include "entities/food.hpp"
 
-const u32 maxPower = 255000;
+constexpr u32 maxPower = 255000;
 const size_t HeroBase::maxDisplayNameSize = 32;
 
 std::string HeroBase::getDisplayName() const
