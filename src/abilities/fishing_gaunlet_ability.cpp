@@ -5,6 +5,7 @@
 #include "buff.hpp"
 #include "entity.hpp"
 #include "server_entity_manager.hpp"
+#include "game_mode.hpp"
 
 FishingGaunletAbility* FishingGaunletAbility::clone() const
 {
@@ -23,7 +24,7 @@ void FishingGaunletAbility::onCast(Unit* caster, const ManagersContext& context,
 	const u16 healthRemoved = m_healthRemoved * caster->getHealth();
 
 	caster->takeDamage(healthRemoved, caster, caster->getUniqueId(), caster->getTeamId());
-	projectile->damage = healthRemoved * m_healthToDamage; 
+	projectile->damage = (healthRemoved * m_healthToDamage) * context.gameMode->getDamageMultiplier(); 
 
 	ABILITY_BACKTRACK_PROJECTILE(clientDelay)
 }
