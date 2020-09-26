@@ -14,10 +14,10 @@ void GoldenLeafAbility::onCast(Unit* caster, const ManagersContext& context, u16
 {
     CooldownAbility::onCastUpdate();
 
-    Projectile* projectile = nullptr;
+    Projectile* projectile = context.entityManager->createProjectile(PROJECTILE_GOLDEN_LEAF, caster->getPosition(), caster->getAimAngle(), caster->getTeamId());
+    if (!projectile) return;
 
-    ABILITY_CREATE_PROJECTILE(PROJECTILE_GOLDEN_LEAF, caster->getPosition(), caster->getAimAngle(), caster->getTeamId())
-    ABILITY_SET_PROJECTILE_SHOOTER(caster)
+    projectile->shooterUniqueId = caster->getUniqueId();
 
     CooldownAbility* primaryFire = caster->getPrimaryFire();
 
@@ -36,7 +36,7 @@ void GoldenLeafAbility::onCast(Unit* caster, const ManagersContext& context, u16
     }
 
     //backtracking has to be done after damage multiplier is set
-    ABILITY_BACKTRACK_PROJECTILE(clientDelay)
+    Projectile_backtrackCollisions(*projectile, context, clientDelay);
 }
 
 void GoldenLeafAbility::C_onCast(C_Unit* unit, CasterComponent* caster, Vector2& casterPos, const C_ManagersContext& context, u32 inputId, bool repeating)
@@ -44,11 +44,12 @@ void GoldenLeafAbility::C_onCast(C_Unit* unit, CasterComponent* caster, Vector2&
     if (repeating) return;
     
     CooldownAbility::onCastUpdate();
-
-    C_Projectile* projectile = nullptr;
     
-    ABILITY_CREATE_PROJECTILE(PROJECTILE_GOLDEN_LEAF, unit->getPosition(), unit->getAimAngle(), unit->getTeamId())
-    ABILITY_SET_PROJECTILE_INPUT_ID(inputId)
+    C_Projectile* projectile = context.entityManager->createProjectile(PROJECTILE_GOLDEN_LEAF, unit->getPosition(), unit->getAimAngle(), unit->getTeamId());
+
+    if (!projectile) return;
+
+    projectile->createdInputId = inputId;
 
     caster->getPrimaryFire()->toZero();
 }

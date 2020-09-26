@@ -14,16 +14,16 @@ void SingleShotAbility::onCast(Unit* caster, const ManagersContext& context, u16
 {
     CooldownAbility::onCastUpdate();
 
-    Projectile* projectile = nullptr;
+    Projectile* projectile = context.entityManager->createProjectile(m_projectileType, caster->getPosition(), caster->getAimAngle(), caster->getTeamId());
+	if (!projectile) return;
 
-    ABILITY_CREATE_PROJECTILE(m_projectileType, caster->getPosition(), caster->getAimAngle(), caster->getTeamId())
-    ABILITY_SET_PROJECTILE_SHOOTER(caster)
+    const float multiplier = context.gameMode->getDamageMultiplier() * caster->getDamageMultiplier();
 
-    float multiplier = context.gameMode->getDamageMultiplier() * caster->getDamageMultiplier();
-    ABILITY_SET_PROJECTILE_DAMAGE_MULTIPLIER(multiplier)
+	projectile->shooterUniqueId = caster->getUniqueId();
+	projectile->damage *= multiplier;
 
     //backtracking has to be done after damage multiplier is set
-    ABILITY_BACKTRACK_PROJECTILE(clientDelay)
+	Projectile_backtrackCollisions(*projectile, context, clientDelay);
 }
 
 void SingleShotAbility::C_onCast(C_Unit* unit, CasterComponent* caster, Vector2& casterPos, const C_ManagersContext& context, u32 inputId, bool repeating)
@@ -32,11 +32,9 @@ void SingleShotAbility::C_onCast(C_Unit* unit, CasterComponent* caster, Vector2&
     
     CooldownAbility::onCastUpdate();
 
-    C_Projectile* projectile = nullptr;
-
     //Using casterPos here doesn't look as good as using caster->getPosition() for some reason
-    ABILITY_CREATE_PROJECTILE(m_projectileType, unit->getPosition(), unit->getAimAngle(), unit->getTeamId())
-    ABILITY_SET_PROJECTILE_INPUT_ID(inputId)
+    C_Projectile* projectile = context.entityManager->createProjectile(m_projectileType, unit->getPosition(), unit->getAimAngle(), unit->getTeamId());
+	projectile->createdInputId = inputId;
 }
 
 void SingleShotAbility::loadFromJson(const rapidjson::Document& doc)

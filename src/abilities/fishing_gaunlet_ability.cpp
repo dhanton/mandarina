@@ -16,17 +16,17 @@ void FishingGaunletAbility::onCast(Unit* caster, const ManagersContext& context,
 {
 	CooldownAbility::onCastUpdate();
 
-	Projectile* projectile = nullptr;
+	Projectile* projectile = context.entityManager->createProjectile(m_projectileType, caster->getPosition(), caster->getAimAngle(), caster->getTeamId());
+	if (!projectile) return;
 
-	ABILITY_CREATE_PROJECTILE(m_projectileType, caster->getPosition(), caster->getAimAngle(), caster->getTeamId())
-	ABILITY_SET_PROJECTILE_SHOOTER(caster)
+	projectile->shooterUniqueId = caster->getUniqueId();
 	
 	const u16 healthRemoved = m_healthRemoved * caster->getHealth();
 
 	caster->takeDamage(healthRemoved, caster, caster->getUniqueId(), caster->getTeamId());
 	projectile->damage = (healthRemoved * m_healthToDamage) * context.gameMode->getDamageMultiplier(); 
 
-	ABILITY_BACKTRACK_PROJECTILE(clientDelay)
+	Projectile_backtrackCollisions(*projectile, context, clientDelay);
 }
 
 void FishingGaunletAbility::addBuffsToCaster(Unit* unit, const ManagersContext& context)

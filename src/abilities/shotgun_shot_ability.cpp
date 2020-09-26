@@ -14,17 +14,17 @@ void ShotgunShotAbility::onCast(Unit* caster, const ManagersContext& context, u1
 {
 	CooldownAbility::onCastUpdate();
 
-	Projectile* projectile = nullptr;
-	float multiplier = context.gameMode->getDamageMultiplier() * caster->getDamageMultiplier();
+	const float multiplier = context.gameMode->getDamageMultiplier() * caster->getDamageMultiplier();
 
 	float angle = caster->getAimAngle() - static_cast<float>(m_spreadAngle)/2;
 	
 	for (int i = 0; i < m_projectileNumber; ++i) {
-		ABILITY_CREATE_PROJECTILE(m_projectileType, caster->getPosition(), angle, caster->getTeamId())
-		ABILITY_SET_PROJECTILE_SHOOTER(caster)
+		Projectile* projectile = context.entityManager->createProjectile(m_projectileType, caster->getPosition(), angle, caster->getTeamId());
+		if (!projectile) continue;
 
-		ABILITY_SET_PROJECTILE_DAMAGE_MULTIPLIER(multiplier)
-		ABILITY_BACKTRACK_PROJECTILE(clientDelay)
+		projectile->shooterUniqueId = caster->getUniqueId();
+		projectile->damage *= multiplier;
+		Projectile_backtrackCollisions(*projectile, context, clientDelay);
 		
 		angle += m_angleStep;
 	}
@@ -36,13 +36,13 @@ void ShotgunShotAbility::C_onCast(C_Unit* unit, CasterComponent* caster, Vector2
 
 	CooldownAbility::onCastUpdate();
 
-	C_Projectile* projectile = nullptr;
-
 	float angle = unit->getAimAngle() - static_cast<float>(m_spreadAngle)/2;
 
 	for (int i = 0; i < m_projectileNumber; ++i) {
-		ABILITY_CREATE_PROJECTILE(m_projectileType, unit->getPosition(), angle, unit->getTeamId())
-		ABILITY_SET_PROJECTILE_INPUT_ID(inputId)
+		C_Projectile* projectile = context.entityManager->createProjectile(m_projectileType, unit->getPosition(), angle, unit->getTeamId());
+		if (!projectile) continue;
+
+		projectile->createdInputId = inputId;
 
 		angle += m_angleStep;
 	}

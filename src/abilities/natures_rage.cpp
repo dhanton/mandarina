@@ -19,14 +19,15 @@ void NaturesRageAbility::onCast(Unit* caster, const ManagersContext& context, u1
     //we need it in radians
     const float aimAngle = caster->getAimAngle() * PI/180.f;
 
-    //half the rocks
     for (int i = 0; i < m_rockNumber; ++i) {
         const float extraAngle = (i + 1) * m_anglePerRock;
         const Vector2 dir = Vector2(std::sin(aimAngle + extraAngle), std::cos(aimAngle + extraAngle));
         const Vector2 pos = caster->getPosition() + dir * static_cast<float>(m_spreadDistance);
 
-        ABILITY_CREATE_PROJECTILE(PROJECTILE_NATURES_ROCK, pos, (aimAngle + extraAngle) * 180.f/PI, caster->getTeamId())
-        ABILITY_SET_PROJECTILE_SHOOTER(caster)
+        Projectile* projectile = context.entityManager->createProjectile(PROJECTILE_NATURES_ROCK, pos, (aimAngle + extraAngle) * 180.f/PI, caster->getTeamId());
+        if (!projectile) continue;
+
+        projectile->shooterUniqueId = caster->getUniqueId();
     }
 
     caster->getPrimaryFire()->refresh();

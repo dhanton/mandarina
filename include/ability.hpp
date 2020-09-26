@@ -178,16 +178,18 @@ private:
 	u8 m_buffType;
 };
 
+//@WIP: Remove unnecesary macros
+
 //These macros can be used by both onCast and C_onCast to create projectiles
 //To use them, a projectile pointer must be defined previously
 
-#define ABILITY_CREATE_PROJECTILE(type, pos, angle, teamId) \
-    projectile = context.entityManager->createProjectile(type, pos, angle, teamId);
+// #define ABILITY_CREATE_PROJECTILE(type, pos, angle, teamId) \
+//     projectile = context.entityManager->createProjectile(type, pos, angle, teamId);
     
-#define ABILITY_BACKTRACK_PROJECTILE(delay) if (projectile) {Projectile_backtrackCollisions(*projectile, context, delay);}
+// #define ABILITY_BACKTRACK_PROJECTILE(delay) if (projectile) {Projectile_backtrackCollisions(*projectile, context, delay);}
 
-#define ABILITY_SET_PROJECTILE_SHOOTER(caster) if (projectile && caster) {projectile->shooterUniqueId = caster->getUniqueId();}
+// #define ABILITY_SET_PROJECTILE_SHOOTER(caster) if (projectile && caster) {projectile->shooterUniqueId = caster->getUniqueId();}
 
-#define ABILITY_SET_PROJECTILE_INPUT_ID(inputId) if (projectile) {projectile->createdInputId = inputId;}
+// #define ABILITY_SET_PROJECTILE_INPUT_ID(inputId) if (projectile) {projectile->createdInputId = inputId;}
 
-#define ABILITY_SET_PROJECTILE_DAMAGE_MULTIPLIER(multiplier) if (projectile) {projectile->damage *= multiplier;}
+// #define ABILITY_SET_PROJECTILE_DAMAGE_MULTIPLIER(multiplier) if (projectile) {projectile->damage *= multiplier;}
