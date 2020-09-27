@@ -26,9 +26,9 @@ void RechargeAbilityBuff::onEntityKill(Entity* target)
     }
 }
 
-void RechargeAbilityBuff::setCreator(void* creator, const ManagersContext& context)
+void RechargeAbilityBuff::setParentAbility(RechargeAbility* ability, const ManagersContext& context)
 {
-    m_ability = static_cast<RechargeAbility*>(creator);
+    m_ability = ability;
     m_gameMode = context.gameMode;
 }
 

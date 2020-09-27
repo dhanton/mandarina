@@ -34,10 +34,6 @@ void FishingGaunletAbility::addBuffsToCaster(Unit* unit, const ManagersContext& 
 	SingleShotAbility::addBuffsToCaster(unit, context);
 
 	Buff* buff = unit->addBuff(BUFF_FISHING_GAUNLET);
-
-	if (buff) {
-		buff->setCreator(this, context);
-	}
 }
 
 void FishingGaunletAbility::loadFromJson(const rapidjson::Document& doc)

@@ -4,6 +4,7 @@
 #include "unit.hpp"
 #include "game_mode.hpp"
 #include "buff.hpp"
+#include "buffs/recharge_ability_buff.hpp"
 
 u8 Ability::stringToType(const std::string& typeStr)
 {
@@ -307,7 +308,7 @@ void RechargeAbility::addBuffsToCaster(Unit* unit, const ManagersContext& contex
     Buff* buff = unit->addBuff(BUFF_RECHARGE_ABILITY);
     
     if (buff) {
-        buff->setCreator(this, context);
+        static_cast<RechargeAbilityBuff*>(buff)->setParentAbility(this, context);
     }
 }
 
@@ -366,10 +367,6 @@ void PassiveAbility::addBuffsToCaster(Unit* unit, const ManagersContext& context
 	Ability::addBuffsToCaster(unit, context);
 
 	Buff* buff = unit->addBuff(m_buffType);
-    
-    if (buff) {
-        buff->setCreator(this, context);
-    }
 }
 
 void PassiveAbility::loadFromJson(const rapidjson::Document& doc)

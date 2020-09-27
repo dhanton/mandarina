@@ -150,11 +150,6 @@ void Buff::setBuffType(u8 type)
     m_type = type;
 }
 
-void Buff::setCreator(void* creator, const ManagersContext& context)
-{
-    
-}
-
 float Buff::getCurrentTime() const
 {
     return m_currentTime;

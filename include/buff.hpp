@@ -73,10 +73,6 @@ public:
     u8 getType() const;
     void setBuffType(u8 type);
 
-    //it can be useful for some buffs to hold a pointer to their creator
-    //like for example some buffs asociated with abilities
-    virtual void setCreator(void* creator, const ManagersContext& context);
-
     float getCurrentTime() const;
 
 protected:

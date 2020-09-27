@@ -15,7 +15,7 @@ public:
     //onHeal should give ~ same percentage as damage
     //onPlaceBuff should give less than damage
 
-    void setCreator(void* creator, const ManagersContext& context);
+    void setParentAbility(RechargeAbility* ability, const ManagersContext& context);
 
 private:
     float getMultiplier() const;
