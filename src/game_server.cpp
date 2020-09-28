@@ -524,15 +524,11 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
 			u8 selectedHero;
 			packet >> selectedHero;
 
-			//@TODO: Automate this for new heroes
-			constexpr u8 numberOfHeroes = 3;
-			constexpr u8 heroTypes[numberOfHeroes] = {ENTITY_RED_DEMON, ENTITY_BLONDIE, ENTITY_FISH_OGRE};
-
-			if (selectedHero == 0 || selectedHero > numberOfHeroes) {
-				selectedHero = rand() % numberOfHeroes + 1;
+			if (selectedHero == 0 || selectedHero > g_numberOfHeroes) {
+				selectedHero = rand() % g_numberOfHeroes + 1;
 			}
 
-			m_clients[index].selectedHeroType = heroTypes[selectedHero - 1];
+			m_clients[index].selectedHeroType = g_heroTypes[selectedHero - 1];
 			m_clients[index].heroDead = false;
 			
 			Hero* hero = createClientHeroEntity(index);

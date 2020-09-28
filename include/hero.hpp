@@ -3,6 +3,10 @@
 #include "unit.hpp"
 #include "hero_ui.hpp"
 
+//@TODO: Automate this for new heroes
+constexpr u8 g_numberOfHeroes = 3;
+constexpr u8 g_heroTypes[g_numberOfHeroes] = {ENTITY_RED_DEMON, ENTITY_BLONDIE, ENTITY_FISH_OGRE};
+
 class HeroBase
 {
 public:

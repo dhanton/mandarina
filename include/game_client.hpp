@@ -33,6 +33,11 @@ class GameClient : public InContext, public NetPeer
 public:
     friend struct GameClientCallbacks;
 
+	struct ConfigData {
+		SteamNetworkingIPAddr endpoint;
+		sf::Time inputRate;
+	};
+
     struct Snapshot {
         C_EntityManager entityManager;
         u32 id = 0;
@@ -52,10 +57,8 @@ public:
     };
 
 public:
-    GameClient(const Context& context);
+    GameClient(const Context& context, const ConfigData& configData);
     ~GameClient();
-
-    void mainLoop(bool& running);
 
     void receiveLoop();
     void update(sf::Time eTime);
@@ -83,12 +86,8 @@ public:
 
     Snapshot* findSnapshotById(u32 snapshotId);
 
-    void loadFromJson(const rapidjson::Document& doc);
-
 private:
     void loadMap(const std::string& filename);
-    void readDisplayName(const std::string& filename);
-	void readSelectedHero(const std::string& filename);
 
 private:
     GameClientCallbacks m_gameClientCallbacks;
@@ -98,15 +97,8 @@ private:
     bool m_connected;
     sf::Time m_infoTimer;
 
-    Vector2u m_screenSize;
-    u32 m_screenStyle;
-
     sf::RenderTexture m_canvas;
     bool m_canvasCreated;
-
-    sf::Time m_updateRate;
-    sf::Time m_inputRate;
-    sf::Time m_renderRate;
 
     C_EntityManager m_entityManager;
     std::list<Snapshot> m_snapshots;
@@ -116,6 +108,7 @@ private:
 
     sf::Time m_worldTime;
     sf::Time m_interElapsed;
+	sf::Time m_inputRate;
 
     //Number of snapshots required to start rendering
     int m_requiredSnapshotsToRender;
@@ -137,7 +130,7 @@ private:
     float m_smoothUnitRadius;
     Vector2 m_smoothUnitPos;
 
-    std::unique_ptr<ClientCaster> m_clientCaster;
+    ClientCaster m_clientCaster;
 
     bool m_forceFullSnapshotUpdate;
     bool m_fullUpdateReceived;
@@ -147,5 +140,5 @@ private:
 
     sf::Sprite m_mouseSprite;
 
-    std::unique_ptr<ConnectionStatusRender> m_connectionStatusRender;
+	ConnectionStatusRender m_connectionStatusRender;
 };

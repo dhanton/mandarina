@@ -61,20 +61,27 @@ void GameClientCallbacks::OnSteamNetConnectionStatusChanged(SteamNetConnectionSt
     }
 }
 
-GameClient::GameClient(const Context& context):
+GameClient::GameClient(const Context& context, const ConfigData& configData):
     m_gameClientCallbacks(this),
     InContext(context),
     NetPeer(&m_gameClientCallbacks, false),
     m_entityManager(context),
-    m_tileMapRenderer(context, &m_tileMap)
+    m_tileMapRenderer(context, &m_tileMap),
+	m_clientCaster(context),
+	m_connectionStatusRender(context)
 {
     C_loadProjectilesFromJson(context.jsonParser);
+
+	m_endpoint = configData.endpoint;
+	m_inputRate = configData.inputRate;
 
     //force to update ping in 1 sec
     m_infoTimer = sf::seconds(4.f);
 
     m_context.renderTarget = &m_canvas;
     m_canvasCreated = false;
+
+	m_camera.setView(context.view);
 
     m_entityManager.allocateAll();
     m_entityManager.setTileMap(&m_tileMap);
@@ -87,15 +94,6 @@ GameClient::GameClient(const Context& context):
 
     m_forceFullSnapshotUpdate = false;
     m_fullUpdateReceived = false;
-
-	readSelectedHero("hero.txt");
-    readDisplayName("name.txt");
-
-    const rapidjson::Document& doc = *context.jsonParser->getDocument("client_config");
-
-    loadFromJson(doc);
-
-    m_inputRate = sf::seconds(1.f/30.f);
 
     m_mouseSprite.setTexture(context.textures->getResource(TextureId::CROSSHAIR));
     m_mouseSprite.setOrigin(m_mouseSprite.getLocalBounds().width/2.f, m_mouseSprite.getLocalBounds().height/2.f);
@@ -117,129 +115,129 @@ GameClient::~GameClient()
     m_pInterface->CloseConnection(m_serverConnectionId, 0, nullptr, false);
 }
 
-void GameClient::mainLoop(bool& running)
-{
-    sf::RenderWindow window{{m_screenSize.x, m_screenSize.y}, "Mandarina v0.0.3", m_screenStyle};
-    window.setMouseCursorVisible(false);
-    
-    sf::View view = window.getDefaultView();
-    view.zoom(m_camera.getZoom());
-    m_smoothUnitPos = view.getCenter();
-
-    m_context.window = &window;
-    m_context.view = &view;
-
-    //these two are a pointer because we need to pass them the updated Context (with window and view)
-    //so their construction must be here
-    m_clientCaster = std::unique_ptr<ClientCaster>(new ClientCaster(m_context));
-    m_connectionStatusRender = std::unique_ptr<ConnectionStatusRender>(new ConnectionStatusRender(m_context));
-
-    m_camera.setView(&view);
-
-    sf::Clock clock;
-    
-    //eTime shouldn't be 0 the first frame (weird glitches)
-    sf::Time eTime = sf::milliseconds(5);
-
-    sf::Time updateTimer;
-    sf::Time inputTimer;
-    sf::Time renderTimer;
-
-    bool focused = true;
-
-    while (running) {
-        m_worldTime += eTime;
-
-        updateTimer += eTime;
-        inputTimer += eTime;
-        renderTimer += eTime;
-
-        receiveLoop();
-
-        while (inputTimer >= m_inputRate) {
-            sf::Event event;
-
-            while (window.pollEvent(event)) {
-                if (event.type == sf::Event::GainedFocus) {
-                    focused = true;
-                }
-
-                if (event.type == sf::Event::LostFocus) {
-                    focused = false;
-                }
-                
-                if (event.type == sf::Event::Closed) {
-                    running = false;
-                }
-
-                if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
-                    running = false;
-                }
-
-                handleInput(event, focused);
-            }
-
-            saveCurrentInput();
-            inputTimer -= m_inputRate;
-        }
-
-        while (updateTimer >= m_inputRate) {
-            update(m_inputRate);
-            updateTimer -= m_inputRate;
-        }
-        
-        while (renderTimer >= m_renderRate) {
-            renderUpdate(m_renderRate == sf::Time::Zero ? eTime : m_renderRate);
-
-            window.clear();
-            window.setView(view);
-
-            if (m_canvasCreated) {
-                //draw everything to the canvas
-                m_canvas.clear();
-
-                m_tileMapRenderer.renderBeforeEntities(m_canvas);
-                m_entityManager.renderingEntitiesUI = false;
-                m_canvas.draw(m_entityManager);
-                m_tileMapRenderer.renderAfterEntities(m_canvas);
-                
-                if (m_gameMode) {
-                    m_gameMode->draw(m_canvas, m_context.textures);
-                }
-
-                m_canvas.display();
-
-                //draw the canvas to the window
-                sf::Sprite sprite(m_canvas.getTexture());
-                window.draw(sprite);
-
-                //draw entity UIs
-                m_entityManager.renderingEntitiesUI = true;
-                window.draw(m_entityManager);
-
-                //draw UI elements
-                window.draw(*m_clientCaster);
-                
-                if (m_gameMode && m_gameMode->hasGameEnded()) {
-                    m_gameMode->drawGameEndInfo(window, m_context.fonts);
-                }
-
-            }
-
-            window.draw(*m_connectionStatusRender);
-
-            if (!m_entityManager.isHeroDead()) {
-                window.draw(m_mouseSprite);
-            }
-
-            window.display();
-
-            renderTimer -= m_renderRate;
-        }
-
-        eTime = clock.restart();
-    }
-}
+//void GameClient::mainLoop(bool& running)
+//{
+//    sf::RenderWindow window{{m_screenSize.x, m_screenSize.y}, "Mandarina v0.0.3", m_screenStyle};
+//    window.setMouseCursorVisible(false);
+//    
+//    sf::View view = window.getDefaultView();
+//    view.zoom(m_camera.getZoom());
+//    m_smoothUnitPos = view.getCenter();
+//
+//    m_context.window = &window;
+//    m_context.view = &view;
+//
+//    //these two are a pointer because we need to pass them the updated Context (with window and view)
+//    //so their construction must be here
+//    m_clientCaster = std::unique_ptr<ClientCaster>(new ClientCaster(m_context));
+//    m_connectionStatusRender = std::unique_ptr<ConnectionStatusRender>(new ConnectionStatusRender(m_context));
+//
+//    m_camera.setView(&view);
+//
+//    sf::Clock clock;
+//    
+//    //eTime shouldn't be 0 the first frame (weird glitches)
+//    sf::Time eTime = sf::milliseconds(5);
+//
+//    sf::Time updateTimer;
+//    sf::Time inputTimer;
+//    sf::Time renderTimer;
+//
+//    bool focused = true;
+//
+//    while (running) {
+//        m_worldTime += eTime;
+//
+//        updateTimer += eTime;
+//        inputTimer += eTime;
+//        renderTimer += eTime;
+//
+//        receiveLoop();
+//
+//        while (inputTimer >= m_inputRate) {
+//            sf::Event event;
+//
+//            while (window.pollEvent(event)) {
+//                if (event.type == sf::Event::GainedFocus) {
+//                    focused = true;
+//                }
+//
+//                if (event.type == sf::Event::LostFocus) {
+//                    focused = false;
+//                }
+//                
+//                if (event.type == sf::Event::Closed) {
+//                    running = false;
+//                }
+//
+//                if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
+//                    running = false;
+//                }
+//
+//                handleInput(event, focused);
+//            }
+//
+//            saveCurrentInput();
+//            inputTimer -= m_inputRate;
+//        }
+//
+//        while (updateTimer >= m_inputRate) {
+//            update(m_inputRate);
+//            updateTimer -= m_inputRate;
+//        }
+//        
+//        while (renderTimer >= m_renderRate) {
+//            renderUpdate(m_renderRate == sf::Time::Zero ? eTime : m_renderRate);
+//
+//            window.clear();
+//            window.setView(view);
+//
+//            if (m_canvasCreated) {
+//                //draw everything to the canvas
+//                m_canvas.clear();
+//
+//                m_tileMapRenderer.renderBeforeEntities(m_canvas);
+//                m_entityManager.renderingEntitiesUI = false;
+//                m_canvas.draw(m_entityManager);
+//                m_tileMapRenderer.renderAfterEntities(m_canvas);
+//                
+//                if (m_gameMode) {
+//                    m_gameMode->draw(m_canvas, m_context.textures);
+//                }
+//
+//                m_canvas.display();
+//
+//                //draw the canvas to the window
+//                sf::Sprite sprite(m_canvas.getTexture());
+//                window.draw(sprite);
+//
+//                //draw entity UIs
+//                m_entityManager.renderingEntitiesUI = true;
+//                window.draw(m_entityManager);
+//
+//                //draw UI elements
+//                window.draw(*m_clientCaster);
+//                
+//                if (m_gameMode && m_gameMode->hasGameEnded()) {
+//                    m_gameMode->drawGameEndInfo(window, m_context.fonts);
+//                }
+//
+//            }
+//
+//            window.draw(*m_connectionStatusRender);
+//
+//            if (!m_entityManager.isHeroDead()) {
+//                window.draw(m_mouseSprite);
+//            }
+//
+//            window.display();
+//
+//            renderTimer -= m_renderRate;
+//        }
+//
+//        eTime = clock.restart();
+//    }
+//}
 
 void GameClient::receiveLoop()
 {
@@ -254,7 +252,7 @@ void GameClient::update(sf::Time eTime)
         SteamNetworkingQuickConnectionStatus status;
         SteamNetworkingSockets()->GetQuickConnectionStatus(m_serverConnectionId, &status);
 
-        m_connectionStatusRender->update(status);
+        m_connectionStatusRender.update(status);
 
         m_infoTimer = sf::Time::Zero;
     }
@@ -265,10 +263,10 @@ void GameClient::update(sf::Time eTime)
 
     m_entityManager.update(eTime);
 
-    m_clientCaster->setSpectating(m_entityManager.isHeroDead());
+    m_clientCaster.setSpectating(m_entityManager.isHeroDead());
     
-    if (!m_clientCaster->getSpectating()) {
-        m_clientCaster->update(eTime, m_gameMode.get());
+    if (!m_clientCaster.getSpectating()) {
+        m_clientCaster.update(eTime, m_gameMode.get());
     }
 
     if (m_connected) {
@@ -370,14 +368,14 @@ void GameClient::setupNextInterpolation()
     const u32 snapshotEntityId = m_interSnapshot_it->entityManager.getControlledEntityUniqueId();
 
     //Update the abilities if the controlled entity changes (also in the first iteration)
-    if (!m_clientCaster->getCaster() || (controlledEntityId != snapshotEntityId)) {
+    if (!m_clientCaster.getCaster() || (controlledEntityId != snapshotEntityId)) {
         //if for some reason controlled entity is not a unit the ClientCaster will
         //receive nullptr and nothing will change
         C_Unit* controlledUnit = dynamic_cast<C_Unit*>(m_entityManager.entities.atUniqueId(controlledEntityId));
         
         if (controlledUnit) {
-            m_clientCaster->setCaster(controlledUnit, m_gameMode.get());
-            controlledUnit->getUnitUI()->setClientCaster(m_clientCaster.get());
+            m_clientCaster.setCaster(controlledUnit, m_gameMode.get());
+            controlledUnit->getUnitUI()->setClientCaster(&m_clientCaster);
         }
     }
 
@@ -468,7 +466,7 @@ void GameClient::saveCurrentInput()
 
     //when casting abilities we use the normal entity manager
     //since local entities might be created
-    m_clientCaster->applyInputs(m_currentInput, entityPos, C_ManagersContext(&m_entityManager, &m_tileMap, m_gameMode.get()));
+    m_clientCaster.applyInputs(m_currentInput, entityPos, C_ManagersContext(&m_entityManager, &m_tileMap, m_gameMode.get()));
     
     //we dont modify the unit since we intepolate its position
     //between two inputs (result is stored in entityPos)
@@ -486,7 +484,7 @@ void GameClient::saveCurrentInput()
     m_inputSnapshots.back().input = m_currentInput;
     m_inputSnapshots.back().endPosition = entityPos;
     m_inputSnapshots.back().forceSnap = false;
-    m_inputSnapshots.back().caster = m_clientCaster->takeSnapshot();
+    m_inputSnapshots.back().caster = m_clientCaster.takeSnapshot();
 
     //reset input timer
     m_currentInput.timeApplied = sf::Time::Zero;
@@ -556,7 +554,7 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
 
                 //apply only ability inputs that move the unit
                 //@TODO: If the controlledEntity is not the unit this shouldn't be called really
-                m_clientCaster->reapplyInputs(it->input, newPos, context);
+                m_clientCaster.reapplyInputs(it->input, newPos, context);
 
             } else {
                 //if there's no entity just repeat the input with no prediction
@@ -606,7 +604,7 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
             }
 
             //Update ClientCaster using the diffSnapshot
-            m_clientCaster->applyServerCorrection(diffSnapshot);
+            m_clientCaster.applyServerCorrection(diffSnapshot);
         }
     }
 }
@@ -778,7 +776,7 @@ void GameClient::handleCommand(u8 command, CRCPacket& packet)
             m_gameMode->C_onGameStarted();
 
             //force ClientCaster to restart cooldown and ability info next update
-            m_clientCaster->forceCasterUpdate();
+            m_clientCaster.forceCasterUpdate();
 
             for (auto& inputSnapshot : m_inputSnapshots) {
                 //This helps eliminate an interpolation artifact that happened
@@ -853,51 +851,6 @@ GameClient::Snapshot* GameClient::findSnapshotById(u32 snapshotId)
     return nullptr;
 }
 
-void GameClient::loadFromJson(const rapidjson::Document& doc)
-{
-    if (doc.HasMember("update_rate")) {
-        m_updateRate = sf::seconds(1.f/doc["update_rate"].GetFloat());
-    } else {
-        m_updateRate = sf::seconds(1.f/30.f);
-    }
-
-    if (doc.HasMember("frames_per_second")) {
-        m_renderRate = sf::seconds(1.f/doc["frames_per_second"].GetFloat());
-    } else {
-        m_renderRate = sf::seconds(1.f/120.f);
-    }
-
-    if (doc.HasMember("server_ip_address")) {
-        m_endpoint.ParseString(doc["server_ip_address"].GetString());
-    } else {
-        m_endpoint.ParseString("127.0.0.1");
-    }
-
-    if (doc.HasMember("server_port")) {
-        m_endpoint.m_port = doc["server_port"].GetUint();
-    } else {
-        m_endpoint.m_port = 7000;
-    }
-
-    if (doc.HasMember("resolution")) {
-        m_screenSize.x = doc["resolution"][0].GetUint();
-        m_screenSize.y = doc["resolution"][1].GetUint();
-    } else {
-        m_screenSize.x = 1080;
-        m_screenSize.y = 720;
-    }
-
-    if (doc.HasMember("fullscreen")) {
-        if (doc["fullscreen"].GetBool()) {
-            m_screenStyle = sf::Style::Fullscreen;
-        } else {
-            m_screenStyle = sf::Style::Titlebar | sf::Style::Close;
-        }
-    } else {
-        m_screenStyle = sf::Style::Titlebar | sf::Style::Close;
-    }
-}
-
 void GameClient::loadMap(const std::string& filename)
 {
     m_tileMap.loadFromFile(filename);
@@ -911,54 +864,3 @@ void GameClient::loadMap(const std::string& filename)
     m_camera.setMapSize(totalSize);
 }
 
-void GameClient::readDisplayName(const std::string& filename)
-{
-#ifndef MANDARINA_DEBUG
-    const char* itchioAPIKey = std::getenv("ITCHIO_API_KEY");
-
-    if (itchioAPIKey) {
-        std::string authString = "Bearer " + std::string(itchioAPIKey);
-
-        httplib::SSLClient itchioClient("itch.io");
-        httplib::Headers authHeader = {
-            { "Authorization", authString}
-        };
-
-        auto res = itchioClient.Get("/api/1/jwt/me", authHeader);
-
-        if (res && res->status == 200) {
-            rapidjson::Document doc;
-            doc.Parse(res->body.c_str());
-
-            if (doc.HasMember("user") && doc["user"].HasMember("display_name")) {
-                m_displayName = doc["user"]["display_name"].GetString();
-            }
-        }
-
-    } else {
-        std::fstream nameFile(DATA_PATH + filename);
-
-        if (nameFile.is_open()) {
-            std::getline(nameFile, m_displayName);
-        }
-    }
-    
-    if (m_displayName.size() > HeroBase::maxDisplayNameSize) {
-        m_displayName.resize(HeroBase::maxDisplayNameSize);
-    }
-#else
-    m_displayName = "Debug";
-#endif
-}
-
-void GameClient::readSelectedHero(const std::string& filename)
-{
-    //@TODO: Select hero using a menu instead of a file
-	std::fstream heroFile(DATA_PATH + filename);
-
-	if (heroFile.is_open()) {
-		heroFile >> m_selectedHero;
-	} else {
-		m_selectedHero = 0;
-	}
-}
