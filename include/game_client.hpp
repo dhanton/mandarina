@@ -28,7 +28,7 @@ struct GameClientCallbacks : public ISteamNetworkingSocketsCallbacks
     GameClient* parent;
 };
 
-class GameClient : public InContext, public NetPeer
+class GameClient : public InContext, public NetPeer, public sf::Drawable
 {
 public:
     friend struct GameClientCallbacks;
@@ -36,6 +36,8 @@ public:
 	struct ConfigData {
 		SteamNetworkingIPAddr endpoint;
 		sf::Time inputRate;
+		std::string displayName;
+		u8 selectedHero;
 	};
 
     struct Snapshot {
@@ -62,6 +64,7 @@ public:
 
     void receiveLoop();
     void update(sf::Time eTime);
+	void updateWorldTime(sf::Time eTime);
 
     void renderUpdate(sf::Time eTime);
 
@@ -87,6 +90,8 @@ public:
     Snapshot* findSnapshotById(u32 snapshotId);
 
 private:
+	void draw(sf::RenderTarget& target, sf::RenderStates states) const;
+
     void loadMap(const std::string& filename);
 
 private:
@@ -97,7 +102,7 @@ private:
     bool m_connected;
     sf::Time m_infoTimer;
 
-    sf::RenderTexture m_canvas;
+    mutable sf::RenderTexture m_canvas;
     bool m_canvasCreated;
 
     C_EntityManager m_entityManager;
@@ -136,7 +141,7 @@ private:
     bool m_fullUpdateReceived;
 
     std::string m_displayName;
-	int m_selectedHero;
+	u8 m_selectedHero;
 
     sf::Sprite m_mouseSprite;
 

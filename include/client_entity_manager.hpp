@@ -102,7 +102,7 @@ public:
     bool renderingEntityData;
 #endif
 
-    bool renderingEntitiesUI;
+    mutable bool renderingEntitiesUI;
 
 private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const;

@@ -113,7 +113,7 @@ void TileMapRenderer::updateLayers()
     }
 }
 
-void TileMapRenderer::renderBeforeEntities(sf::RenderTexture& renderTexture)
+void TileMapRenderer::renderBeforeEntities(sf::RenderTexture& renderTexture) const
 {
     renderTexture.draw(m_layers[LAYER_GROUND], m_texture);
     renderTexture.draw(m_layers[LAYER_BUSH], m_texture);
@@ -123,7 +123,7 @@ void TileMapRenderer::renderBeforeEntities(sf::RenderTexture& renderTexture)
     renderTexture.draw(m_layers[LAYER_SIDES_TOP], m_texture);
 }
 
-void TileMapRenderer::renderAfterEntities(sf::RenderTexture& renderTexture)
+void TileMapRenderer::renderAfterEntities(sf::RenderTexture& renderTexture) const
 {
     renderTexture.draw(m_layers[LAYER_CEILING], m_texture);
 }

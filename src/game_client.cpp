@@ -74,6 +74,8 @@ GameClient::GameClient(const Context& context, const ConfigData& configData):
 
 	m_endpoint = configData.endpoint;
 	m_inputRate = configData.inputRate;
+	m_displayName = configData.displayName;
+	m_selectedHero = configData.selectedHero;
 
     //force to update ping in 1 sec
     m_infoTimer = sf::seconds(4.f);
@@ -81,6 +83,8 @@ GameClient::GameClient(const Context& context, const ConfigData& configData):
     m_context.renderTarget = &m_canvas;
     m_canvasCreated = false;
 
+	context.view->zoom(m_camera.getZoom());
+	m_smoothUnitPos = context.view->getCenter();
 	m_camera.setView(context.view);
 
     m_entityManager.allocateAll();
@@ -114,130 +118,6 @@ GameClient::~GameClient()
 {
     m_pInterface->CloseConnection(m_serverConnectionId, 0, nullptr, false);
 }
-
-//void GameClient::mainLoop(bool& running)
-//{
-//    sf::RenderWindow window{{m_screenSize.x, m_screenSize.y}, "Mandarina v0.0.3", m_screenStyle};
-//    window.setMouseCursorVisible(false);
-//    
-//    sf::View view = window.getDefaultView();
-//    view.zoom(m_camera.getZoom());
-//    m_smoothUnitPos = view.getCenter();
-//
-//    m_context.window = &window;
-//    m_context.view = &view;
-//
-//    //these two are a pointer because we need to pass them the updated Context (with window and view)
-//    //so their construction must be here
-//    m_clientCaster = std::unique_ptr<ClientCaster>(new ClientCaster(m_context));
-//    m_connectionStatusRender = std::unique_ptr<ConnectionStatusRender>(new ConnectionStatusRender(m_context));
-//
-//    m_camera.setView(&view);
-//
-//    sf::Clock clock;
-//    
-//    //eTime shouldn't be 0 the first frame (weird glitches)
-//    sf::Time eTime = sf::milliseconds(5);
-//
-//    sf::Time updateTimer;
-//    sf::Time inputTimer;
-//    sf::Time renderTimer;
-//
-//    bool focused = true;
-//
-//    while (running) {
-//        m_worldTime += eTime;
-//
-//        updateTimer += eTime;
-//        inputTimer += eTime;
-//        renderTimer += eTime;
-//
-//        receiveLoop();
-//
-//        while (inputTimer >= m_inputRate) {
-//            sf::Event event;
-//
-//            while (window.pollEvent(event)) {
-//                if (event.type == sf::Event::GainedFocus) {
-//                    focused = true;
-//                }
-//
-//                if (event.type == sf::Event::LostFocus) {
-//                    focused = false;
-//                }
-//                
-//                if (event.type == sf::Event::Closed) {
-//                    running = false;
-//                }
-//
-//                if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
-//                    running = false;
-//                }
-//
-//                handleInput(event, focused);
-//            }
-//
-//            saveCurrentInput();
-//            inputTimer -= m_inputRate;
-//        }
-//
-//        while (updateTimer >= m_inputRate) {
-//            update(m_inputRate);
-//            updateTimer -= m_inputRate;
-//        }
-//        
-//        while (renderTimer >= m_renderRate) {
-//            renderUpdate(m_renderRate == sf::Time::Zero ? eTime : m_renderRate);
-//
-//            window.clear();
-//            window.setView(view);
-//
-//            if (m_canvasCreated) {
-//                //draw everything to the canvas
-//                m_canvas.clear();
-//
-//                m_tileMapRenderer.renderBeforeEntities(m_canvas);
-//                m_entityManager.renderingEntitiesUI = false;
-//                m_canvas.draw(m_entityManager);
-//                m_tileMapRenderer.renderAfterEntities(m_canvas);
-//                
-//                if (m_gameMode) {
-//                    m_gameMode->draw(m_canvas, m_context.textures);
-//                }
-//
-//                m_canvas.display();
-//
-//                //draw the canvas to the window
-//                sf::Sprite sprite(m_canvas.getTexture());
-//                window.draw(sprite);
-//
-//                //draw entity UIs
-//                m_entityManager.renderingEntitiesUI = true;
-//                window.draw(m_entityManager);
-//
-//                //draw UI elements
-//                window.draw(*m_clientCaster);
-//                
-//                if (m_gameMode && m_gameMode->hasGameEnded()) {
-//                    m_gameMode->drawGameEndInfo(window, m_context.fonts);
-//                }
-//
-//            }
-//
-//            window.draw(*m_connectionStatusRender);
-//
-//            if (!m_entityManager.isHeroDead()) {
-//                window.draw(m_mouseSprite);
-//            }
-//
-//            window.display();
-//
-//            renderTimer -= m_renderRate;
-//        }
-//
-//        eTime = clock.restart();
-//    }
-//}
 
 void GameClient::receiveLoop()
 {
@@ -275,6 +155,11 @@ void GameClient::update(sf::Time eTime)
 
         sendPacket(outPacket, m_serverConnectionId, false);
     }
+}
+
+void GameClient::updateWorldTime(sf::Time eTime)
+{
+	m_worldTime += eTime;
 }
 
 void GameClient::renderUpdate(sf::Time eTime)
@@ -613,7 +498,7 @@ void GameClient::sendInitialInfo()
 {
 	CRCPacket outPacket;
 
-	outPacket << (u8) ServerCommand::SelectedHero << static_cast<u8>(m_selectedHero);
+	outPacket << (u8) ServerCommand::SelectedHero << m_selectedHero;
 
     if (!m_displayName.empty()) {
         outPacket << (u8) ServerCommand::DisplayName << m_displayName;
@@ -849,6 +734,46 @@ GameClient::Snapshot* GameClient::findSnapshotById(u32 snapshotId)
     }
 
     return nullptr;
+}
+
+void GameClient::draw(sf::RenderTarget& target, sf::RenderStates states) const
+{
+	if (m_canvasCreated) {
+		//draw everything to the canvas
+		m_canvas.clear();
+
+		m_tileMapRenderer.renderBeforeEntities(m_canvas);
+		m_entityManager.renderingEntitiesUI = false;
+		m_canvas.draw(m_entityManager, states);
+		m_tileMapRenderer.renderAfterEntities(m_canvas);
+
+		if (m_gameMode) {
+			m_gameMode->draw(m_canvas, m_context.textures);
+		}
+
+		m_canvas.display();
+
+		//draw the canvas to the window
+		sf::Sprite sprite(m_canvas.getTexture());
+		target.draw(sprite, states);
+
+		//draw entity UI
+		m_entityManager.renderingEntitiesUI = true;
+		target.draw(m_entityManager, states);
+
+		//draw UI elements
+		target.draw(m_clientCaster, states);
+
+		if (m_gameMode && m_gameMode->hasGameEnded()) {
+			m_gameMode->drawGameEndInfo(target, m_context.fonts);
+		}
+	}
+
+	target.draw(m_connectionStatusRender, states);
+
+	if (!m_entityManager.isHeroDead()) {
+		target.draw(m_mouseSprite, states);
+	}
 }
 
 void GameClient::loadMap(const std::string& filename)

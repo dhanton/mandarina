@@ -13,6 +13,8 @@ MainMenu::MainMenu(const Context& context):
 	const rapidjson::Document& doc = *context.jsonParser->getDocument("client_config");
 	loadFromJson(doc);
 
+	readDisplayName();
+
 	m_window = std::unique_ptr<sf::RenderWindow>(new sf::RenderWindow({m_screenSize.x, m_screenSize.y}, "Mandarina v0.0.3", m_screenStyle));
 	m_view = m_window->getDefaultView();
 
@@ -34,11 +36,17 @@ void MainMenu::mainLoop(bool& running)
 	bool focused = true;
 
 	while (running) {
+		if (m_gameClient) {
+			m_gameClient->updateWorldTime(eTime);
+		}
+
 		updateTimer += eTime;
 		inputTimer += eTime;
 		renderTimer += eTime;
 
-		if (m_gameClient) m_gameClient->receiveLoop();
+		if (m_gameClient) {
+			m_gameClient->receiveLoop();
+		}
 		
 		while (inputTimer >= m_inputRate) {
 			sf::Event event;
@@ -61,7 +69,10 @@ void MainMenu::mainLoop(bool& running)
 				}
 			}
 
-			if (m_gameClient) m_gameClient->saveCurrentInput();
+			if (m_gameClient) {
+				m_gameClient->saveCurrentInput();
+			}
+
 			inputTimer -= m_inputRate;
 		}
 
@@ -95,9 +106,14 @@ void MainMenu::startGame()
 {
 	if (m_gameClient) return;
 
+	//camera zoom needs to be reset
+	m_view = m_window->getDefaultView();
+
 	GameClient::ConfigData data;
 	data.endpoint = m_endpoint;
 	data.inputRate = m_inputRate;
+	data.displayName = m_displayName;
+	data.selectedHero = m_selectedHero;
 
 	m_gameClient = std::unique_ptr<GameClient>(new GameClient(m_context, data));
 	m_window->setMouseCursorVisible(false);
@@ -105,7 +121,7 @@ void MainMenu::startGame()
 
 void MainMenu::stopGame()
 {
-	if (!m_gameClient);
+	if (!m_gameClient) return;
 
 	m_gameClient.reset();
 	m_window->setMouseCursorVisible(true);
@@ -219,7 +235,7 @@ void MainMenu::readDisplayName()
 void MainMenu::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
 	if (m_gameClient) {
-		//target.draw(*m_gameClient, states);
+		target.draw(*m_gameClient, states);
 	} else {
 		_doDraw(target, states);
 	}
@@ -232,10 +248,6 @@ void MainMenu::_doUpdate(sf::Time eTime)
 
 void MainMenu::_doHandleInput(const sf::Event& event)
 {
-	//@TODO @MAIN_MENU
-	//Detect hero selection
-	//Detect "Play" button
-	
 	if (event.type == sf::Event::KeyPressed) {
 		if (event.key.code == sf::Keyboard::Escape) {
 			if (m_gameClient && !m_context.local) {
