@@ -104,6 +104,9 @@ public:
 
     mutable bool renderingEntitiesUI;
 
+    static void loadEntityData(const Context& context);
+	static C_Entity* getEntityData(u8 entityType);
+
 private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const;
     
@@ -112,8 +115,6 @@ private:
 
     static bool m_entitiesJsonLoaded;
     static std::unique_ptr<C_Entity> m_entityData[ENTITY_MAX_TYPES];
-
-    static void loadEntityData(const Context& context);
     
     u32 m_controlledEntityUniqueId;
     u8 m_controlledEntityTeamId;

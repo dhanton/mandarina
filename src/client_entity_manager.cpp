@@ -420,6 +420,27 @@ std::vector<RenderNode>& C_EntityManager::getUIRenderNodes()
     return m_uiRenderNodes;
 }
 
+void C_EntityManager::loadEntityData(const Context& context)
+{
+    if (m_entitiesJsonLoaded) return;
+
+    #define DoEntity(class_name, type, json_id) \
+        m_entityData[ENTITY_##type] = std::unique_ptr<C_Entity>(new C_##class_name()); \
+        m_entityData[ENTITY_##type]->setEntityType(ENTITY_##type); \
+        m_entityData[ENTITY_##type]->loadFromJson(*(context.jsonParser->getDocument(json_id)), TextureId::type, context);
+    #include "entities.inc"
+    #undef DoEntity
+
+    m_entitiesJsonLoaded = true;
+}
+
+C_Entity* C_EntityManager::getEntityData(u8 entityType)
+{
+	if (entityType >= ENTITY_MAX_TYPES) return nullptr;
+
+	return m_entityData[entityType].get();
+}
+
 void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     if (renderingEntitiesUI) {
@@ -478,16 +499,4 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
 bool C_EntityManager::m_entitiesJsonLoaded = false;
 std::unique_ptr<C_Entity> C_EntityManager::m_entityData[ENTITY_MAX_TYPES];
 
-void C_EntityManager::loadEntityData(const Context& context)
-{
-    if (m_entitiesJsonLoaded) return;
 
-    #define DoEntity(class_name, type, json_id) \
-        m_entityData[ENTITY_##type] = std::unique_ptr<C_Entity>(new C_##class_name()); \
-        m_entityData[ENTITY_##type]->setEntityType(ENTITY_##type); \
-        m_entityData[ENTITY_##type]->loadFromJson(*(context.jsonParser->getDocument(json_id)), TextureId::type, context);
-    #include "entities.inc"
-    #undef DoEntity
-
-    m_entitiesJsonLoaded = true;
-}

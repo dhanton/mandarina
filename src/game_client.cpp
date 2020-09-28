@@ -75,7 +75,7 @@ GameClient::GameClient(const Context& context, const ConfigData& configData):
 	m_endpoint = configData.endpoint;
 	m_inputRate = configData.inputRate;
 	m_displayName = configData.displayName;
-	m_selectedHero = configData.selectedHero;
+	m_pickedHero = configData.pickedHero;
 
     //force to update ping in 1 sec
     m_infoTimer = sf::seconds(4.f);
@@ -498,7 +498,7 @@ void GameClient::sendInitialInfo()
 {
 	CRCPacket outPacket;
 
-	outPacket << (u8) ServerCommand::SelectedHero << m_selectedHero;
+	outPacket << (u8) ServerCommand::PickedHero << m_pickedHero;
 
     if (!m_displayName.empty()) {
         outPacket << (u8) ServerCommand::DisplayName << m_displayName;

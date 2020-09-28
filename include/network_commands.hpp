@@ -20,5 +20,5 @@ enum class ServerCommand {
     ChangeInputRate,
     ChangeSnapshotRate,
     DisplayName,
-	SelectedHero
+	PickedHero
 };

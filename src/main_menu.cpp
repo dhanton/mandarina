@@ -1,14 +1,23 @@
 #include "main_menu.hpp"
 
+#include <SFML/Graphics/RectangleShape.hpp>
+#include <SFML/Graphics/Text.hpp>
+
 #include "projectiles.hpp"
+#include "weapon.hpp"
+
+const sf::Color MainMenu::m_backgroundColor = sf::Color(104, 109, 224);
+const sf::Color MainMenu::m_buttonColor = sf::Color(72, 52, 212);
+const sf::Color MainMenu::m_hoveringColor = sf::Color(34, 166, 179);
+//const sf::Color MainMenu::m_selectedColor = sf::Color(126, 214, 223);
+const sf::Color MainMenu::m_selectedColor = sf::Color(149, 175, 192);
 
 MainMenu::MainMenu(const Context& context):
 	InContext(context)
 {
 	m_stopRunning = false;
 	C_loadProjectilesFromJson(context.jsonParser);
-
-	m_selectedHero = 0;
+	C_EntityManager::loadEntityData(context);
 
 	const rapidjson::Document& doc = *context.jsonParser->getDocument("client_config");
 	loadFromJson(doc);
@@ -20,6 +29,28 @@ MainMenu::MainMenu(const Context& context):
 
 	m_context.window = m_window.get();
 	m_context.view = &m_view;
+
+	resetHeroSelection();
+
+	constexpr float offsetX = 300.f;
+	constexpr float width = 200.f;
+	constexpr float height = 150.f;
+	const Vector2u windowSize = m_window->getSize(); 
+	
+	for (int i = 0; i < g_numberOfHeroes; ++i) {
+		m_heroButtons[i].left = windowSize.x/2.f + (i - 1) * offsetX - width/2.f;
+		m_heroButtons[i].top = windowSize.y/2.f - height/2.f; 
+		m_heroButtons[i].width = width;
+		m_heroButtons[i].height = height;
+	}
+
+	constexpr float playWidth = 200.f;
+	constexpr float playHeight = 50.f;
+
+	m_playButton.left = windowSize.x/2.f - playWidth/2.f;
+	m_playButton.top = windowSize.y - playHeight/2.f - 200.f;
+	m_playButton.width = playWidth;
+	m_playButton.height = playHeight;
 }
 
 void MainMenu::mainLoop(bool& running)
@@ -113,7 +144,22 @@ void MainMenu::startGame()
 	data.endpoint = m_endpoint;
 	data.inputRate = m_inputRate;
 	data.displayName = m_displayName;
-	data.selectedHero = m_selectedHero;
+	
+	std::vector<u8> available;
+
+	for (int i = 0; i < g_numberOfHeroes; ++i) {
+		if (m_selectedHeroes[i]) {
+			available.push_back(i);
+		}
+	}
+	
+	if (available.empty()) {
+		//for the server, 0 means random
+		data.pickedHero = 0;
+	} else {
+		//so we have to +1 each index
+		data.pickedHero = available[rand() % available.size()] + 1; 
+	}
 
 	m_gameClient = std::unique_ptr<GameClient>(new GameClient(m_context, data));
 	m_window->setMouseCursorVisible(false);
@@ -123,8 +169,13 @@ void MainMenu::stopGame()
 {
 	if (!m_gameClient) return;
 
+	m_view = m_window->getDefaultView();
+
 	m_gameClient.reset();
 	m_window->setMouseCursorVisible(true);
+
+	//it's better to remember what the player selected 
+	//resetHeroSelection();
 }
 
 void MainMenu::update(sf::Time eTime)
@@ -243,7 +294,7 @@ void MainMenu::draw(sf::RenderTarget& target, sf::RenderStates states) const
 
 void MainMenu::_doUpdate(sf::Time eTime)
 {
-	//Update hero aimAngle using the mouse
+	
 }
 
 void MainMenu::_doHandleInput(const sf::Event& event)
@@ -263,9 +314,138 @@ void MainMenu::_doHandleInput(const sf::Event& event)
 			}
 		}
 	}
+
+	if (m_gameClient) return;
+
+	if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+		const Vector2 mousePos = static_cast<Vector2>(sf::Mouse::getPosition(*m_window));
+
+		if (m_playButton.contains(mousePos)) {
+			startGame();
+			return;
+		}
+
+		for (int i = 0; i < g_numberOfHeroes; ++i) {
+			if (m_heroButtons[i].contains(mousePos)) {
+				m_selectedHeroes[i] = !m_selectedHeroes[i];
+				return;
+			}
+		}	
+	}
 }
 
 void MainMenu::_doDraw(sf::RenderTarget& target, sf::RenderStates states) const
 {
-	//Render each hero
+	const Vector2u windowSize = m_window->getSize(); 
+
+	constexpr float backgroundOffset = 200.f;
+
+	sf::RectangleShape background;
+	background.setSize(static_cast<Vector2>(windowSize) - Vector2(backgroundOffset, backgroundOffset));
+	background.setOrigin(background.getSize().x/2.f, background.getSize().y/2.f);
+	background.setPosition(windowSize.x/2.f, windowSize.y/2.f);
+	background.setFillColor(m_backgroundColor);
+
+	target.draw(background, states);
+
+	//no need to do any transformations since the view is not moving 
+	//and there is no zoom in the menu
+	const Vector2 mousePos = static_cast<Vector2>(sf::Mouse::getPosition(*m_window));
+
+	for (int i = 0; i < g_numberOfHeroes; ++i) {
+		const sf::FloatRect& button = m_heroButtons[i];
+
+		sf::RectangleShape shape;
+
+		shape.setFillColor(m_selectedHeroes[i] ? m_selectedColor : m_buttonColor);
+		shape.setSize({button.width, button.height});
+		shape.setOrigin(button.width/2.f, button.height/2.f);
+		shape.setPosition(button.left + button.width/2.f, button.top + button.height/2.f);
+
+		if (button.contains(mousePos)) {
+			shape.setOutlineThickness(3.f);
+			shape.setOutlineColor(m_hoveringColor);
+		}
+		
+		target.draw(shape, states);
+
+		const C_Unit* unit = static_cast<C_Unit*>(C_EntityManager::getEntityData(g_heroTypes[i]));	
+
+		sf::Sprite sprite;
+		sprite.setTexture(m_context.textures->getResource(unit->getTextureId()));
+		sprite.setScale(unit->getScale(), unit->getScale());
+		sprite.setOrigin(sprite.getLocalBounds().width/2.f, sprite.getLocalBounds().height/2.f);
+		sprite.setPosition(shape.getPosition());
+
+		target.draw(sprite, states);
+
+		u8 weaponId = unit->getWeaponId();
+
+		if (weaponId != WEAPON_NONE) {
+			const Weapon& weapon = g_weaponData[weaponId];
+
+			sf::Sprite weaponSprite;
+			weaponSprite.setTexture(m_context.textures->getResource(weapon.textureId));
+			weaponSprite.setScale(weapon.scale, weapon.scale);
+			weaponSprite.setOrigin(Vector2(weaponSprite.getLocalBounds().width/2.f, weaponSprite.getLocalBounds().height/2.f) + weapon.originOffset);
+			weaponSprite.setPosition(sprite.getPosition());
+
+			Vector2 dir = mousePos - weaponSprite.getPosition();
+			float aimAngle = Helper_radToDeg(std::atan2(dir.x, dir.y));
+			weaponSprite.setRotation(-aimAngle - weapon.angleOffset);
+
+			target.draw(weaponSprite, states);
+		}
+	}
+
+	constexpr float titleBgWidth = 550.f;
+	constexpr float titleBgHeight = 100.f;
+
+	sf::RectangleShape titleBg;
+	titleBg.setSize({titleBgWidth, titleBgHeight});
+	titleBg.setOrigin(titleBgWidth/2.f, titleBgHeight/2.f);
+	titleBg.setPosition(windowSize.x/2.f, 250.f);
+	titleBg.setFillColor(m_buttonColor);
+
+	target.draw(titleBg, states);
+
+	sf::Text titleText;
+	titleText.setFont(m_context.fonts->getResource("keep_calm_font"));
+	titleText.setCharacterSize(70);
+	titleText.setString("MANDARINA");
+	titleText.setOrigin(titleText.getLocalBounds().width/2.f + titleText.getLocalBounds().left,
+						titleText.getLocalBounds().height/2.f + titleText.getLocalBounds().top);
+	titleText.setPosition(titleBg.getPosition());
+
+	target.draw(titleText, states);
+
+	sf::RectangleShape playShape;
+	playShape.setSize({m_playButton.width, m_playButton.height});
+	playShape.setOrigin(m_playButton.width/2.f, m_playButton.height/2.f);
+	playShape.setPosition(m_playButton.left + m_playButton.width/2.f, m_playButton.top + m_playButton.height/2.f);
+	playShape.setFillColor(m_buttonColor);
+
+	if (m_playButton.contains(mousePos)) {
+		playShape.setOutlineThickness(3.f);
+		playShape.setOutlineColor(m_hoveringColor);
+	}
+
+	target.draw(playShape, states);
+
+	sf::Text playText;
+	playText.setFont(m_context.fonts->getResource("keep_calm_font"));
+	playText.setCharacterSize(30);
+	playText.setString("PLAY");
+	playText.setOrigin(playText.getLocalBounds().width/2.f + playText.getLocalBounds().left,
+						playText.getLocalBounds().height/2.f + playText.getLocalBounds().top);
+	playText.setPosition(playShape.getPosition());
+
+	target.draw(playText, states);
+}
+
+void MainMenu::resetHeroSelection()
+{
+	for (int i = 0; i < g_numberOfHeroes; ++i) {
+		m_selectedHeroes[i] = false;
+	} 
 }

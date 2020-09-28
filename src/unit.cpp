@@ -68,6 +68,11 @@ const Status& _UnitBase::getStatus() const
     return m_status;
 }
 
+u8 _UnitBase::getWeaponId() const
+{
+	return m_weaponId;
+}
+
 Vector2 _UnitBase::moveCollidingTilemap_impl(const Vector2& oldPos, Vector2 newPos, float collisionRadius, TileMap* map)
 {
     sf::FloatRect collidingTile;

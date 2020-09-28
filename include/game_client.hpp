@@ -37,7 +37,7 @@ public:
 		SteamNetworkingIPAddr endpoint;
 		sf::Time inputRate;
 		std::string displayName;
-		u8 selectedHero;
+		u8 pickedHero;
 	};
 
     struct Snapshot {
@@ -141,7 +141,7 @@ private:
     bool m_fullUpdateReceived;
 
     std::string m_displayName;
-	u8 m_selectedHero;
+	u8 m_pickedHero;
 
     sf::Sprite m_mouseSprite;
 

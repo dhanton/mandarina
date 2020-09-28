@@ -4,6 +4,7 @@
 
 #include "context.hpp"
 #include "game_client.hpp"
+#include "hero.hpp"
 
 class MainMenu : public InContext, public sf::Drawable
 {
@@ -29,6 +30,8 @@ private:
 	void _doHandleInput(const sf::Event& event);
 	void _doDraw(sf::RenderTarget& target, sf::RenderStates states) const;
 
+	void resetHeroSelection();
+
 	std::unique_ptr<GameClient> m_gameClient;
 
 	std::unique_ptr<sf::RenderWindow> m_window;
@@ -45,5 +48,13 @@ private:
 	u32      m_screenStyle;
 
 	std::string m_displayName;
-	u8 m_selectedHero;
+
+	bool m_selectedHeroes[g_numberOfHeroes];
+	sf::FloatRect m_heroButtons[g_numberOfHeroes];
+	sf::FloatRect m_playButton;
+
+	static const sf::Color m_backgroundColor;
+	static const sf::Color m_buttonColor;
+	static const sf::Color m_hoveringColor;
+	static const sf::Color m_selectedColor;
 };

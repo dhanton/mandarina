@@ -133,6 +133,11 @@ public:
 
     virtual void insertRenderNode(const C_ManagersContext& managersContext, const Context& context);
 
+	u16 getTextureId() const;
+	float getScale() const;
+	bool getUseSubTextureRect() const;
+	sf::IntRect getSubTextureRect() const;
+
 protected:
     u16 m_textureId;
     float m_scale;
