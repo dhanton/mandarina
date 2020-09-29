@@ -28,8 +28,8 @@ public:
     void generateLayers();
     void updateLayers();
 
-    void renderBeforeEntities(sf::RenderTexture& window);
-    void renderAfterEntities(sf::RenderTexture& window);
+    void renderBeforeEntities(sf::RenderTexture& window) const;
+    void renderAfterEntities(sf::RenderTexture& window) const;
 
 private:
     Vector2u _getTextureCoords(TileType tile);

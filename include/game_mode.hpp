@@ -43,7 +43,7 @@ public:
     virtual void draw(sf::RenderTexture& renderTexture, const TextureLoader* textures);
 
     //we don't use drawable since this class is shared by client and server
-    virtual void drawGameEndInfo(sf::RenderWindow& window, const FontLoader* fonts);
+    virtual void drawGameEndInfo(sf::RenderTarget& target, const FontLoader* fonts);
 
     //creates chests and other game mode specific entities
     //(called after heroes are created)

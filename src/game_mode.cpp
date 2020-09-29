@@ -86,7 +86,7 @@ void GameMode::draw(sf::RenderTexture& renderTexture, const TextureLoader* textu
 
 }
 
-void GameMode::drawGameEndInfo(sf::RenderWindow& window, const FontLoader* fonts)
+void GameMode::drawGameEndInfo(sf::RenderTarget& target, const FontLoader* fonts)
 {
 
 }

@@ -62,12 +62,12 @@ void BattleRoyaleMode::draw(sf::RenderTexture& renderTexture, const TextureLoade
     renderTexture.draw(m_stormVertices, &textures->getResource(TextureId::STORM));
 }
 
-void BattleRoyaleMode::drawGameEndInfo(sf::RenderWindow& window, const FontLoader* fonts)
+void BattleRoyaleMode::drawGameEndInfo(sf::RenderTarget& target, const FontLoader* fonts)
 {
-    const Vector2u windowSize = window.getSize();
+    const Vector2u windowSize = target.getSize();
 
-    sf::View previousView = window.getView();
-    window.setView(window.getDefaultView());
+    sf::View previousView = target.getView();
+    target.setView(target.getDefaultView());
 
     sf::Text winnerText;
     winnerText.setFont(fonts->getResource("keep_calm_font"));
@@ -82,9 +82,9 @@ void BattleRoyaleMode::drawGameEndInfo(sf::RenderWindow& window, const FontLoade
     float yOffset = 1.5f * winnerText.getLocalBounds().height;
     winnerText.setPosition({windowSize.x/2.f, windowSize.y/2.f - yOffset});
 
-    window.draw(winnerText);
+    target.draw(winnerText);
 
-    window.setView(previousView);
+    target.setView(previousView);
 }
 
 void BattleRoyaleMode::onGameStarted(u8 numberOfPlayers, const ManagersContext& context)

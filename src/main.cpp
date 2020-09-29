@@ -5,7 +5,7 @@
 
 #include "paths.hpp"
 #include "game_server.hpp"
-#include "game_client.hpp"
+#include "main_menu.hpp"
 #include "res_loader.hpp"
 #include "texture_ids.hpp"
 
@@ -145,8 +145,8 @@ int main(int argc, char* argv[])
     switch (execMode) {
         case ExecMode::Client:
         {
-            GameClient client(context);
-            client.mainLoop(running);
+            MainMenu mainMenu(context);
+            mainMenu.mainLoop(running);
 
             break;
         }
@@ -165,8 +165,9 @@ int main(int argc, char* argv[])
 
             std::thread thread(&GameServer::mainLoop, &server, std::ref(running));
 
-            GameClient client(context);
-            client.mainLoop(running);
+            MainMenu mainMenu(context);
+			mainMenu.startGame();
+            mainMenu.mainLoop(running);
 
             thread.join();
             break;

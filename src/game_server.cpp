@@ -519,20 +519,16 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
             break;
         }
 
-		case ServerCommand::SelectedHero:
+		case ServerCommand::PickedHero:
 		{
-			u8 selectedHero;
-			packet >> selectedHero;
+			u8 pickedHero;
+			packet >> pickedHero;
 
-			//@TODO: Automate this for new heroes
-			constexpr u8 numberOfHeroes = 3;
-			constexpr u8 heroTypes[numberOfHeroes] = {ENTITY_RED_DEMON, ENTITY_BLONDIE, ENTITY_FISH_OGRE};
-
-			if (selectedHero == 0 || selectedHero > numberOfHeroes) {
-				selectedHero = rand() % numberOfHeroes + 1;
+			if (pickedHero == 0 || pickedHero > g_numberOfHeroes) {
+				pickedHero = rand() % g_numberOfHeroes + 1;
 			}
 
-			m_clients[index].selectedHeroType = heroTypes[selectedHero - 1];
+			m_clients[index].pickedHeroType = g_heroTypes[pickedHero - 1];
 			m_clients[index].heroDead = false;
 			
 			Hero* hero = createClientHeroEntity(index);
@@ -588,12 +584,12 @@ Hero* GameServer::createClientHeroEntity(int index, bool keepOldUniqueId)
 
     if (keepOldUniqueId) {
         //we can force the entity to conserve the old client controlledEntityUniqueId
-        entity = m_entityManager.createEntity(m_clients[index].selectedHeroType, Vector2(), m_clients[index].teamId, uniqueId);
+        entity = m_entityManager.createEntity(m_clients[index].pickedHeroType, Vector2(), m_clients[index].teamId, uniqueId);
         static_cast<Hero*>(entity)->setDisplayName(m_clients[index].displayName);
 
     } else {
         //or we can use a new one
-        entity = m_entityManager.createEntity(m_clients[index].selectedHeroType, Vector2(), m_clients[index].teamId);
+        entity = m_entityManager.createEntity(m_clients[index].pickedHeroType, Vector2(), m_clients[index].teamId);
 
         if (entity) {
             //and update the client info

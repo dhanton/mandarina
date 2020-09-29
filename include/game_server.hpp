@@ -57,7 +57,7 @@ public:
         bool heroDead = true;
 
         //EntityType of hero selected (before/after matchmaking)
-        u8 selectedHeroType = ENTITY_MAX_TYPES;
+        u8 pickedHeroType = ENTITY_MAX_TYPES;
 
         int ping = -1;
     };
@@ -66,7 +66,7 @@ public:
     //@TODO: Should we use this??
     struct ClientInfo_cold {
         //display name
-        //selectedHeroType
+        //pickedHeroType
         //cosmetics??
     };
 

@@ -18,7 +18,7 @@ public:
     //@storm_remove: remove this when the storm gets implemented with tiles
     virtual void draw(sf::RenderTexture& renderTexture, const TextureLoader* textures);
 
-    virtual void drawGameEndInfo(sf::RenderWindow& window, const FontLoader* fonts);
+    virtual void drawGameEndInfo(sf::RenderTarget& target, const FontLoader* fonts);
 
     virtual void onGameStarted(u8 numberOfPlayers, const ManagersContext& context);
     virtual void C_onGameStarted();
