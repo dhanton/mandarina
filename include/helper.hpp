@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <random>
+
 #include "defines.hpp"
 
 double  Helper_lerp(double x0, double x1, double t, double d);
@@ -38,5 +40,25 @@ T Helper_clamp(T value, T upper, T lower);
 //angle in degrees
 template <typename T> 
 void Helper_rotatePoint(sf::Vector2<T>& point, T angle, const sf::Vector2<T>& center = {(T) 0, (T) 0});
+
+class Helper_Random
+{
+public:
+	Helper_Random() = delete;
+
+	static std::mt19937& gen();
+	
+	static double rndAngleDegrees();
+	static double rndAngleRadians();
+
+	static int coinFlip();
+
+private:
+	static std::random_device m_rd;
+	static std::mt19937 m_gen;
+
+	static std::uniform_real_distribution<double> m_angleDistr;
+	static std::uniform_int_distribution<int> m_coinFlipDistr;
+};
 
 #include "helper.inl"

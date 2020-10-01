@@ -48,6 +48,13 @@ endif ()
 
 include_directories("../include")
 
+set(SRC_DIR "../src")
+file(GLOB SRC_FILES "${SRC_DIR}/*.cpp" "${INCLUDE_DIR}/*.inl" "${SRC_DIR}/entities/*.cpp" "${SRC_DIR}/abilities/*.cpp" "${SRC_DIR}/buffs/*.cpp" "${SRC_DIR}/game_modes/*.cpp")
+
+#remove the other main.cpp
+get_filename_component(main_full_path "../src/main.cpp" ABSOLUTE)
+list(REMOVE_ITEM SRC_FILES "${CMAKE_SOURCE_DIR}/../src/main.cpp")
+
 #SFML
 include_directories(${PATH_SFML_include})
 set(SFML_LIBS_D debug libsfml-audio-d.so debug libsfml-graphics-d.so debug libsfml-network-d.so debug libsfml-window-d.so debug libsfml-system-d.so)
@@ -62,5 +69,8 @@ include_directories(${PATH_sockets_include})
 set(NETWORK_LIBS libGameNetworkingSockets.so)
 link_directories(${PATH_sockets_lib})
 
-add_executable(mandarina_tests "../src/packet.cpp" "test_packet.cpp")
-target_link_libraries(mandarina_tests stdc++fs ${SFML_LIBS_D} ${SFML_LIBS_R} libGL.so ${NETWORK_LIBS} libssl.so libcrypto.so pthread)
+add_executable(mandarina_tests_main ${SRC_FILES} "tests_main.cpp")
+target_link_libraries(mandarina_tests_main stdc++fs ${SFML_LIBS_D} ${SFML_LIBS_R} libGL.so ${NETWORK_LIBS} libssl.so libcrypto.so pthread)
+
+add_executable(mandarina_test_packet ${SRC_FILES} "test_packet.cpp")
+target_link_libraries(mandarina_test_packet stdc++fs ${SFML_LIBS_D} ${SFML_LIBS_R} libGL.so ${NETWORK_LIBS} libssl.so libcrypto.so pthread)

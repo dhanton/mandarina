@@ -14,6 +14,10 @@ u8 FoodBase::m_dropRate[MAX_FOOD_RARITY_TYPES];
 u32 FoodBase::m_powerGiven[MAX_FOOD_RARITY_TYPES];
 sf::Color FoodBase::m_color[MAX_FOOD_RARITY_TYPES];
 u8 FoodBase::m_rarityOffset[MAX_FOOD_RARITY_TYPES + 1];
+
+std::unique_ptr<FoodBase::DiscreteDistr> FoodBase::m_dropDistr;
+std::uniform_real_distribution<double> FoodBase::m_distanceDistr(FoodBase::m_minRadius, FoodBase::m_scatterRadius);
+
 float FoodBase::m_collisionRadius = 0.f;
 bool FoodBase::m_foodDataLoaded = false;
 
@@ -77,36 +81,16 @@ sf::Color FoodBase::getRarityColor(u8 foodType)
 
 u8 FoodBase::getRandomFood()
 {
-    u8 uniform = rand() % 100;
-    u8 rarity = 0xff;
-    u8 combinedPercentage = 0;
-
-    //Get a random type using the appropiate drop chance
-    for (int i = 0; i < MAX_FOOD_RARITY_TYPES; ++i) {
-        combinedPercentage += m_dropRate[i];
-
-        if (uniform < combinedPercentage) {
-            rarity = i;
-            break;
-        }
-    }
-
-    //Get a random food within the same type
-    return (rand() % (m_rarityOffset[rarity + 1] - m_rarityOffset[rarity])) + m_rarityOffset[rarity];
+	return (*m_dropDistr)(Helper_Random::gen());
 }
 
 void FoodBase::scatterFood(const Vector2& pos, const std::vector<u8>& foodVec, const ManagersContext& context)
 {
     if (foodVec.empty()) return;
-    
-    constexpr float scatterRadius = 60.f;
-
-    //don't scatter food closer than this
-    constexpr float offset = 25.f;
 
     for (int i = 0; i < foodVec.size(); ++i) {
-        const float randAngle = (rand() % 360) * PI/180.0;
-        const float dist = static_cast<float>(rand() % static_cast<int>(scatterRadius - offset)) + offset;
+		const float randAngle = Helper_Random::rndAngleRadians();
+		const float dist = m_distanceDistr(Helper_Random::gen());
         const Vector2 randVec = Vector2(std::sin(randAngle) * dist, std::cos(randAngle) * dist);
 
         Vector2 finalPos = randVec + pos;
@@ -140,13 +124,23 @@ void FoodBase::loadFoodData(const rapidjson::Document& doc)
 
     if (m_foodDataLoaded) return;
     
-    //number of food in each rarity
+    //probability of obtaining each food type (in percentage)
+    m_dropRate[FOOD_RARITY_COMMON] = 60;
+    m_dropRate[FOOD_RARITY_UNCOMMON] = 30;
+    m_dropRate[FOOD_RARITY_RARE] = 9;
+    m_dropRate[FOOD_RARITY_MYTHIC] = 1;
+
+    //index of the first food of that type
     m_rarityOffset[FOOD_RARITY_COMMON] = 0;
     m_rarityOffset[FOOD_RARITY_UNCOMMON] = 18;
     m_rarityOffset[FOOD_RARITY_RARE] = 27;
     m_rarityOffset[FOOD_RARITY_MYTHIC] = 30;
-    m_rarityOffset[MAX_FOOD_RARITY_TYPES] = MAX_FOOD_TYPES;    
+	m_rarityOffset[MAX_FOOD_RARITY_TYPES] = MAX_FOOD_TYPES;
 
+	//needed to generate the discrete distribution
+	std::vector<double> distrChances(MAX_FOOD_TYPES, 0);
+
+	//generate the rarity of each food type using the offset
     for (int i = 0; i < MAX_FOOD_TYPES; ++i) {
         if (i < m_rarityOffset[FOOD_RARITY_UNCOMMON]) {
             m_rarityType[i] = FOOD_RARITY_COMMON;
@@ -160,14 +154,15 @@ void FoodBase::loadFoodData(const rapidjson::Document& doc)
         } else {
             m_rarityType[i] = FOOD_RARITY_MYTHIC;
         }
+
+		//we have to divide the drop rate with the amount of food of each type
+        const double amount = m_rarityOffset[m_rarityType[i] + 1] - m_rarityOffset[m_rarityType[i]];
+		distrChances[i] = static_cast<double>(m_dropRate[m_rarityType[i]])/amount;
     }
 
-    //in percentage
-    m_dropRate[FOOD_RARITY_COMMON] = 60;
-    m_dropRate[FOOD_RARITY_UNCOMMON] = 30;
-    m_dropRate[FOOD_RARITY_RARE] = 9;
-    m_dropRate[FOOD_RARITY_MYTHIC] = 1;
+	m_dropDistr = std::unique_ptr<DiscreteDistr>(new DiscreteDistr(distrChances.begin(), distrChances.end()));
 
+	//power given by each rarity
     m_powerGiven[FOOD_RARITY_COMMON] = 200;
     m_powerGiven[FOOD_RARITY_UNCOMMON] = 400;
     m_powerGiven[FOOD_RARITY_RARE] = 900;

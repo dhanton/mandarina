@@ -7,6 +7,10 @@
 // testing 3/11 etc
 //Check number of tests failed
 
+#include "entities/food.hpp"
+#include "quadtree.hpp"
+#include "paths.hpp"
+
 #define ASSERT(CONDITION) if (!(CONDITION)) {\
     printf("Assertion failure %s:%d ASSERT(%s)\n", __FILE__, __LINE__, #CONDITION);\
 }
@@ -260,9 +264,33 @@ void rotating_and_circle_test()
     }
 }
 
+void food_distribution_test()
+{
+	JsonParser json;
+	json.loadAll("../../data/json");
+
+	Food food;
+	food.loadFromJson(*json.getDocument("food"));
+
+	std::vector<int> counts(MAX_FOOD_RARITY_TYPES, 0);
+
+	for (int i = 0; i < 100000; ++i) {
+		u8 foodType = FoodBase::getRandomFood();
+
+		food.setFoodType(foodType);
+
+		++counts[food.getRarity()];
+	}
+
+	//Answer should be about 60'000 30'000 9'000 1'000
+	for (int n : counts) std::cout << n << " ";
+	std::cout << std::endl;
+}
+
 int main()
 {
     // rotating_shape_test();
-    rotating_and_circle_test();
+    //rotating_and_circle_test();
+	food_distribution_test();
     return 0;
 }

@@ -1,5 +1,6 @@
 #include "entities/crate.hpp"
 
+#include "helper.hpp"
 #include "bit_stream.hpp"
 #include "client_entity_manager.hpp"
 
@@ -89,10 +90,12 @@ void Crate::packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUn
 
 void Crate::onCreated()
 {
-    int possibleFoodDiff = m_maxPossibleFood - m_minPossibleFood;
-    m_foodAmount = (rand() % (possibleFoodDiff + 1)) + m_minPossibleFood;
+    const int possibleFoodDiff = m_maxPossibleFood - m_minPossibleFood;
+	
+	std::uniform_int_distribution<int> distr(m_minPossibleFood, m_maxPossibleFood);
+	m_foodAmount = distr(Helper_Random::gen());
     
-    float percentage = static_cast<float>(m_foodAmount - m_minPossibleFood)/static_cast<float>(possibleFoodDiff);
+    const float percentage = static_cast<float>(m_foodAmount - m_minPossibleFood)/static_cast<float>(possibleFoodDiff);
 
     m_maxHealth = percentage * static_cast<float>(m_maxPossibleHealth) + (1.f - percentage) * static_cast<float>(m_minPossibleHealth);
     m_health = m_maxHealth;

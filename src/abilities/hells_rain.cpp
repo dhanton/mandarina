@@ -17,8 +17,12 @@ void HellsRainAbility::onCast(Unit* caster, const ManagersContext& context, u16 
 
     const float multiplier = context.gameMode->getDamageMultiplier() * caster->getDamageMultiplier();
 
+	std::uniform_int_distribution<u16> spreadDistr(0, m_spreadDistance);
+
     for (int i = 0; i < m_bubbleNumber; ++i) {
-        Projectile* projectile = context.entityManager->createProjectile(PROJECTILE_HELLS_BUBBLE, caster->getPosition() + calculateRndPos(), caster->getAimAngle(), caster->getTeamId());
+        const Vector2 randPos = calculateRndPos(spreadDistr);
+
+        Projectile* projectile = context.entityManager->createProjectile(PROJECTILE_HELLS_BUBBLE, caster->getPosition() + randPos, caster->getAimAngle(), caster->getTeamId());
         if (!projectile) continue;
 
         projectile->shooterUniqueId = caster->getUniqueId();
@@ -52,10 +56,10 @@ void HellsRainAbility::loadFromJson(const rapidjson::Document& doc)
     m_spreadDistance = doc["spread_distance"].GetUint();
 }
 
-Vector2 HellsRainAbility::calculateRndPos()
+Vector2 HellsRainAbility::calculateRndPos(std::uniform_int_distribution<u16>& distr)
 {
-    float angle = (rand() % m_spreadAngle) * PI/180.f;
-    float dist = rand() % m_spreadDistance;
+	float angle = Helper_Random::rndAngleRadians();
+	float dist = distr(Helper_Random::gen());
 
     return Vector2(std::sin(angle) * dist, std::cos(angle) * dist);
 }

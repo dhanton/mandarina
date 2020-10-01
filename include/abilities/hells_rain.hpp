@@ -1,5 +1,7 @@
 #pragma once
 
+#include <random>
+
 #include "ability.hpp"
 
 class HellsRainAbility : public RechargeAbility
@@ -13,7 +15,7 @@ public:
     void loadFromJson(const rapidjson::Document& doc);
 
 private:
-    Vector2 calculateRndPos();
+    Vector2 calculateRndPos(std::uniform_int_distribution<u16>& distr);
 
 private:
     u16 m_bubbleNumber;

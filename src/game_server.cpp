@@ -98,7 +98,8 @@ GameServer::GameServer(const Context& context, u8 gameModeType):
     m_gameServerCallbacks(this),
     InContext(context),
     NetPeer(&m_gameServerCallbacks, true),
-    m_entityManager(context.jsonParser)
+    m_entityManager(context.jsonParser),
+	m_heroesDistr(0, g_numberOfHeroes - 1)
 {
     createGameMode(gameModeType);
 
@@ -525,7 +526,7 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
 			packet >> pickedHero;
 
 			if (pickedHero == 0 || pickedHero > g_numberOfHeroes) {
-				pickedHero = rand() % g_numberOfHeroes + 1;
+				pickedHero = m_heroesDistr(Helper_Random::gen()) + 1;
 			}
 
 			m_clients[index].pickedHeroType = g_heroTypes[pickedHero - 1];

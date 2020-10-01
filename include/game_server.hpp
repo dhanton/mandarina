@@ -145,4 +145,6 @@ private:
     bool m_gameEnded;
     sf::Time m_gameEndLingeringTime;
     sf::Time m_gameEndTimer;
+
+	std::uniform_int_distribution<int> m_heroesDistr;
 };

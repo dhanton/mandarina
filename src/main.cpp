@@ -56,7 +56,10 @@ int main(int argc, char* argv[])
         }
     }
 
+#ifdef MANDARINA_DEBUG
+	//we still use rand() for some debug randomization
     srand(time(nullptr));
+#endif
 
     //can be shared between client and server (in case of local connection)
     bool running = true;

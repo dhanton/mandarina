@@ -157,8 +157,10 @@ void MainMenu::startGame()
 		//for the server, 0 means random
 		data.pickedHero = 0;
 	} else {
-		//so we have to +1 each index
-		data.pickedHero = available[rand() % available.size()] + 1; 
+		std::uniform_int_distribution<int> distr(0, available.size() - 1);
+
+		//so we have to +1 the picked hero 
+		data.pickedHero = available[distr(Helper_Random::gen())] + 1;
 	}
 
 	m_gameClient = std::unique_ptr<GameClient>(new GameClient(m_context, data));

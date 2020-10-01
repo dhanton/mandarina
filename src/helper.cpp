@@ -86,3 +86,28 @@ float Helper_percentageFrom16bit(u16 percentage)
 {
     return (static_cast<float>(percentage)/static_cast<float>(0xffff));
 }
+
+std::random_device Helper_Random::m_rd;
+std::mt19937 Helper_Random::m_gen(m_rd());
+std::uniform_real_distribution<double> Helper_Random::m_angleDistr(0.0, 360.0);
+std::uniform_int_distribution<int> Helper_Random::m_coinFlipDistr(0, 1);
+
+std::mt19937& Helper_Random::gen() 
+{
+	return m_gen;
+}
+
+double Helper_Random::rndAngleDegrees()
+{
+	return m_angleDistr(m_gen);
+}
+
+double Helper_Random::rndAngleRadians()
+{
+	return rndAngleDegrees() * (PI/180.0); 
+}
+
+int Helper_Random::coinFlip()
+{
+	return m_coinFlipDistr(m_gen);
+}
