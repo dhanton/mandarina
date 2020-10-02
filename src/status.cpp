@@ -44,18 +44,18 @@ const bool& Status::operator[](const unsigned int& index) const
 
 void Status::packData(CRCPacket& outPacket) const
 {
-	#define DoStatus(type, json_id) \
-		outPacket << m_data[STATUS_##type];
-	#include "status.inc"
-	#undef DoStatus
+    #define DoStatus(type, json_id) \
+        outPacket << m_data[STATUS_##type];
+    #include "status.inc"
+    #undef DoStatus
 }
 
 void Status::loadFromData(CRCPacket& inPacket)
 {
-	#define DoStatus(type, json_id) \
-		inPacket >> m_data[STATUS_##type];
-	#include "status.inc"
-	#undef DoStatus
+    #define DoStatus(type, json_id) \
+        inPacket >> m_data[STATUS_##type];
+    #include "status.inc"
+    #undef DoStatus
 }
 
 void Status::loadJsonData(const JsonParser* jsonParser)

@@ -5,8 +5,8 @@
 class MeatShieldBuff : public Buff
 {
 public:
-	MeatShieldBuff* clone() const;
+    MeatShieldBuff* clone() const;
 
-	void onPreUpdate(sf::Time eTime);
-	void onEntityKill(Entity* target);
+    void onPreUpdate(sf::Time eTime);
+    void onEntityKill(Entity* target);
 };

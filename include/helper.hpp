@@ -44,21 +44,21 @@ void Helper_rotatePoint(sf::Vector2<T>& point, T angle, const sf::Vector2<T>& ce
 class Helper_Random
 {
 public:
-	Helper_Random() = delete;
+    Helper_Random() = delete;
 
-	static std::mt19937& gen();
-	
-	static double rndAngleDegrees();
-	static double rndAngleRadians();
+    static std::mt19937& gen();
+    
+    static double rndAngleDegrees();
+    static double rndAngleRadians();
 
-	static int coinFlip();
+    static int coinFlip();
 
 private:
-	static std::random_device m_rd;
-	static std::mt19937 m_gen;
+    static std::random_device m_rd;
+    static std::mt19937 m_gen;
 
-	static std::uniform_real_distribution<double> m_angleDistr;
-	static std::uniform_int_distribution<int> m_coinFlipDistr;
+    static std::uniform_real_distribution<double> m_angleDistr;
+    static std::uniform_int_distribution<int> m_coinFlipDistr;
 };
 
 #include "helper.inl"

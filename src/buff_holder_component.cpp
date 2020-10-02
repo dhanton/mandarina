@@ -94,11 +94,11 @@ void BuffHolderComponent::onTakeDamage(u16 damage, Entity* source, u32 uniqueId,
 
 void BuffHolderComponent::onProjectileHit(Projectile& projectile, Entity* target)
 {
-	FOR_ALL_BUFFS(onProjectileHit(projectile, target))
-	
-	if (projectile.damage > 0) {
-		onDealDamage(projectile.damage, target);
-	}
+    FOR_ALL_BUFFS(onProjectileHit(projectile, target))
+    
+    if (projectile.damage > 0) {
+        onDealDamage(projectile.damage, target);
+    }
 }
 
 void BuffHolderComponent::onBeHealed(u16 amount, Entity* source)

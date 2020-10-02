@@ -129,9 +129,9 @@ void ClientCaster::setCaster(C_Unit* caster, GameMode* gameMode)
     m_altAbilityUI.setPosition({m_secondaryUI.getPosition().x + m_secondaryUI.getBoundingSize().x + 2.f*xPadding, m_secondaryUI.getPosition().y});
     m_ultimateUI.setPosition({windowSize.x/2.f - m_ultimateUI.getBoundingSize().x/2.f, windowSize.y - m_ultimateUI.getBoundingSize().y - 2.5f*yPadding});
 
-	bool hasSecondaryHotkey = m_casterComponent.getSecondaryFire() ? m_casterComponent.getSecondaryFire()->hasHotkey() : false;
-	bool hasAltHotkey = m_casterComponent.getAltAbility() ? m_casterComponent.getAltAbility()->hasHotkey() : false;
-	bool hasUltimateHotkey = m_casterComponent.getUltimate() ? m_casterComponent.getUltimate()->hasHotkey() : false;
+    bool hasSecondaryHotkey = m_casterComponent.getSecondaryFire() ? m_casterComponent.getSecondaryFire()->hasHotkey() : false;
+    bool hasAltHotkey = m_casterComponent.getAltAbility() ? m_casterComponent.getAltAbility()->hasHotkey() : false;
+    bool hasUltimateHotkey = m_casterComponent.getUltimate() ? m_casterComponent.getUltimate()->hasHotkey() : false;
 
     //@TODO: Use user-defined hotkeys
     m_secondaryUI.setHotkey(hasSecondaryHotkey ? "RMOUSE" : "");

@@ -9,39 +9,39 @@
 
 FishingGaunletAbility* FishingGaunletAbility::clone() const
 {
-	return new FishingGaunletAbility(*this);
+    return new FishingGaunletAbility(*this);
 }
 
 void FishingGaunletAbility::onCast(Unit* caster, const ManagersContext& context, u16 clientDelay)
 {
-	CooldownAbility::onCastUpdate();
+    CooldownAbility::onCastUpdate();
 
-	Projectile* projectile = context.entityManager->createProjectile(m_projectileType, caster->getPosition(), caster->getAimAngle(), caster->getTeamId());
-	if (!projectile) return;
+    Projectile* projectile = context.entityManager->createProjectile(m_projectileType, caster->getPosition(), caster->getAimAngle(), caster->getTeamId());
+    if (!projectile) return;
 
-	projectile->shooterUniqueId = caster->getUniqueId();
-	
-	const u16 healthRemoved = m_healthRemoved * caster->getHealth();
+    projectile->shooterUniqueId = caster->getUniqueId();
 
-	caster->takeDamage(healthRemoved, caster, caster->getUniqueId(), caster->getTeamId());
-	projectile->damage = (healthRemoved * m_healthToDamage) * context.gameMode->getDamageMultiplier(); 
+    const u16 healthRemoved = m_healthRemoved * caster->getHealth();
 
-	Projectile_backtrackCollisions(*projectile, context, clientDelay);
+    caster->takeDamage(healthRemoved, caster, caster->getUniqueId(), caster->getTeamId());
+    projectile->damage = (healthRemoved * m_healthToDamage) * context.gameMode->getDamageMultiplier(); 
+
+    Projectile_backtrackCollisions(*projectile, context, clientDelay);
 }
 
 void FishingGaunletAbility::addBuffsToCaster(Unit* unit, const ManagersContext& context)
 {
-	SingleShotAbility::addBuffsToCaster(unit, context);
+    SingleShotAbility::addBuffsToCaster(unit, context);
 
-	Buff* buff = unit->addBuff(BUFF_FISHING_GAUNLET);
+    Buff* buff = unit->addBuff(BUFF_FISHING_GAUNLET);
 }
 
 void FishingGaunletAbility::loadFromJson(const rapidjson::Document& doc)
 {
-	CooldownAbility::loadFromJson(doc);
+    CooldownAbility::loadFromJson(doc);
 
-	m_projectileType = PROJECTILE_FISHING_GAUNLET;
+    m_projectileType = PROJECTILE_FISHING_GAUNLET;
 
-	m_healthRemoved = doc["health_removed"].GetFloat();
-	m_healthToDamage = doc["health_to_damage"].GetFloat();
+    m_healthRemoved = doc["health_removed"].GetFloat();
+    m_healthToDamage = doc["health_to_damage"].GetFloat();
 }

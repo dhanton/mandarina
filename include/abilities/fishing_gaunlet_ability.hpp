@@ -6,14 +6,14 @@
 class FishingGaunletAbility : public SingleShotAbility 
 {
 public:
-	virtual FishingGaunletAbility* clone() const;
+    virtual FishingGaunletAbility* clone() const;
 
     virtual void onCast(Unit* caster, const ManagersContext& context, u16 clientDelay);
 
-	virtual void addBuffsToCaster(Unit* unit, const ManagersContext& context);
-	virtual void loadFromJson(const rapidjson::Document& doc);
+    virtual void addBuffsToCaster(Unit* unit, const ManagersContext& context);
+    virtual void loadFromJson(const rapidjson::Document& doc);
 
 private:
-	float m_healthRemoved;
-	float m_healthToDamage;
+    float m_healthRemoved;
+    float m_healthToDamage;
 };

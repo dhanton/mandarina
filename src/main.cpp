@@ -15,11 +15,11 @@
 
 namespace ExecMode 
 {
-	enum _ExecMode {
-		Client          = 0b01,
-		Server          = 0b10,
-		LocalConnection = 0b11 
-	};
+    enum _ExecMode {
+        Client          = 0b01,
+        Server          = 0b10,
+        LocalConnection = 0b11 
+    };
 }
 
 int main(int argc, char* argv[])
@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
     }
 
 #ifdef MANDARINA_DEBUG
-	//we still use rand() for some debug randomization
+    //we still use rand() for some debug randomization
     srand(time(nullptr));
 #endif
 
@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
     context.localCon2 = localCon2;
 
     std::unique_ptr<TextureLoader> textures;
-	std::unique_ptr<FontLoader> fonts;
+    std::unique_ptr<FontLoader> fonts;
     
     //only load textures in client
     if ((execMode & ExecMode::Client) != 0) {
@@ -108,16 +108,16 @@ int main(int argc, char* argv[])
         textures->loadResource(ICONS_PATH + "forest_night.png", TextureId::ICON_FOREST_NIGHT);
         textures->loadResource(ICONS_PATH + "golden_leaf.png", TextureId::ICON_GOLDEN_LEAF);
 
-		//Fish Ogre
-		textures->loadResource(TEXTURES_PATH + "fishman.png", TextureId::FISH_OGRE);
-		textures->loadResource(TEXTURES_PATH + "fish_shell.png", TextureId::FISH_SHELL);
-		textures->loadResource(TEXTURES_PATH + "scythe.png", TextureId::SCYTHE);
-		textures->loadResource(TEXTURES_PATH + "fishing_gaunlet.png", TextureId::FISHING_GAUNLET);
-		textures->loadResource(TEXTURES_PATH + "meat_shield.png", TextureId::MEAT_SHIELD);
-		textures->loadResource(ICONS_PATH + "fish_shell.png", TextureId::ICON_FISH_SHOTGUN);
-		textures->loadResource(ICONS_PATH + "fishing_gaunlet.png", TextureId::ICON_FISHING_GAUNLET);
-		textures->loadResource(ICONS_PATH + "fish_lifesteal.png", TextureId::ICON_FISH_LIFESTEAL);
-		textures->loadResource(ICONS_PATH + "meat_shield.png", TextureId::ICON_MEAT_SHIELD);
+        //Fish Ogre
+        textures->loadResource(TEXTURES_PATH + "fishman.png", TextureId::FISH_OGRE);
+        textures->loadResource(TEXTURES_PATH + "fish_shell.png", TextureId::FISH_SHELL);
+        textures->loadResource(TEXTURES_PATH + "scythe.png", TextureId::SCYTHE);
+        textures->loadResource(TEXTURES_PATH + "fishing_gaunlet.png", TextureId::FISHING_GAUNLET);
+        textures->loadResource(TEXTURES_PATH + "meat_shield.png", TextureId::MEAT_SHIELD);
+        textures->loadResource(ICONS_PATH + "fish_shell.png", TextureId::ICON_FISH_SHOTGUN);
+        textures->loadResource(ICONS_PATH + "fishing_gaunlet.png", TextureId::ICON_FISHING_GAUNLET);
+        textures->loadResource(ICONS_PATH + "fish_lifesteal.png", TextureId::ICON_FISH_LIFESTEAL);
+        textures->loadResource(ICONS_PATH + "meat_shield.png", TextureId::ICON_MEAT_SHIELD);
 
         textures->loadResource(TEXTURES_PATH + "food.png", TextureId::FOOD);
         textures->loadResource(TEXTURES_PATH + "normal_crate.png", TextureId::NORMAL_CRATE);
@@ -126,9 +126,9 @@ int main(int argc, char* argv[])
 
         context.textures = textures.get();
 
-		fonts = std::unique_ptr<FontLoader>(new FontLoader());
-		fonts->loadResource(FONTS_PATH + "Keep Calm.ttf", "keep_calm_font");
-		context.fonts = fonts.get();
+        fonts = std::unique_ptr<FontLoader>(new FontLoader());
+        fonts->loadResource(FONTS_PATH + "Keep Calm.ttf", "keep_calm_font");
+        context.fonts = fonts.get();
     }
 
     JsonParser jsonParser;
@@ -140,7 +140,7 @@ int main(int argc, char* argv[])
 
     CasterComponent::loadAbilityData(&jsonParser);
     BuffHolderComponent::loadBuffData(&jsonParser);
-	Status::loadJsonData(&jsonParser);
+    Status::loadJsonData(&jsonParser);
 
     //client and server are not created in the main context so that
     //they call their deleter before GameNetworkingSockets is killed
@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
             std::thread thread(&GameServer::mainLoop, &server, std::ref(running));
 
             MainMenu mainMenu(context);
-			mainMenu.startGame();
+            mainMenu.startGame();
             mainMenu.mainLoop(running);
 
             thread.join();

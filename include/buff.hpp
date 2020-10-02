@@ -47,7 +47,7 @@ public:
     //uniqueId and teamId are passed since the source entity might be invalid when the damage is dealt
     virtual void onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId);
 
-	virtual void onProjectileHit(Projectile& projectile, Entity* target);
+    virtual void onProjectileHit(Projectile& projectile, Entity* target);
     virtual void onDealDamage(u16 damage, Entity* target);
     virtual void onBeHealed(u16 amount, Entity* source);
     virtual void onHeal(u16 amount, Entity* target);

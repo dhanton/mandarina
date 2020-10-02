@@ -436,9 +436,9 @@ void C_EntityManager::loadEntityData(const Context& context)
 
 C_Entity* C_EntityManager::getEntityData(u8 entityType)
 {
-	if (entityType >= ENTITY_MAX_TYPES) return nullptr;
+    if (entityType >= ENTITY_MAX_TYPES) return nullptr;
 
-	return m_entityData[entityType].get();
+    return m_entityData[entityType].get();
 }
 
 void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) const

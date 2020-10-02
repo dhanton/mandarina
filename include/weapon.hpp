@@ -11,7 +11,7 @@ struct Weapon {
     u16 textureId;
     float scale;
     float angleOffset;
-	Vector2 originOffset;
+    Vector2 originOffset;
 };
 
 enum WeaponType {

@@ -3,5 +3,5 @@
     "secondary_fire": "FISHING_GAUNLET",
     "scale": 2.5,
     "angle_offset": 135.0,
-	"origin_offset": [5.0, 5.0]
+    "origin_offset": [5.0, 5.0]
 }

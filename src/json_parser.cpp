@@ -20,10 +20,10 @@ void JsonParser::loadAll(const std::string &dir)
 
 void JsonParser::loadDocument(const std::string &filename, const std::string& id)
 {
-	FILE* file;
-	
+    FILE* file;
+    
 #ifdef _WIN32
-	fopen_s(&file, filename.c_str(), "rb");
+    fopen_s(&file, filename.c_str(), "rb");
 #else
     file = fopen(filename.c_str(), "rb");
 #endif
@@ -86,5 +86,5 @@ const rapidjson::Document* JsonParser::getDocument(const std::string& id) const
 
 bool JsonParser::isLoaded(const std::string& id) const
 {
-	return (m_documents.find(id) != m_documents.end());
+    return (m_documents.find(id) != m_documents.end());
 }

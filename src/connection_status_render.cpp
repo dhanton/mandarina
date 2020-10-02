@@ -13,7 +13,7 @@ ConnectionStatusRender::ConnectionStatusRender(const Context& context):
 
     //we could also show this
     // m_status.m_flConnectionQualityLocal;
-	// m_status.m_flConnectionQualityRemote;
+    // m_status.m_flConnectionQualityRemote;
 }
 
 void ConnectionStatusRender::update(const SteamNetworkingQuickConnectionStatus& status)

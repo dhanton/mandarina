@@ -27,7 +27,7 @@ public:
     static u8 stringToType(const std::string& typeStr);
 
     virtual Ability* clone() const = 0;
-	virtual ~Ability() = default;
+    virtual ~Ability() = default;
 
     u8 getAbilityType() const;
     void setAbilityType(u8 abilityType);
@@ -45,8 +45,8 @@ public:
     //(both of which are displayed in client, which is important)
     virtual bool canBeCasted(const Status& status) const = 0;
 
-	//passive abilities don't render any hotkey info
-	virtual bool hasHotkey() const;
+    //passive abilities don't render any hotkey info
+    virtual bool hasHotkey() const;
 
     virtual void applyServerCorrection(float diff);
 
@@ -78,7 +78,7 @@ class CooldownAbility : public Ability
 {
 public:
     virtual CooldownAbility* clone() const = 0;
-	virtual ~CooldownAbility() = default;
+    virtual ~CooldownAbility() = default;
 
     virtual void update(sf::Time eTime, GameMode* gameMode);
     virtual bool canBeCasted(const Status& status) const;
@@ -120,7 +120,7 @@ class RechargeAbility : public Ability
 {
 public:
     virtual RechargeAbility* clone() const = 0;
-	virtual ~RechargeAbility() = default;
+    virtual ~RechargeAbility() = default;
 
     virtual void update(sf::Time eTime, GameMode* gameMode);
     virtual bool canBeCasted(const Status& status) const;
@@ -159,21 +159,21 @@ class PassiveAbility : public Ability
 {
 public:
     virtual PassiveAbility* clone() const;
-	virtual ~PassiveAbility() = default;
+    virtual ~PassiveAbility() = default;
 
-	virtual void onCast(Unit* caster, const ManagersContext& context, u16 clientDelay);
+    virtual void onCast(Unit* caster, const ManagersContext& context, u16 clientDelay);
     virtual void C_onCast(C_Unit* unit, CasterComponent* caster, Vector2& pos, const C_ManagersContext& context, u32 inputId, bool repeating);
 
     virtual void update(sf::Time eTime, GameMode* gameMode);
     virtual bool canBeCasted(const Status& status) const;
     virtual void refresh();
 
-	virtual bool hasHotkey() const;
+    virtual bool hasHotkey() const;
 
     virtual void addBuffsToCaster(Unit* unit, const ManagersContext& context);
 
     virtual void loadFromJson(const rapidjson::Document& doc);
 
 private:
-	u8 m_buffType;
+    u8 m_buffType;
 };

@@ -105,7 +105,7 @@ public:
     mutable bool renderingEntitiesUI;
 
     static void loadEntityData(const Context& context);
-	static C_Entity* getEntityData(u8 entityType);
+    static C_Entity* getEntityData(u8 entityType);
 
 private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const;

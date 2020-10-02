@@ -23,7 +23,7 @@ public:
     Status& getStatus();
     const Status& getStatus() const;
 
-	u8 getWeaponId() const;
+    u8 getWeaponId() const;
 
     static Vector2 moveCollidingTilemap_impl(const Vector2& oldPos, Vector2 newPos, float collisionRadius, TileMap* map);
 

@@ -67,15 +67,15 @@ GameClient::GameClient(const Context& context, const ConfigData& configData):
     NetPeer(&m_gameClientCallbacks, false),
     m_entityManager(context),
     m_tileMapRenderer(context, &m_tileMap),
-	m_clientCaster(context),
-	m_connectionStatusRender(context)
+    m_clientCaster(context),
+    m_connectionStatusRender(context)
 {
     C_loadProjectilesFromJson(context.jsonParser);
 
-	m_endpoint = configData.endpoint;
-	m_inputRate = configData.inputRate;
-	m_displayName = configData.displayName;
-	m_pickedHero = configData.pickedHero;
+    m_endpoint = configData.endpoint;
+    m_inputRate = configData.inputRate;
+    m_displayName = configData.displayName;
+    m_pickedHero = configData.pickedHero;
 
     //force to update ping in 1 sec
     m_infoTimer = sf::seconds(4.f);
@@ -83,9 +83,9 @@ GameClient::GameClient(const Context& context, const ConfigData& configData):
     m_context.renderTarget = &m_canvas;
     m_canvasCreated = false;
 
-	context.view->zoom(m_camera.getZoom());
-	m_smoothUnitPos = context.view->getCenter();
-	m_camera.setView(context.view);
+    context.view->zoom(m_camera.getZoom());
+    m_smoothUnitPos = context.view->getCenter();
+    m_camera.setView(context.view);
 
     m_entityManager.allocateAll();
     m_entityManager.setTileMap(&m_tileMap);
@@ -159,7 +159,7 @@ void GameClient::update(sf::Time eTime)
 
 void GameClient::updateWorldTime(sf::Time eTime)
 {
-	m_worldTime += eTime;
+    m_worldTime += eTime;
 }
 
 void GameClient::renderUpdate(sf::Time eTime)
@@ -496,15 +496,15 @@ void GameClient::checkServerInput(u32 inputId, const Vector2& endPosition, u16 m
 
 void GameClient::sendInitialInfo()
 {
-	CRCPacket outPacket;
+    CRCPacket outPacket;
 
-	outPacket << (u8) ServerCommand::PickedHero << m_pickedHero;
+    outPacket << (u8) ServerCommand::PickedHero << m_pickedHero;
 
     if (!m_displayName.empty()) {
         outPacket << (u8) ServerCommand::DisplayName << m_displayName;
     }
 
-	sendPacket(outPacket, m_serverConnectionId, true);
+    sendPacket(outPacket, m_serverConnectionId, true);
 }
 
 void GameClient::processPacket(HSteamNetConnection connectionId, CRCPacket& packet)
@@ -588,24 +588,24 @@ void GameClient::handleCommand(u8 command, CRCPacket& packet)
 
         case ClientCommand::RequestInitialInfo:
         {
-			sendInitialInfo();
+            sendInitialInfo();
 
             break;
         }
 
-		case ClientCommand::HeroCreated:
-		{
-			u32 uniqueId;
-			packet >> uniqueId;
+        case ClientCommand::HeroCreated:
+        {
+            u32 uniqueId;
+            packet >> uniqueId;
 
-			u8 teamId;
-			packet >> teamId;
+            u8 teamId;
+            packet >> teamId;
 
-			m_entityManager.setControlledEntityUniqueId(uniqueId);
+            m_entityManager.setControlledEntityUniqueId(uniqueId);
             m_entityManager.setControlledEntityTeamId(teamId);
 
-			break;
-		}
+            break;
+        }
 
         case ClientCommand::PlayerCoords:
         {
@@ -738,42 +738,42 @@ GameClient::Snapshot* GameClient::findSnapshotById(u32 snapshotId)
 
 void GameClient::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
-	if (m_canvasCreated) {
-		//draw everything to the canvas
-		m_canvas.clear();
+    if (m_canvasCreated) {
+        //draw everything to the canvas
+        m_canvas.clear();
 
-		m_tileMapRenderer.renderBeforeEntities(m_canvas);
-		m_entityManager.renderingEntitiesUI = false;
-		m_canvas.draw(m_entityManager, states);
-		m_tileMapRenderer.renderAfterEntities(m_canvas);
+        m_tileMapRenderer.renderBeforeEntities(m_canvas);
+        m_entityManager.renderingEntitiesUI = false;
+        m_canvas.draw(m_entityManager, states);
+        m_tileMapRenderer.renderAfterEntities(m_canvas);
 
-		if (m_gameMode) {
-			m_gameMode->draw(m_canvas, m_context.textures);
-		}
+        if (m_gameMode) {
+            m_gameMode->draw(m_canvas, m_context.textures);
+        }
 
-		m_canvas.display();
+        m_canvas.display();
 
-		//draw the canvas to the window
-		sf::Sprite sprite(m_canvas.getTexture());
-		target.draw(sprite, states);
+        //draw the canvas to the window
+        sf::Sprite sprite(m_canvas.getTexture());
+        target.draw(sprite, states);
 
-		//draw entity UI
-		m_entityManager.renderingEntitiesUI = true;
-		target.draw(m_entityManager, states);
+        //draw entity UI
+        m_entityManager.renderingEntitiesUI = true;
+        target.draw(m_entityManager, states);
 
-		//draw UI elements
-		target.draw(m_clientCaster, states);
+        //draw UI elements
+        target.draw(m_clientCaster, states);
 
-		if (m_gameMode && m_gameMode->hasGameEnded()) {
-			m_gameMode->drawGameEndInfo(target, m_context.fonts);
-		}
-	}
+        if (m_gameMode && m_gameMode->hasGameEnded()) {
+            m_gameMode->drawGameEndInfo(target, m_context.fonts);
+        }
+    }
 
-	target.draw(m_connectionStatusRender, states);
+    target.draw(m_connectionStatusRender, states);
 
-	if (!m_entityManager.isHeroDead()) {
-		target.draw(m_mouseSprite, states);
-	}
+    if (!m_entityManager.isHeroDead()) {
+        target.draw(m_mouseSprite, states);
+    }
 }
 
 void GameClient::loadMap(const std::string& filename)

@@ -5,7 +5,7 @@
 class FishingGaunletBuff : public Buff
 {
 public:
-	FishingGaunletBuff* clone() const;
+    FishingGaunletBuff* clone() const;
 
-	void onProjectileHit(Projectile& projectile, Entity* target);
+    void onProjectileHit(Projectile& projectile, Entity* target);
 };

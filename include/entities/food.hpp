@@ -79,18 +79,18 @@ private:
     static sf::Color m_color[MAX_FOOD_RARITY_TYPES];
     static u8 m_rarityOffset[MAX_FOOD_RARITY_TYPES + 1];
 
-	using DiscreteDistr = std::discrete_distribution<u8>;
-	static std::unique_ptr<DiscreteDistr> m_dropDistr;
+    using DiscreteDistr = std::discrete_distribution<u8>;
+    static std::unique_ptr<DiscreteDistr> m_dropDistr;
 
-	static std::uniform_real_distribution<double> m_distanceDistr;
+    static std::uniform_real_distribution<double> m_distanceDistr;
     
     //used internally by this class
     static float m_collisionRadius;
 
     static bool m_foodDataLoaded;
 
-	static constexpr float m_scatterRadius = 60.f;
-	static constexpr float m_minRadius = 25.f;
+    static constexpr float m_scatterRadius = 60.f;
+    static constexpr float m_minRadius = 25.f;
 };
 
 class Food : public Entity, public FoodBase

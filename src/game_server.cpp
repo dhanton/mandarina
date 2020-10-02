@@ -99,7 +99,7 @@ GameServer::GameServer(const Context& context, u8 gameModeType):
     InContext(context),
     NetPeer(&m_gameServerCallbacks, true),
     m_entityManager(context.jsonParser),
-	m_heroesDistr(0, g_numberOfHeroes - 1)
+    m_heroesDistr(0, g_numberOfHeroes - 1)
 {
     createGameMode(gameModeType);
 
@@ -520,32 +520,32 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
             break;
         }
 
-		case ServerCommand::PickedHero:
-		{
-			u8 pickedHero;
-			packet >> pickedHero;
+        case ServerCommand::PickedHero:
+        {
+            u8 pickedHero;
+            packet >> pickedHero;
 
-			if (pickedHero == 0 || pickedHero > g_numberOfHeroes) {
-				pickedHero = m_heroesDistr(Helper_Random::gen()) + 1;
-			}
+            if (pickedHero == 0 || pickedHero > g_numberOfHeroes) {
+                pickedHero = m_heroesDistr(Helper_Random::gen()) + 1;
+            }
 
-			m_clients[index].pickedHeroType = g_heroTypes[pickedHero - 1];
-			m_clients[index].heroDead = false;
-			
-			Hero* hero = createClientHeroEntity(index);
+            m_clients[index].pickedHeroType = g_heroTypes[pickedHero - 1];
+            m_clients[index].heroDead = false;
+            
+            Hero* hero = createClientHeroEntity(index);
 
-			if (hero) {
-				CRCPacket outPacket;
-				outPacket << (u8) ClientCommand::HeroCreated << m_clients[index].controlledEntityUniqueId << m_clients[index].teamId;
-				outPacket << (u8) ClientCommand::PlayerCoords << hero->getPosition().x << hero->getPosition().y;
+            if (hero) {
+                CRCPacket outPacket;
+                outPacket << (u8) ClientCommand::HeroCreated << m_clients[index].controlledEntityUniqueId << m_clients[index].teamId;
+                outPacket << (u8) ClientCommand::PlayerCoords << hero->getPosition().x << hero->getPosition().y;
 
                 m_clients[index].connectionCompleted = true;
 
-				sendPacket(outPacket, m_clients[index].connectionId, true);
-			}
+                sendPacket(outPacket, m_clients[index].connectionId, true);
+            }
 
-			break;
-		}
+            break;
+        }
     }
 }
 

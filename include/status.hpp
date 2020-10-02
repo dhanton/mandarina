@@ -6,12 +6,12 @@
 
 enum StatusType
 {
-	#define DoStatus(type, json_id) \
-		STATUS_##type,
-	#include "status.inc"
-	#undef DoStatus
+    #define DoStatus(type, json_id) \
+        STATUS_##type,
+    #include "status.inc"
+    #undef DoStatus
 
-	STATUS_MAX_TYPES
+    STATUS_MAX_TYPES
 };
 
 //Status is like a buffer that buffs can write to
@@ -31,8 +31,8 @@ public:
     bool& operator[](const unsigned int& index);
     const bool& operator[](const unsigned int& index) const;
 
-	void packData(CRCPacket& outPacket) const;
-	void loadFromData(CRCPacket& inPacket);
+    void packData(CRCPacket& outPacket) const;
+    void loadFromData(CRCPacket& inPacket);
 
     static void loadJsonData(const JsonParser* jsonParser);
 

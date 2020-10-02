@@ -70,7 +70,7 @@ const Status& _UnitBase::getStatus() const
 
 u8 _UnitBase::getWeaponId() const
 {
-	return m_weaponId;
+    return m_weaponId;
 }
 
 Vector2 _UnitBase::moveCollidingTilemap_impl(const Vector2& oldPos, Vector2 newPos, float collisionRadius, TileMap* map)
@@ -247,7 +247,7 @@ void Unit::packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUni
     outPacket << isInvisible();
     outPacket << isSolid();
 
-	m_status.packData(outPacket);
+    m_status.packData(outPacket);
 
     bool posXChanged = !prevUnit || m_pos.x != prevUnit->getPosition().x;
     outPacket << posXChanged;
@@ -511,9 +511,9 @@ void C_Unit::loadFromData(u32 controlledEntityUniqueId, CRCPacket& inPacket, Cas
     inPacket >> m_invisible;
     inPacket >> m_solid;
 
-	m_status.loadFromData(inPacket);
+    m_status.loadFromData(inPacket);
 
-	inPacket >> posXChanged;
+    inPacket >> posXChanged;
     inPacket >> posYChanged;
     inPacket >> teamIdChanged;
     inPacket >> flyingHeightChanged;
@@ -718,7 +718,7 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
         m_healthUI.setFonts(context.fonts);
     }
 
-	m_unitUI.updateStatus(getStatus());
+    m_unitUI.updateStatus(getStatus());
 
     //isAlly can change if the client changes the team its spectating
     bool isAlly = (m_teamId == managersContext.entityManager->getLocalTeamId());

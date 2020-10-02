@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.9.1)
 project(MandarinaTest)
 
 if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
-	message(FATAL_ERROR "In-source builds are not allowed, use a separate build directory.")
+    message(FATAL_ERROR "In-source builds are not allowed, use a separate build directory.")
 endif()
 
 set(PATH_SFML_include     "")
@@ -12,23 +12,23 @@ set(PATH_sockets_include  "")
 set(PATH_sockets_lib      "")
 
 if("${PATH_SFML_include}" STREQUAL "")
-	message(FATAL_ERROR "Missing SFML include directory")
+    message(FATAL_ERROR "Missing SFML include directory")
 endif()
 
 if("${PATH_SFML_lib}" STREQUAL "")
-	message(FATAL_ERROR "Missing SFML lib directory")
+    message(FATAL_ERROR "Missing SFML lib directory")
 endif()
 
 if("${PATH_rapidjson}" STREQUAL "")
-	message(FATAL_ERROR "Missing rapidjson include directory")
+    message(FATAL_ERROR "Missing rapidjson include directory")
 endif()
 
 if("${PATH_sockets_include}" STREQUAL "")
-	message(FATAL_ERROR "Missing GameNetworkingSockets include directory")
+    message(FATAL_ERROR "Missing GameNetworkingSockets include directory")
 endif()
 
 if("${PATH_sockets_lib}" STREQUAL "")
-	message(FATAL_ERROR "Missing GameNetworkingSockets lib directory")
+    message(FATAL_ERROR "Missing GameNetworkingSockets lib directory")
 endif()
 
 set(CMAKE_CXX_STANDARD 11)
@@ -37,13 +37,13 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DMANDARINA_DEBUG")
 
 #required by GameNetworkingSockets (for UNIX systems)
 if (UNIX AND NOT APPLE)
-	add_definitions(-DPOSIX)
+    add_definitions(-DPOSIX)
 
-	if (NOT APPLE)
-		add_definitions(-DLINUX)
-	else()
-		add_definitions(-DOSX)
-	endif()
+    if (NOT APPLE)
+        add_definitions(-DLINUX)
+    else()
+        add_definitions(-DOSX)
+    endif()
 endif ()
 
 include_directories("../include")

@@ -94,20 +94,20 @@ std::uniform_int_distribution<int> Helper_Random::m_coinFlipDistr(0, 1);
 
 std::mt19937& Helper_Random::gen() 
 {
-	return m_gen;
+    return m_gen;
 }
 
 double Helper_Random::rndAngleDegrees()
 {
-	return m_angleDistr(m_gen);
+    return m_angleDistr(m_gen);
 }
 
 double Helper_Random::rndAngleRadians()
 {
-	return rndAngleDegrees() * (PI/180.0); 
+    return rndAngleDegrees() * (PI/180.0); 
 }
 
 int Helper_Random::coinFlip()
 {
-	return m_coinFlipDistr(m_gen);
+    return m_coinFlipDistr(m_gen);
 }

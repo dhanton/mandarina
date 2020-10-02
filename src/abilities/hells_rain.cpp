@@ -17,7 +17,7 @@ void HellsRainAbility::onCast(Unit* caster, const ManagersContext& context, u16 
 
     const float multiplier = context.gameMode->getDamageMultiplier() * caster->getDamageMultiplier();
 
-	std::uniform_int_distribution<u16> spreadDistr(0, m_spreadDistance);
+    std::uniform_int_distribution<u16> spreadDistr(0, m_spreadDistance);
 
     for (int i = 0; i < m_bubbleNumber; ++i) {
         const Vector2 randPos = calculateRndPos(spreadDistr);
@@ -58,8 +58,8 @@ void HellsRainAbility::loadFromJson(const rapidjson::Document& doc)
 
 Vector2 HellsRainAbility::calculateRndPos(std::uniform_int_distribution<u16>& distr)
 {
-	float angle = Helper_Random::rndAngleRadians();
-	float dist = distr(Helper_Random::gen());
+    float angle = Helper_Random::rndAngleRadians();
+    float dist = distr(Helper_Random::gen());
 
     return Vector2(std::sin(angle) * dist, std::cos(angle) * dist);
 }

@@ -81,7 +81,7 @@ sf::Color FoodBase::getRarityColor(u8 foodType)
 
 u8 FoodBase::getRandomFood()
 {
-	return (*m_dropDistr)(Helper_Random::gen());
+    return (*m_dropDistr)(Helper_Random::gen());
 }
 
 void FoodBase::scatterFood(const Vector2& pos, const std::vector<u8>& foodVec, const ManagersContext& context)
@@ -89,8 +89,8 @@ void FoodBase::scatterFood(const Vector2& pos, const std::vector<u8>& foodVec, c
     if (foodVec.empty()) return;
 
     for (int i = 0; i < foodVec.size(); ++i) {
-		const float randAngle = Helper_Random::rndAngleRadians();
-		const float dist = m_distanceDistr(Helper_Random::gen());
+        const float randAngle = Helper_Random::rndAngleRadians();
+        const float dist = m_distanceDistr(Helper_Random::gen());
         const Vector2 randVec = Vector2(std::sin(randAngle) * dist, std::cos(randAngle) * dist);
 
         Vector2 finalPos = randVec + pos;
@@ -135,12 +135,12 @@ void FoodBase::loadFoodData(const rapidjson::Document& doc)
     m_rarityOffset[FOOD_RARITY_UNCOMMON] = 18;
     m_rarityOffset[FOOD_RARITY_RARE] = 27;
     m_rarityOffset[FOOD_RARITY_MYTHIC] = 30;
-	m_rarityOffset[MAX_FOOD_RARITY_TYPES] = MAX_FOOD_TYPES;
+    m_rarityOffset[MAX_FOOD_RARITY_TYPES] = MAX_FOOD_TYPES;
 
-	//needed to generate the discrete distribution
-	std::vector<double> distrChances(MAX_FOOD_TYPES, 0);
+    //needed to generate the discrete distribution
+    std::vector<double> distrChances(MAX_FOOD_TYPES, 0);
 
-	//generate the rarity of each food type using the offset
+    //generate the rarity of each food type using the offset
     for (int i = 0; i < MAX_FOOD_TYPES; ++i) {
         if (i < m_rarityOffset[FOOD_RARITY_UNCOMMON]) {
             m_rarityType[i] = FOOD_RARITY_COMMON;
@@ -155,14 +155,14 @@ void FoodBase::loadFoodData(const rapidjson::Document& doc)
             m_rarityType[i] = FOOD_RARITY_MYTHIC;
         }
 
-		//we have to divide the drop rate with the amount of food of each type
+        //we have to divide the drop rate with the amount of food of each type
         const double amount = m_rarityOffset[m_rarityType[i] + 1] - m_rarityOffset[m_rarityType[i]];
-		distrChances[i] = static_cast<double>(m_dropRate[m_rarityType[i]])/amount;
+        distrChances[i] = static_cast<double>(m_dropRate[m_rarityType[i]])/amount;
     }
 
-	m_dropDistr = std::unique_ptr<DiscreteDistr>(new DiscreteDistr(distrChances.begin(), distrChances.end()));
+    m_dropDistr = std::unique_ptr<DiscreteDistr>(new DiscreteDistr(distrChances.begin(), distrChances.end()));
 
-	//power given by each rarity
+    //power given by each rarity
     m_powerGiven[FOOD_RARITY_COMMON] = 200;
     m_powerGiven[FOOD_RARITY_UNCOMMON] = 400;
     m_powerGiven[FOOD_RARITY_RARE] = 900;

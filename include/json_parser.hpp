@@ -16,7 +16,7 @@ public:
     rapidjson::Document *getDocument(const std::string& id);
     const rapidjson::Document *getDocument(const std::string &id) const;
 
-	bool isLoaded(const std::string& id) const;
+    bool isLoaded(const std::string& id) const;
 
 private:
     std::map<std::string, std::unique_ptr<rapidjson::Document>> m_documents;

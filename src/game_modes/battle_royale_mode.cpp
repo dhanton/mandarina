@@ -153,7 +153,7 @@ void BattleRoyaleMode::onHeroCreated(Hero* hero)
 
     if (!m_spawnPoints.empty()) {
         std::uniform_int_distribution<int> distr(0, m_spawnPoints.size() - 1);
-		auto it = std::next(m_spawnPoints.begin(), distr(Helper_Random::gen()));
+        auto it = std::next(m_spawnPoints.begin(), distr(Helper_Random::gen()));
 
         //move the unit randomly to one of the spawn points
         hero->setPosition(*it);

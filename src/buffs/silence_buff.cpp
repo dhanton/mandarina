@@ -4,10 +4,10 @@
 
 SilenceBuff* SilenceBuff::clone() const
 {
-	return new SilenceBuff(*this);
+    return new SilenceBuff(*this);
 }
 
 void SilenceBuff::onPreUpdate(sf::Time eTime)
 {
-	m_unit->getStatus()[STATUS_SILENCED] = true;
+    m_unit->getStatus()[STATUS_SILENCED] = true;
 }

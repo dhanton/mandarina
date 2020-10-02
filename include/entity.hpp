@@ -71,8 +71,8 @@ class Entity : public BaseEntityComponent
 public:
     virtual Entity* clone() const = 0;
 
-	//virtual destructor is required to delete an instance of a derived class through a pointer to this class
-	//(even if delete is handled by unique_ptr)
+    //virtual destructor is required to delete an instance of a derived class through a pointer to this class
+    //(even if delete is handled by unique_ptr)
     virtual ~Entity() = default;
 
     virtual void loadFromJson(const rapidjson::Document& doc);
@@ -105,9 +105,9 @@ class C_Entity : public BaseEntityComponent
 public:
     virtual C_Entity* clone() const = 0;
 
-	//virtual destructor is required to delete an instance of a derived class through a pointer to this class
-	//(even if delete is handled by unique_ptr)
-	virtual ~C_Entity() = default;
+    //virtual destructor is required to delete an instance of a derived class through a pointer to this class
+    //(even if delete is handled by unique_ptr)
+    virtual ~C_Entity() = default;
 
     virtual void loadFromJson(const rapidjson::Document& doc, u16 textureId, const Context& context);
 
@@ -133,10 +133,10 @@ public:
 
     virtual void insertRenderNode(const C_ManagersContext& managersContext, const Context& context);
 
-	u16 getTextureId() const;
-	float getScale() const;
-	bool getUseSubTextureRect() const;
-	sf::IntRect getSubTextureRect() const;
+    u16 getTextureId() const;
+    float getScale() const;
+    bool getUseSubTextureRect() const;
+    sf::IntRect getSubTextureRect() const;
 
 protected:
     u16 m_textureId;

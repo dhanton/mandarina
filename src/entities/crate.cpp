@@ -91,9 +91,9 @@ void Crate::packData(const Entity* prevEntity, u8 teamId, u32 controlledEntityUn
 void Crate::onCreated()
 {
     const int possibleFoodDiff = m_maxPossibleFood - m_minPossibleFood;
-	
-	std::uniform_int_distribution<int> distr(m_minPossibleFood, m_maxPossibleFood);
-	m_foodAmount = distr(Helper_Random::gen());
+    
+    std::uniform_int_distribution<int> distr(m_minPossibleFood, m_maxPossibleFood);
+    m_foodAmount = distr(Helper_Random::gen());
     
     const float percentage = static_cast<float>(m_foodAmount - m_minPossibleFood)/static_cast<float>(possibleFoodDiff);
 

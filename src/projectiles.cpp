@@ -383,7 +383,7 @@ void Projectile_onHit(Projectile& projectile, Entity* entityHit, const ManagersC
         Unit* shooterUnit = dynamic_cast<Unit*>(shooter);
 
         if (shooterUnit) {
-			shooterUnit->onProjectileHit(projectile, entityHit);
+            shooterUnit->onProjectileHit(projectile, entityHit);
         }
     }
 }

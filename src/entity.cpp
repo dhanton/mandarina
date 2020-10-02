@@ -244,22 +244,22 @@ void C_Entity::insertRenderNode(const C_ManagersContext& managersContext, const 
 
 u16 C_Entity::getTextureId() const
 {
-	return m_textureId;
+    return m_textureId;
 }
 
 float C_Entity::getScale() const
 {
-	return m_scale;
+    return m_scale;
 }
 
 bool C_Entity::getUseSubTextureRect() const
 {
-	return m_useSubTextureRect;
+    return m_useSubTextureRect;
 }
 
 sf::IntRect C_Entity::getSubTextureRect() const
 {
-	return m_subTextureRect;
+    return m_subTextureRect;
 }
 
 void HealthComponent::takeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId)

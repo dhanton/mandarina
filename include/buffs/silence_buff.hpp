@@ -5,7 +5,7 @@
 class SilenceBuff : public Buff
 {
 public:
-	SilenceBuff* clone() const;
+    SilenceBuff* clone() const;
 
-	void onPreUpdate(sf::Time eTime);
+    void onPreUpdate(sf::Time eTime);
 };

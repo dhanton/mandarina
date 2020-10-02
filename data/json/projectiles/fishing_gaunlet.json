@@ -5,5 +5,5 @@
     "range": 600,
     "hit_flags": "ENEMIES",
     "rotation_offset": -45.0,
-	"buff_applied": "GAUNLET_SILENCE" 
+    "buff_applied": "GAUNLET_SILENCE" 
 }

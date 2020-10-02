@@ -19,31 +19,31 @@ UnitUI::UnitUI()
 
 void UnitUI::updateStatus(const Status& status)
 {
-	//reset m_status values
-	m_status.preUpdate();
+    //reset m_status values
+    m_status.preUpdate();
 
-	for (auto it = m_statusBar.begin(); it != m_statusBar.end();) {
-		if (!status[*it]) {
-			//remove any status that is not in the unit anymore
-			it = m_statusBar.erase(it);
-		} else {
-			//keep track of which status were already in the bar
-			m_status[*it] = true;
-			++it;
-		}
-	}
+    for (auto it = m_statusBar.begin(); it != m_statusBar.end();) {
+        if (!status[*it]) {
+            //remove any status that is not in the unit anymore
+            it = m_statusBar.erase(it);
+        } else {
+            //keep track of which status were already in the bar
+            m_status[*it] = true;
+            ++it;
+        }
+    }
 
-	for (int i = 0; i < STATUS_MAX_TYPES; ++i) {
-		//if a status wasn't already in the bar (but it's in the unit)
-		if (status[i] && !m_status[i]) {
-			m_status[i] = true;
+    for (int i = 0; i < STATUS_MAX_TYPES; ++i) {
+        //if a status wasn't already in the bar (but it's in the unit)
+        if (status[i] && !m_status[i]) {
+            m_status[i] = true;
 
-			//add it
-			if (Status::getInStatusBar(i)) {
-				m_statusBar.push_back(i);
-			}
-		}
-	}
+            //add it
+            if (Status::getInStatusBar(i)) {
+                m_statusBar.push_back(i);
+            }
+        }
+    }
 }
 
 void UnitUI::setUnit(const C_Unit* unit)
@@ -82,29 +82,29 @@ void UnitUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
 
     const float yOffset = HealthUI::getYOffset(m_clientCaster);
     const Vector2 barSize = HealthUI::barSize;
-	const Vector2 initialPos = m_unit->getPosition() - barSize/2.f + Vector2(0.f, yOffset - 30.f - m_unit->getCollisionRadius());
+    const Vector2 initialPos = m_unit->getPosition() - barSize/2.f + Vector2(0.f, yOffset - 30.f - m_unit->getCollisionRadius());
 
     sf::Sprite statusSprite;
     float statusXOffset = 5.f;
 
-	//render status in StatusBar
-	for (int i = 0; i < m_statusBar.size(); ++i) {
-		statusSprite.setTexture(m_textures->getResource(Status::getTextureId(m_statusBar[i])));
+    //render status in StatusBar
+    for (int i = 0; i < m_statusBar.size(); ++i) {
+        statusSprite.setTexture(m_textures->getResource(Status::getTextureId(m_statusBar[i])));
         statusSprite.setPosition(initialPos + Vector2(i * (statusSprite.getLocalBounds().width + statusXOffset), 0.f));
         statusSprite.setScale(Status::getScale(i), Status::getScale(i));
-		target.draw(statusSprite, states);
-	}
+        target.draw(statusSprite, states);
+    }
 
-	//render the rest
-	for (int i = 0; i < STATUS_MAX_TYPES; ++i) {
-		if (m_status[i] && !Status::getInStatusBar(i)) {
-			statusSprite.setTexture(m_textures->getResource(Status::getTextureId(i)));
+    //render the rest
+    for (int i = 0; i < STATUS_MAX_TYPES; ++i) {
+        if (m_status[i] && !Status::getInStatusBar(i)) {
+            statusSprite.setTexture(m_textures->getResource(Status::getTextureId(i)));
             statusSprite.setOrigin(Vector2(statusSprite.getLocalBounds().width/2.f, statusSprite.getLocalBounds().height/2.f));
             statusSprite.setPosition(m_unit->getPosition() + Status::getOffset(i));
             statusSprite.setScale(Status::getScale(i), Status::getScale(i));
             target.draw(statusSprite, states);
-		}
-	}
+        }
+    }
 
     Vector2 backgroundPos = m_unit->getPosition() - HealthUI::barSize/2.f + Vector2(0.f, yOffset - m_unit->getCollisionRadius());
 
