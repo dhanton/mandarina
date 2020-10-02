@@ -181,9 +181,10 @@ void C_Crate::copySnapshotData(const C_Entity* snapshotEntity, bool isControlled
     m_ui = healthUI;
 }
 
-void C_Crate::insertRenderNode(const C_ManagersContext& managersContext, const Context& context)
+void C_Crate::insertRenderNode(sf::Time eTime, const C_ManagersContext& managersContext, const Context& context)
 {
-    C_Entity::insertRenderNode(managersContext, context);
+    C_Entity::insertRenderNode(eTime, managersContext, context);
+    RenderNode& node = managersContext.entityManager->getRenderNodes().back();
 
     std::vector<RenderNode>& uiRenderNodes = managersContext.entityManager->getUIRenderNodes();
     
@@ -192,6 +193,8 @@ void C_Crate::insertRenderNode(const C_ManagersContext& managersContext, const C
         m_ui.setHealthComponent(this);
         m_ui.setFonts(context.fonts);
     }
+
+    m_ui.renderUpdate(eTime, node);
 
     bool isAlly = (m_teamId == managersContext.entityManager->getLocalTeamId());
 

@@ -214,7 +214,7 @@ void C_Entity::localReveal(C_Entity* entity)
 
 }
 
-void C_Entity::insertRenderNode(const C_ManagersContext& managersContext, const Context& context)
+void C_Entity::insertRenderNode(sf::Time eTime, const C_ManagersContext& managersContext, const Context& context)
 {
     std::vector<RenderNode>& renderNodes = managersContext.entityManager->getRenderNodes();
     renderNodes.emplace_back(m_uniqueId);

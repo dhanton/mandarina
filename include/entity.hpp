@@ -9,6 +9,7 @@
 #include "json_parser.hpp"
 #include "component.hpp"
 #include "caster_snapshot.hpp"
+#include "render_node.hpp"
 
 class BaseEntityComponent
 {
@@ -97,9 +98,6 @@ protected:
     bool m_dead;
 };
 
-//Used by ClientEntityManager
-struct RenderNode;
-
 class C_Entity : public BaseEntityComponent
 {
 public:
@@ -131,7 +129,7 @@ public:
     virtual void updateLocallyVisible(const C_ManagersContext& context);
     virtual void localReveal(C_Entity* entity);
 
-    virtual void insertRenderNode(const C_ManagersContext& managersContext, const Context& context);
+    virtual void insertRenderNode(sf::Time eTime, const C_ManagersContext& managersContext, const Context& context);
 
     u16 getTextureId() const;
     float getScale() const;

@@ -663,7 +663,7 @@ void C_Unit::localReveal(C_Entity* entity)
     }
 }
 
-void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Context& context)
+void C_Unit::insertRenderNode(sf::Time eTime, const C_ManagersContext& managersContext, const Context& context)
 {
 #ifdef MANDARINA_DEBUG
     bool renderingLocallyHidden = managersContext.entityManager->renderingLocallyHidden;
@@ -673,11 +673,10 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
 #endif
 
     std::vector<RenderNode>& renderNodes = managersContext.entityManager->getRenderNodes();
-    C_Entity::insertRenderNode(managersContext, context);
+    C_Entity::insertRenderNode(eTime, managersContext, context);
 
-    const float unitHeight = renderNodes.back().height;
-
-    sf::Sprite& sprite = renderNodes.back().sprite;
+    //the one we've just inserted using C_Entity::insertRenderNode
+    RenderNode& node = renderNodes.back();
 
     int aimQuadrant = Helper_angleQuadrant(m_aimAngle);
     float mirrored = 1.f;
@@ -687,10 +686,10 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
     }
 
     //flip the sprite depending on aimAngle
-    sprite.setScale(mirrored * m_scale, m_scale);
+    node.sprite.setScale(mirrored * m_scale, m_scale);
 
     if (m_inBush || m_invisible) {
-        sf::Color color = sprite.getColor();
+        sf::Color color = node.sprite.getColor();
         color.a = 150.f;
 
 #ifdef MANDARINA_DEBUG
@@ -699,7 +698,7 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
         }
 #endif
 
-        sprite.setColor(color);
+        node.sprite.setColor(color);
     }
 
     std::vector<RenderNode>& uiRenderNodes = managersContext.entityManager->getUIRenderNodes();
@@ -718,6 +717,7 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
         m_healthUI.setFonts(context.fonts);
     }
 
+    m_healthUI.renderUpdate(eTime, node);
     m_unitUI.updateStatus(getStatus());
 
     //isAlly can change if the client changes the team its spectating
@@ -763,7 +763,7 @@ void C_Unit::insertRenderNode(const C_ManagersContext& managersContext, const Co
         weaponSprite.setPosition(getPosition());
         weaponSprite.setRotation(-getAimAngle() - weapon.angleOffset);
 
-        renderNodes.back().height = unitHeight;
+        renderNodes.back().height = node.height;
 
         //put the weapon behind or in front of the unit depending on the quadrant
         if (aimQuadrant == 2 || aimQuadrant == 3) {

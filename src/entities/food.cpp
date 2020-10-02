@@ -300,10 +300,10 @@ void C_Food::copySnapshotData(const C_Entity* snapshotEntity, bool isControlled)
     *this = *(static_cast<const C_Food*>(snapshotEntity));
 }
 
-void C_Food::insertRenderNode(const C_ManagersContext& managersContext, const Context& context)
+void C_Food::insertRenderNode(sf::Time eTime, const C_ManagersContext& managersContext, const Context& context)
 {
     std::vector<RenderNode>& renderNodes = managersContext.entityManager->getRenderNodes();
-    C_Entity::insertRenderNode(managersContext, context);
+    C_Entity::insertRenderNode(eTime, managersContext, context);
 
     // rarer than common have a glow around them
     if (getRarity() != FOOD_RARITY_COMMON) {

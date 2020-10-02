@@ -5,6 +5,7 @@
 #include "entity.hpp"
 
 const Vector2 HealthUI::barSize = Vector2(80.f, 16.f);
+const sf::Time HealthUI::m_takingDamageTotalTime = sf::seconds(0.065);
 
 float HealthUI::getYOffset(bool isControlledEntity)
 {
@@ -19,6 +20,33 @@ HealthUI::HealthUI()
 
     m_isControlledEntity = false;
     m_isAlly = false;
+    m_takingDamage = false;
+
+    //-1 so that damage taking animation doesn't trigger the first time
+    m_prevHealthPercentage = -1.f;
+}
+
+void HealthUI::renderUpdate(sf::Time eTime, RenderNode& node)
+{
+    if (!m_health) return;
+
+    float percentage = static_cast<float>(m_health->getHealth())/static_cast<float>(m_health->getMaxHealth());
+
+    if (percentage < m_prevHealthPercentage) {
+        m_takingDamage = true;
+    }
+
+    if (m_takingDamage) {
+        m_takingDamageTimer += eTime;
+
+        if (m_takingDamageTimer >= m_takingDamageTotalTime) {
+            m_takingDamageTimer = sf::Time::Zero;
+            m_takingDamage = false;
+        }
+    }
+
+    node.takingDamage = m_takingDamage;
+    m_prevHealthPercentage = percentage;
 }
 
 void HealthUI::setEntity(const C_Entity* entity)

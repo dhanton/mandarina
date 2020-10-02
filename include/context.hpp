@@ -12,6 +12,7 @@ struct Context {
 
     TextureLoader* textures = nullptr;
     FontLoader* fonts = nullptr;
+    ShaderLoader* shaders = nullptr;
 
     bool local = false;
     uint32_t localCon1 = 0;

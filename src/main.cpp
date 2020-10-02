@@ -71,6 +71,7 @@ int main(int argc, char* argv[])
 
     std::unique_ptr<TextureLoader> textures;
     std::unique_ptr<FontLoader> fonts;
+    std::unique_ptr<ShaderLoader> shaders;
     
     //only load textures in client
     if ((execMode & ExecMode::Client) != 0) {
@@ -129,6 +130,10 @@ int main(int argc, char* argv[])
         fonts = std::unique_ptr<FontLoader>(new FontLoader());
         fonts->loadResource(FONTS_PATH + "Keep Calm.ttf", "keep_calm_font");
         context.fonts = fonts.get();
+
+        shaders = std::unique_ptr<ShaderLoader>(new ShaderLoader());
+        shaders->loadResource(SHADERS_PATH + "damage_shader.frag", "damage_shader", sf::Shader::Fragment);
+        context.shaders = shaders.get();
     }
 
     JsonParser jsonParser;

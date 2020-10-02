@@ -1,8 +1,10 @@
 #pragma once
 
 #include <SFML/Graphics/Drawable.hpp>
+#include <SFML/System/Time.hpp>
 #include "defines.hpp"
 #include "context.hpp"
+#include "render_node.hpp"
 
 class C_Entity;
 class HealthComponent;
@@ -14,6 +16,8 @@ public:
     static float getYOffset(bool isControlledEntity);
 
     HealthUI();
+
+    void renderUpdate(sf::Time eTime, RenderNode& node);
 
     void setEntity(const C_Entity* entity);
     const C_Entity* getEntity() const;
@@ -35,4 +39,10 @@ private:
 
     bool m_isAlly;
     bool m_isControlledEntity;
+
+    bool m_takingDamage;
+    sf::Time m_takingDamageTimer;
+    float m_prevHealthPercentage;
+
+    static const sf::Time m_takingDamageTotalTime;
 };

@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/Graphics/Font.hpp>
+#include <SFML/Graphics/Shader.hpp>
 
 #include <map>
 #include <memory>
@@ -26,5 +27,6 @@ private:
 
 using TextureLoader = ResLoader<sf::Texture, u16>;
 using FontLoader = ResLoader<sf::Font, std::string>;
+using ShaderLoader = ResLoader<sf::Shader, std::string>;
 
 #include "res_loader.inl"

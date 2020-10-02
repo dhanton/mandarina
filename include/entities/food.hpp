@@ -118,7 +118,7 @@ public:
     virtual void interpolate(const C_Entity* prevEntity, const C_Entity* nextEntity, double t, double d, bool isControlled);
     virtual void copySnapshotData(const C_Entity* snapshotEntity, bool isControlled);
 
-    virtual void insertRenderNode(const C_ManagersContext& managersContext, const Context& context);
+    virtual void insertRenderNode(sf::Time eTime, const C_ManagersContext& managersContext, const Context& context);
 
 private:
     void updateTextureSubRect();

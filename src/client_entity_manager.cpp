@@ -12,30 +12,6 @@
 #include "entities/food.hpp"
 #include "entities/crate.hpp"
 
-RenderNode::RenderNode(u32 uniqueId)
-{
-    this->uniqueId = uniqueId;
-
-    usingSprite = false;
-    drawable = nullptr;
-
-    height = 0.f;
-    manualFilter = 0;
-}
-
-inline bool RenderNode::operator<(const RenderNode& other) 
-{
-    if (height == other.height) {
-        if (uniqueId == other.uniqueId) {
-            return manualFilter < other.manualFilter;
-        }
-
-        return uniqueId < other.uniqueId;
-    }
-
-    return height < other.height;
-}
-
 C_EntityManager::C_EntityManager(const Context& context, sf::Time worldTime):
     InContext(context)
 {
@@ -96,7 +72,7 @@ void C_EntityManager::renderUpdate(sf::Time eTime)
     m_uiRenderNodes.clear();
 
     for (auto it = entities.begin(); it != entities.end(); ++it) {
-        it->insertRenderNode(managersContext, m_context);
+        it->insertRenderNode(eTime, managersContext, m_context);
     }
 
     for (int i = 0; i < projectiles.firstInvalidIndex(); ++i) {
@@ -467,7 +443,16 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
     } else {
         for (const auto& node : m_renderNodes) {
             if (node.usingSprite) {
-                target.draw(node.sprite, states);
+                sf::RenderStates statesCopy  = states;
+
+                if (node.takingDamage) {
+                    sf::Shader* shader = &m_context.shaders->getResource("damage_shader");
+
+                    shader->setUniform("texture", sf::Shader::CurrentTexture);
+                    statesCopy.shader = shader;
+                }
+
+                target.draw(node.sprite, statesCopy);
             } else {
                 target.draw(*node.drawable, states);
             }

@@ -8,6 +8,7 @@
 #include "health_ui.hpp"
 #include "buff_holder_component.hpp"
 #include "caster_snapshot.hpp"
+#include "render_node.hpp"
 
 class _UnitBase
 {
@@ -96,8 +97,6 @@ private:
     sf::Time m_passiveHealingTimer;
 };
 
-struct RenderNode;
-
 class C_Unit : public C_Entity, public _UnitBase, public HealthComponent,
                public TrueSightComponent
 {
@@ -125,7 +124,7 @@ public:
 
     virtual void updateLocallyVisible(const C_ManagersContext& context);
     virtual void localReveal(C_Entity* unit);
-    virtual void insertRenderNode(const C_ManagersContext& managersContext, const Context& context);
+    virtual void insertRenderNode(sf::Time eTime, const C_ManagersContext& managersContext, const Context& context);
 
     UnitUI* getUnitUI();
     const UnitUI* getUnitUI() const;

@@ -10,6 +10,7 @@ const std::string DATA_PATH = "../data/";
 const std::string TEXTURES_PATH = DATA_PATH + "textures/";
 const std::string ICONS_PATH = TEXTURES_PATH + "icons/";
 const std::string FONTS_PATH = DATA_PATH + "fonts/";
+const std::string SHADERS_PATH = DATA_PATH + "shaders/";
 const std::string JSON_PATH = DATA_PATH + "json/";
 const std::string MAPS_PATH = DATA_PATH + "maps/";
 
