@@ -6,6 +6,18 @@
 #include "projectiles.hpp"
 #include "weapon.hpp"
 
+#ifndef MANDARINA_DEBUG
+    #include <cstdlib>
+
+    //Itchio auth
+    #define CPPHTTPLIB_OPENSSL_SUPPORT //needed to use https
+    #include <httplib.h>
+    
+    #ifdef _WIN32
+        #include <Windows.h>
+    #endif
+#endif
+
 const sf::Color MainMenu::m_backgroundColor = sf::Color(104, 109, 224);
 const sf::Color MainMenu::m_buttonColor = sf::Color(72, 52, 212);
 const sf::Color MainMenu::m_hoveringColor = sf::Color(34, 166, 179);
