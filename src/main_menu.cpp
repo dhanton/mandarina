@@ -49,7 +49,7 @@ MainMenu::MainMenu(const Context& context):
     constexpr float playHeight = 50.f;
 
     m_playButton.left = windowSize.x/2.f - playWidth/2.f;
-    m_playButton.top = windowSize.y - playHeight/2.f - 200.f;
+    m_playButton.top = windowSize.y - playHeight/2.f - 100.f;
     m_playButton.width = playWidth;
     m_playButton.height = playHeight;
 }
@@ -118,7 +118,7 @@ void MainMenu::mainLoop(bool& running)
                 m_gameClient->renderUpdate(m_renderRate == sf::Time::Zero ? eTime : m_renderRate);
             }
 
-            m_window->clear();
+            m_window->clear(m_gameClient ? sf::Color::Black : m_backgroundColor);
             m_window->setView(m_view);
 
             m_window->draw(*this);
@@ -343,16 +343,6 @@ void MainMenu::_doDraw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     const Vector2u windowSize = m_window->getSize(); 
 
-    constexpr float backgroundOffset = 200.f;
-
-    sf::RectangleShape background;
-    background.setSize(static_cast<Vector2>(windowSize) - Vector2(backgroundOffset, backgroundOffset));
-    background.setOrigin(background.getSize().x/2.f, background.getSize().y/2.f);
-    background.setPosition(windowSize.x/2.f, windowSize.y/2.f);
-    background.setFillColor(m_backgroundColor);
-
-    target.draw(background, states);
-
     //no need to do any transformations since the view is not moving 
     //and there is no zoom in the menu
     const Vector2 mousePos = static_cast<Vector2>(sf::Mouse::getPosition(*m_window));
@@ -409,7 +399,7 @@ void MainMenu::_doDraw(sf::RenderTarget& target, sf::RenderStates states) const
     sf::RectangleShape titleBg;
     titleBg.setSize({titleBgWidth, titleBgHeight});
     titleBg.setOrigin(titleBgWidth/2.f, titleBgHeight/2.f);
-    titleBg.setPosition(windowSize.x/2.f, 250.f);
+    titleBg.setPosition(windowSize.x/2.f, 100.f);
     titleBg.setFillColor(m_buttonColor);
 
     target.draw(titleBg, states);
