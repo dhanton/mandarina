@@ -27,7 +27,7 @@ void ConnectionStatusRender::draw(sf::RenderTarget& target, sf::RenderStates sta
     infoStream.precision(2);
     infoStream << std::fixed;
 
-    infoStream << "In: " << m_status.m_flInBytesPerSec/1000.f << " KB/s Out: " << m_status.m_flOutBytesPerSec/1000.f << " KB/s \nPing: " << m_status.m_nPing << " ms" ;
+    infoStream << "In: " << m_status.m_flInBytesPerSec/1000.f << " KB/s Out: " << m_status.m_flOutBytesPerSec/1000.f << " KB/s \nPing: " << m_status.m_nPing << " ms";
 
     sf::View previousView = target.getView();
     target.setView(target.getDefaultView());

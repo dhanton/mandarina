@@ -5,6 +5,7 @@
 #include "context.hpp"
 #include "game_client.hpp"
 #include "hero.hpp"
+#include "build_version_render.hpp"
 
 class MainMenu : public InContext, public sf::Drawable
 {
@@ -52,6 +53,8 @@ private:
     bool m_selectedHeroes[g_numberOfHeroes];
     sf::FloatRect m_heroButtons[g_numberOfHeroes];
     sf::FloatRect m_playButton;
+
+    BuildVersionRender m_buildVersionRender;
 
     static const sf::Color m_backgroundColor;
     static const sf::Color m_buttonColor;

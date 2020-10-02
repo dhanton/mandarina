@@ -15,6 +15,5 @@ public:
 private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const;
 
-    FontLoader* m_fonts;
     SteamNetworkingQuickConnectionStatus m_status;
 };

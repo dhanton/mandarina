@@ -13,7 +13,8 @@ const sf::Color MainMenu::m_hoveringColor = sf::Color(34, 166, 179);
 const sf::Color MainMenu::m_selectedColor = sf::Color(149, 175, 192);
 
 MainMenu::MainMenu(const Context& context):
-    InContext(context)
+    InContext(context),
+    m_buildVersionRender(context)
 {
     m_stopRunning = false;
     C_loadProjectilesFromJson(context.jsonParser);
@@ -24,7 +25,7 @@ MainMenu::MainMenu(const Context& context):
 
     readDisplayName();
 
-    m_window = std::unique_ptr<sf::RenderWindow>(new sf::RenderWindow({m_screenSize.x, m_screenSize.y}, "Mandarina v0.0.3", m_screenStyle));
+    m_window = std::unique_ptr<sf::RenderWindow>(new sf::RenderWindow({m_screenSize.x, m_screenSize.y}, "Mandarina", m_screenStyle));
     m_view = m_window->getDefaultView();
 
     m_context.window = m_window.get();
@@ -292,6 +293,8 @@ void MainMenu::draw(sf::RenderTarget& target, sf::RenderStates states) const
     } else {
         _doDraw(target, states);
     }
+
+    target.draw(m_buildVersionRender, states);
 }
 
 void MainMenu::_doUpdate(sf::Time eTime)
