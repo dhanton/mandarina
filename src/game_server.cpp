@@ -342,6 +342,8 @@ void GameServer::sendSnapshots()
     m_entityManager.takeSnapshot(&snapshot.entityManager);
 
     for (int i = 0; i < m_clients.firstInvalidIndex(); ++i) {
+        if (!m_clients[i].connectionCompleted) continue;
+        
         CRCPacket outPacket;
         outPacket << (u8) ClientCommand::Snapshot;
 
@@ -542,6 +544,7 @@ void GameServer::handleCommand(u8 command, int index, CRCPacket& packet)
                 m_clients[index].connectionCompleted = true;
 
                 sendPacket(outPacket, m_clients[index].connectionId, true);
+                printMessage("Connection completed with client %d", m_clients[index].uniqueId);
             }
 
             break;
@@ -562,7 +565,7 @@ void GameServer::onConnectionCompleted(HSteamNetConnection connectionId)
         outPacket << (u8) ClientCommand::GameModeType << m_gameMode->getType() << m_gameStarted;
 
         sendPacket(outPacket, connectionId, true);
-        printMessage("Connection completed with client %d", m_clients[index].uniqueId);
+        printMessage("Connection established with client %d", m_clients[index].uniqueId);
     }
 }
 

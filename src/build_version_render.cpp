@@ -11,7 +11,7 @@ BuildVersionRender::BuildVersionRender(const Context& context):
     m_buildVersion("Build ")
 {
 //game version should be defined in include/game_build_version.h (ignored by git)
-//it should contain the result of the commmand 'git describe --tags --always'
+//it should contain the result of the commmand 'git describe --tags --always --long'
 #ifdef GAME_BUILD_VERSION
     m_buildVersion += GAME_BUILD_VERSION;
 #else

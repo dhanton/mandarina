@@ -710,7 +710,7 @@ void GameClient::removeOldSnapshots(u32 olderThan)
 void GameClient::writeLatestSnapshotId(CRCPacket& packet)
 {
     packet << (u8) ServerCommand::LatestSnapshotId;
-    packet << (m_forceFullSnapshotUpdate ? 0 : m_snapshots.back().id);
+    packet << ((m_forceFullSnapshotUpdate || m_snapshots.empty()) ? 0 : m_snapshots.back().id);
 }
 
 GameClient::Snapshot* GameClient::findSnapshotById(u32 snapshotId)

@@ -4,5 +4,5 @@ build_release/
 tests/build/
 .vscode/
 
-#this file contains the result of 'git describe --tags --always'
+#this file contains the result of 'git describe --tags --always --long'
 include/game_build_version.h
