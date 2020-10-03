@@ -2,11 +2,11 @@
     "weapon": "SCYTHE",
     "alt_ability": "FISH_LIFESTEAL",
     "ultimate": "MEAT_SHIELD",
-    "health": 300,
-    "passive_healing_per_second": 0.16,
+    "health": 230,
+    "passive_healing_per_second": 0.14,
     "movement_speed": 130,
     "collision_radius": 30,
     "scale": 3.5, 
-    "health_per_level": 280,
-    "damage_multiplier_per_level": 0.25
+    "health_per_level": 200,
+    "damage_multiplier_per_level": 0.35
 }

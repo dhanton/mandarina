@@ -15,7 +15,7 @@ void BattleRoyaleMode::loadFromJson(const rapidjson::Document& doc)
     m_playersPerTeam = doc["players_per_team"].GetUint();
 
     m_stormSpeed = doc["storm_tiles_per_second"].GetFloat();
-    m_stormDmgPerSecond = doc["storm_damage_per_second"].GetFloat();
+    m_stormDmgPerSecond = doc["storm_damage_per_second"].GetUint();
     
     if (doc.HasMember("storm_time_treshold")) {
         m_stormTimeTreshold = sf::seconds(doc["storm_time_treshold"].GetFloat());

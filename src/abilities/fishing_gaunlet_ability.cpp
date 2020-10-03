@@ -22,8 +22,11 @@ void FishingGaunletAbility::onCast(Unit* caster, const ManagersContext& context,
     projectile->shooterUniqueId = caster->getUniqueId();
 
     const u16 healthRemoved = m_healthRemoved * caster->getHealth();
+    u16 selfDamage = healthRemoved;
 
-    caster->takeDamage(healthRemoved, caster, caster->getUniqueId(), caster->getTeamId());
+    //because of MeatShield, damage done might be negated (which sets selfDamage to 0)
+    //even if this is the case we still want the projectile to do damage, and that's why we use 2 different variables
+    caster->takeDamage(selfDamage, caster, caster->getUniqueId(), caster->getTeamId());
     projectile->damage = (healthRemoved * m_healthToDamage) * context.gameMode->getDamageMultiplier(); 
 
     Projectile_backtrackCollisions(*projectile, context, clientDelay);

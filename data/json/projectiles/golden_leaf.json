@@ -5,6 +5,5 @@
     "range": 450,
     "hit_flags": "ENEMIES",
     "rotation_offset": 225.0,
-    "damage": 20,
-    "buff_applied": "FOREST_SLOW"
+    "damage": 20
 }

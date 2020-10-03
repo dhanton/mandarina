@@ -359,6 +359,7 @@ void Projectile_onHit(Projectile& projectile, Entity* entityHit, const ManagersC
 
     //deal damage
     if (healthComponentHit) {
+        //projectile.damage is set to the actual amount of damage done (which is always smaller than current health) 
         healthComponentHit->takeDamage(projectile.damage, shooter, projectile.shooterUniqueId, projectile.teamId);
     }
 

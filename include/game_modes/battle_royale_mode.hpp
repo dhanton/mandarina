@@ -46,7 +46,7 @@ private:
 private:
     u8 m_playersPerTeam;
 
-    float m_stormDmgPerSecond;
+    u16 m_stormDmgPerSecond;
     sf::Time m_stormTimeTreshold;
     float m_stormDamageMultiplier;
 

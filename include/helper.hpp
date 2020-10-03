@@ -51,7 +51,7 @@ public:
     static double rndAngleDegrees();
     static double rndAngleRadians();
 
-    static int coinFlip();
+    static bool coinFlip();
 
 private:
     static std::random_device m_rd;

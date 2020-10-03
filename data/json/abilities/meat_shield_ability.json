@@ -1,4 +1,4 @@
 {
-    "duation": 6.66,
-    "lifesteal_multiplier": 2
+    "recharge_multiplier": 0.8,
+    "time_recharge_multiplier": 0.8
 }

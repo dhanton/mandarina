@@ -11,6 +11,7 @@
 #include "abilities/hells_rain.hpp"
 #include "abilities/natures_rage.hpp"
 #include "abilities/self_buff_ability.hpp"
+#include "abilities/forest_leaf_ability.hpp"
 #include "abilities/golden_leaf_ability.hpp"
 #include "abilities/shotgun_shot_ability.hpp"
 #include "abilities/fishing_gaunlet_ability.hpp"

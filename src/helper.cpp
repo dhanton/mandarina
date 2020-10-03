@@ -107,7 +107,7 @@ double Helper_Random::rndAngleRadians()
     return rndAngleDegrees() * (PI/180.0); 
 }
 
-int Helper_Random::coinFlip()
+bool Helper_Random::coinFlip()
 {
-    return m_coinFlipDistr(m_gen);
+    return (m_coinFlipDistr(m_gen) == 0);
 }

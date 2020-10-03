@@ -151,10 +151,10 @@ protected:
 class HealthComponent
 {
 public:
-    void takeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId);
+    void takeDamage(u16& damage, Entity* source, u32 uniqueId, u8 teamId);
     void beHealed(u16 amount, Entity* source);
 
-    virtual void onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId);
+    virtual void onTakeDamage(u16& damage, Entity* source, u32 uniqueId, u8 teamId);
     virtual void onBeHealed(u16 amount, Entity* source);
 
     //increase max health but keep health/max the same

@@ -327,7 +327,7 @@ float Unit::getDamageMultiplier() const
     return damageMultiplier;
 }
 
-void Unit::onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId)
+void Unit::onTakeDamage(u16& damage, Entity* source, u32 uniqueId, u8 teamId)
 {
     BuffHolderComponent::onTakeDamage(damage, source, uniqueId, teamId);
     HealthComponent::onTakeDamage(damage, source, uniqueId, teamId);

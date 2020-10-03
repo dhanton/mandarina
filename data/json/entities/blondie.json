@@ -2,11 +2,11 @@
     "weapon": "GOLDEN_SCEPTER",
     "alt_ability": "FOREST_NIGHT",
     "ultimate": "NATURES_RAGE",
-    "health": 220,
-    "passive_healing_per_second": 0.12,
+    "health": 180,
+    "passive_healing_per_second": 0.11,
     "movement_speed": 150,
     "collision_radius": 23,
     "scale": 4.1,
-    "health_per_level": 200,
-    "damage_multiplier_per_level": 0.28
+    "health_per_level": 160,
+    "damage_multiplier_per_level": 0.30
 }

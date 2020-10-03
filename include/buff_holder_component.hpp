@@ -33,7 +33,7 @@ public:
     //there are more callbacks that don't get called at the same time for all the buffs
     //onEnd() onStart() onPurged()
 
-    void onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId);
+    void onTakeDamage(u16& damage, Entity* source, u32 uniqueId, u8 teamId);
     void onProjectileHit(Projectile& projectile, Entity* target);
     void onBeHealed(u16 amount, Entity* source);
     void onHeal(u16 amount, Entity* target);

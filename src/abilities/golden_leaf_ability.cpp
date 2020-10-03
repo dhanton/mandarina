@@ -1,5 +1,6 @@
 #include "abilities/golden_leaf_ability.hpp"
 
+#include "helper.hpp"
 #include "unit.hpp"
 #include "server_entity_manager.hpp"
 #include "client_entity_manager.hpp"
@@ -18,6 +19,7 @@ void GoldenLeafAbility::onCast(Unit* caster, const ManagersContext& context, u16
     if (!projectile) return;
 
     projectile->shooterUniqueId = caster->getUniqueId();
+    projectile->buffAppliedType = (Helper_Random::coinFlip() ? BUFF_FOREST_SLOW : BUFF_FOREST_SILENCE);
 
     CooldownAbility* primaryFire = caster->getPrimaryFire();
 

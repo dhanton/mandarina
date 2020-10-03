@@ -69,7 +69,7 @@ public:
 
     virtual float getDamageMultiplier() const;
 
-    virtual void onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId);
+    virtual void onTakeDamage(u16& damage, Entity* source, u32 uniqueId, u8 teamId);
     virtual void onBeHealed(u16 amount, Entity* source);
     virtual void onDeath(bool& dead, const ManagersContext& context);
 

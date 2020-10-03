@@ -66,7 +66,7 @@ void Buff::onDeath(bool& dead)
     
 }
 
-void Buff::onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId)
+void Buff::onTakeDamage(u16& damage, Entity* source, u32 uniqueId, u8 teamId)
 {
 
 }

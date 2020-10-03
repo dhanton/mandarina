@@ -25,7 +25,7 @@ void StormBuff::onUpdate(sf::Time eTime)
     }
 }
 
-void StormBuff::setDamagePerSecond(float dmgPerSecond)
+void StormBuff::setDamagePerSecond(u16 dmgPerSecond)
 {
     m_damagePerSecond = dmgPerSecond;
 }

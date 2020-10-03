@@ -87,7 +87,7 @@ void BuffHolderComponent::removeUniqueBuff(u8 buffType)
         buff->function_string; \
     }
 
-void BuffHolderComponent::onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId)
+void BuffHolderComponent::onTakeDamage(u16& damage, Entity* source, u32 uniqueId, u8 teamId)
 {
     FOR_ALL_BUFFS(onTakeDamage(damage, source, uniqueId, teamId))
 }

@@ -12,7 +12,6 @@ void MeatShieldAbility::onCast(Unit* caster, const ManagersContext& context, u16
 {
     RechargeAbility::onCastUpdate();
 
-    caster->beHealed(caster->getMaxHealth(), caster);
     caster->addBuff(BUFF_MEAT_SHIELD);
 }
 

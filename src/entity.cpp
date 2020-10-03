@@ -262,10 +262,14 @@ sf::IntRect C_Entity::getSubTextureRect() const
     return m_subTextureRect;
 }
 
-void HealthComponent::takeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId)
+void HealthComponent::takeDamage(u16& damage, Entity* source, u32 uniqueId, u8 teamId)
 {
-    m_health = std::max((int) m_health - (int) damage, 0);
+    //units overwrite onTakeDamage
+    //damage received might be modified by buffs
     onTakeDamage(damage, source, uniqueId, teamId);
+
+    damage = std::min(damage, m_health); 
+    m_health -= damage;
 }
 
 void HealthComponent::beHealed(u16 amount, Entity* source)
@@ -274,7 +278,7 @@ void HealthComponent::beHealed(u16 amount, Entity* source)
     onBeHealed(amount, source);
 }
 
-void HealthComponent::onTakeDamage(u16 damage, Entity* source, u32 uniqueId, u8 teamId)
+void HealthComponent::onTakeDamage(u16& damage, Entity* source, u32 uniqueId, u8 teamId)
 {
     m_latestDamageDealer = uniqueId;
     m_latestDamageDealerTeamId = teamId;

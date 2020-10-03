@@ -8,5 +8,5 @@ public:
     MeatShieldBuff* clone() const;
 
     void onPreUpdate(sf::Time eTime);
-    void onEntityKill(Entity* target);
+    void onTakeDamage(u16& damage, Entity* source, u32 uniqueId, u8 teamId);
 };

@@ -89,19 +89,19 @@ void TileMapRenderer::updateLayers()
                 Vector2u sidesTextCoord;
 
                 if (j < m_size.y && m_tileMap->getTile(i, j + 1) != TILE_BUSH) {
-                    _setTileTextureCoords(i, j + 1, LAYER_SIDES_BOT, Helper_Random::coinFlip() == 1 ? Vector2u(2, 0) : Vector2u(3, 0));
+                    _setTileTextureCoords(i, j + 1, LAYER_SIDES_BOT, Helper_Random::coinFlip() ? Vector2u(2, 0) : Vector2u(3, 0));
                 }
 
                 if (j > 0 && m_tileMap->getTile(i, j - 1) != TILE_BUSH) {
-                    _setTileTextureCoords(i, j - 1, LAYER_SIDES_TOP, Helper_Random::coinFlip() == 1 ? Vector2u(0, 0) : Vector2u(1, 0));
+                    _setTileTextureCoords(i, j - 1, LAYER_SIDES_TOP, Helper_Random::coinFlip() ? Vector2u(0, 0) : Vector2u(1, 0));
                 }
 
                 if (i < m_size.x && m_tileMap->getTile(i + 1, j) != TILE_BUSH) {
-                    _setTileTextureCoords(i + 1, j, LAYER_SIDES_LEFT, Helper_Random::coinFlip() == 1 ? Vector2u(4, 0) : Vector2u(5, 0));
+                    _setTileTextureCoords(i + 1, j, LAYER_SIDES_LEFT, Helper_Random::coinFlip() ? Vector2u(4, 0) : Vector2u(5, 0));
                 }
 
                 if (i > 0 && m_tileMap->getTile(i - 1, j) != TILE_BUSH) {
-                    _setTileTextureCoords(i - 1, j, LAYER_SIDES_RIGHT, Helper_Random::coinFlip() == 1 ? Vector2u(0, 1) : Vector2u(1, 1));
+                    _setTileTextureCoords(i - 1, j, LAYER_SIDES_RIGHT, Helper_Random::coinFlip() ? Vector2u(0, 1) : Vector2u(1, 1));
                 }
             }
 
@@ -134,7 +134,7 @@ Vector2u TileMapRenderer::_getTextureCoords(TileType tile)
     {
         case TILE_NONE:
         {
-            return (Helper_Random::coinFlip() == 0 ? Vector2u(2, 3) : Vector2u(2, 4));
+            return (Helper_Random::coinFlip() ? Vector2u(2, 3) : Vector2u(2, 4));
         }
 
         case TILE_BUSH:
@@ -145,7 +145,7 @@ Vector2u TileMapRenderer::_getTextureCoords(TileType tile)
         case TILE_WALL:
         case TILE_BLOCK:
         {
-            return (Helper_Random::coinFlip() == 0 ? Vector2u(0, 2) : Vector2u(2, 2));
+            return (Helper_Random::coinFlip() ? Vector2u(0, 2) : Vector2u(2, 2));
         }
     }
 

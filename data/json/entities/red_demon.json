@@ -2,11 +2,11 @@
     "weapon": "DEVILS_BOW",
     "alt_ability": "HELLS_DASH",
     "ultimate": "HELLS_RAIN",
-    "health": 150,
+    "health": 140,
     "passive_healing_per_second": 0.08,
-    "movement_speed": 200,
+    "movement_speed": 180,
     "collision_radius": 20,
     "scale": 4,
     "health_per_level": 130,
-    "damage_multiplier_per_level": 0.33
+    "damage_multiplier_per_level": 0.35
 }
