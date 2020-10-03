@@ -92,7 +92,7 @@ void AbilityUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
                 const Vector2 boxCenter = m_pos + Vector2(m_boxBoundingSize, m_boxBoundingSize)/2.f;
 
                 sf::Text timeText;
-                timeText.setFont(m_context.fonts->getResource("keep_calm_font"));
+                timeText.setFont(m_context.fonts->getResource("main_font"));
                 timeText.setCharacterSize(45);
                 timeText.setString(std::to_string(number));
                 timeText.setFillColor(sf::Color::White);
@@ -125,7 +125,7 @@ void AbilityUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
                 hotkeyShape.setFillColor(greyColor);
 
                 sf::Text hotkeyText;
-                hotkeyText.setFont(m_context.fonts->getResource("keep_calm_font"));
+                hotkeyText.setFont(m_context.fonts->getResource("main_font"));
                 hotkeyText.setCharacterSize(16);
                 hotkeyText.setString(m_hotkey);
                 hotkeyText.setFillColor(sf::Color::White);
@@ -164,7 +164,7 @@ void AbilityUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
             } else {
 
                 sf::Text percentageText;
-                percentageText.setFont(m_context.fonts->getResource("keep_calm_font"));
+                percentageText.setFont(m_context.fonts->getResource("main_font"));
                 percentageText.setCharacterSize(60);
                 percentageText.setString(std::to_string(int(m_percentage * 100.f)));
                 percentageText.setFillColor(sf::Color::White);
@@ -175,7 +175,7 @@ void AbilityUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
                 percentageText.setPosition(circleCenter);
 
                 sf::Text totalText;
-                totalText.setFont(m_context.fonts->getResource("keep_calm_font"));
+                totalText.setFont(m_context.fonts->getResource("main_font"));
                 totalText.setCharacterSize(23);
                 totalText.setString("%");
                 totalText.setFillColor(sf::Color::White);
@@ -201,7 +201,7 @@ void AbilityUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
             hotkeyShape.setFillColor(greyColor);
 
             sf::Text hotkeyText;
-            hotkeyText.setFont(m_context.fonts->getResource("keep_calm_font"));
+            hotkeyText.setFont(m_context.fonts->getResource("main_font"));
             hotkeyText.setCharacterSize(26);
             hotkeyText.setString(m_hotkey);
             hotkeyText.setFillColor(sf::Color::White);

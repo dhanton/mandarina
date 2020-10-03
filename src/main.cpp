@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
         context.textures = textures.get();
 
         fonts = std::unique_ptr<FontLoader>(new FontLoader());
-        fonts->loadResource(FONTS_PATH + "Keep Calm.ttf", "keep_calm_font");
+        fonts->loadResource(FONTS_PATH + "SinkinSans-600SemiBold.ttf", "main_font");
         context.fonts = fonts.get();
 
         shaders = std::unique_ptr<ShaderLoader>(new ShaderLoader());

@@ -35,7 +35,7 @@ void ConnectionStatusRender::draw(sf::RenderTarget& target, sf::RenderStates sta
     const Vector2u windowSize = m_context.window->getSize();
 
     sf::Text basicInfoText;
-    basicInfoText.setFont(m_context.fonts->getResource("keep_calm_font"));
+    basicInfoText.setFont(m_context.fonts->getResource("main_font"));
     basicInfoText.setCharacterSize(12);
     basicInfoText.setString(infoStream.str());
     basicInfoText.setFillColor(sf::Color::Red);

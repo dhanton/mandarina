@@ -53,7 +53,7 @@ void HeroUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
     powerCircle.setFillColor(sf::Color::Magenta);
 
     sf::Text powerText;
-    powerText.setFont(m_fonts->getResource("keep_calm_font"));
+    powerText.setFont(m_fonts->getResource("main_font"));
     powerText.setCharacterSize(14);
     powerText.setString(std::to_string(powerLevel));
     powerText.setFillColor(sf::Color::White);
@@ -68,7 +68,7 @@ void HeroUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
 
     if (!m_hero->getDisplayName().empty()) {
         sf::Text nameText;
-        nameText.setFont(m_fonts->getResource("keep_calm_font"));
+        nameText.setFont(m_fonts->getResource("main_font"));
         nameText.setCharacterSize(10);
         nameText.setString(m_hero->getDisplayName());
         nameText.setFillColor(sf::Color::White);

@@ -417,7 +417,7 @@ void MainMenu::_doDraw(sf::RenderTarget& target, sf::RenderStates states) const
     target.draw(titleBg, states);
 
     sf::Text titleText;
-    titleText.setFont(m_context.fonts->getResource("keep_calm_font"));
+    titleText.setFont(m_context.fonts->getResource("main_font"));
     titleText.setCharacterSize(70);
     titleText.setString("MANDARINA");
     titleText.setOrigin(titleText.getLocalBounds().width/2.f + titleText.getLocalBounds().left,
@@ -440,7 +440,7 @@ void MainMenu::_doDraw(sf::RenderTarget& target, sf::RenderStates states) const
     target.draw(playShape, states);
 
     sf::Text playText;
-    playText.setFont(m_context.fonts->getResource("keep_calm_font"));
+    playText.setFont(m_context.fonts->getResource("main_font"));
     playText.setCharacterSize(30);
     playText.setString("PLAY");
     playText.setOrigin(playText.getLocalBounds().width/2.f + playText.getLocalBounds().left,

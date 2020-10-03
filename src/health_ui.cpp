@@ -106,7 +106,7 @@ void HealthUI::draw(sf::RenderTarget& target, sf::RenderStates states) const
     }
 
     sf::Text healthText;
-    healthText.setFont(m_fonts->getResource("keep_calm_font"));
+    healthText.setFont(m_fonts->getResource("main_font"));
     healthText.setCharacterSize(11);
     healthText.setString(std::to_string(m_health->getMaxHealth()));
     healthText.setFillColor(sf::Color::White);

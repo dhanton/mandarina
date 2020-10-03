@@ -70,7 +70,7 @@ void BattleRoyaleMode::drawGameEndInfo(sf::RenderTarget& target, const FontLoade
     target.setView(target.getDefaultView());
 
     sf::Text winnerText;
-    winnerText.setFont(fonts->getResource("keep_calm_font"));
+    winnerText.setFont(fonts->getResource("main_font"));
     winnerText.setCharacterSize(70);
     winnerText.setString("The winner is " + m_winnerDisplayName + "!");
     winnerText.setFillColor(sf::Color::White);

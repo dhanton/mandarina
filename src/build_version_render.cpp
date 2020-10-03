@@ -25,7 +25,7 @@ void BuildVersionRender::draw(sf::RenderTarget& target, sf::RenderStates states)
     target.setView(target.getDefaultView());
 
     sf::Text buildText;
-    buildText.setFont(m_context.fonts->getResource("keep_calm_font"));
+    buildText.setFont(m_context.fonts->getResource("main_font"));
     buildText.setCharacterSize(12);
     buildText.setString(m_buildVersion);
     buildText.setFillColor(sf::Color::Red);

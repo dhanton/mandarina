@@ -432,7 +432,7 @@ void C_EntityManager::draw(sf::RenderTarget& target, sf::RenderStates states) co
                 sf::Text text;
                 text.setPosition(node.position + Vector2(40.f, -40.f));
                 text.setFillColor(sf::Color::Red);
-                text.setFont(m_context.fonts->getResource("keep_calm_font"));
+                text.setFont(m_context.fonts->getResource("main_font"));
                 text.setCharacterSize(11);
                 text.setString(node.debugDisplayData);
                 target.draw(text, states);

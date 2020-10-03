@@ -178,7 +178,7 @@ void ClientCaster::draw(sf::RenderTarget& target, sf::RenderStates states) const
         const Vector2u windowSize = m_context.window->getSize();
 
         sf::Text spectatingText;
-        spectatingText.setFont(m_context.fonts->getResource("keep_calm_font"));
+        spectatingText.setFont(m_context.fonts->getResource("main_font"));
         spectatingText.setCharacterSize(50);
         spectatingText.setString("SPECTATING");
         spectatingText.setFillColor(sf::Color::White);
