@@ -42,7 +42,7 @@ private:
 
     bool m_takingDamage;
     sf::Time m_takingDamageTimer;
-    float m_prevHealthPercentage;
+    u16 m_prevHealth;
 
     static const sf::Time m_takingDamageTotalTime;
 };

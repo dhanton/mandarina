@@ -22,17 +22,16 @@ HealthUI::HealthUI()
     m_isAlly = false;
     m_takingDamage = false;
 
-    //-1 so that damage taking animation doesn't trigger the first time
-    m_prevHealthPercentage = -1.f;
+    m_prevHealth = 0;
 }
 
 void HealthUI::renderUpdate(sf::Time eTime, RenderNode& node)
 {
     if (!m_health) return;
 
-    float percentage = static_cast<float>(m_health->getHealth())/static_cast<float>(m_health->getMaxHealth());
+    const u16 health = m_health->getHealth();
 
-    if (percentage < m_prevHealthPercentage) {
+    if (health < m_prevHealth) {
         m_takingDamage = true;
     }
 
@@ -46,7 +45,7 @@ void HealthUI::renderUpdate(sf::Time eTime, RenderNode& node)
     }
 
     node.takingDamage = m_takingDamage;
-    m_prevHealthPercentage = percentage;
+    m_prevHealth = health;
 }
 
 void HealthUI::setEntity(const C_Entity* entity)
