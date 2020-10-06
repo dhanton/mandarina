@@ -4,7 +4,7 @@
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/Shader.hpp>
 
-#include <map>
+#include <unordered_map>
 #include <memory>
 #include <cassert>
 #include <stdexcept>
@@ -22,7 +22,7 @@ public:
 
     template <typename Param> void loadResource(const std::string& filename, Id id, const Param &param);
 private:
-    std::map<Id, std::unique_ptr<Res>> m_resourceMap;
+    std::unordered_map<Id, std::unique_ptr<Res>> m_resourceMap;
 };
 
 using TextureLoader = ResLoader<sf::Texture, u16>;
