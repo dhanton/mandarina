@@ -48,21 +48,13 @@ void Bucket<T>::removeElement(u32 uniqueId)
 
         if (index != m_firstInvalidIndex) {            
             m_hashTable[m_elements[m_firstInvalidIndex].uniqueId] = index;
-            std::swap(m_elements[index], m_elements[m_firstInvalidIndex]);
+            m_elements[index] = std::move(m_elements[m_firstInvalidIndex]);
         }
 
         m_hashTable.erase(uniqueId);
 
     } else {
         std::cout << "Bucket::removeElement error - UniqueId doesn't exist" << std::endl;
-    }
-}
-
-template<typename T>
-void Bucket<T>::removeInvalidData()
-{
-    while (m_elements.size() > m_firstInvalidIndex) {
-        m_elements.pop_back();
     }
 }
 
@@ -83,9 +75,6 @@ void Bucket<T>::copyValidDataTo(Bucket<T>& otherBucket) const
         otherBucket.m_elements[i] = m_elements[i];
         otherBucket.m_hashTable.emplace(m_elements[i].uniqueId, i);
     }
-
-    // otherBucket.m_elements = std::vector<T>(m_elements.begin(), m_elements.begin() + m_firstInvalidIndex);
-    // otherBucket.m_hashTable = m_hashTable;
 }
 
 template<typename T>

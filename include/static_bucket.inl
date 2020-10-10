@@ -38,8 +38,12 @@ void StaticBucket<T, N>::removeElement(u32 uniqueId)
 
     if (index != -1) {
         m_firstInvalidIndex--;
-        m_hashTable[m_elements[m_firstInvalidIndex].uniqueId] = index;
-        std::swap(m_elements[index], m_elements[m_firstInvalidIndex]);
+
+        if (index != m_firstInvalidIndex) {
+            m_hashTable[m_elements[m_firstInvalidIndex].uniqueId] = index;
+            m_elements[index] = std::move(m_elements[m_firstInvalidIndex]);
+        }
+
         m_hashTable.erase(uniqueId);
 
     } else {

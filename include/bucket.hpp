@@ -22,7 +22,6 @@ public:
     int addElement(u32 uniqueId);
     void removeElement(u32 uniqueId);
 
-    void removeInvalidData();
     void copyValidDataTo(Bucket<T>& otherBucket) const;
 
     bool isIndexInRange(int index) const;
